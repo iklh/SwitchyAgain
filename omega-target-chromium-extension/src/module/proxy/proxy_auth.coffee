@@ -19,7 +19,7 @@ module.exports = class ProxyAuth
     chrome.webRequest.onAuthRequired.addListener(
       @authHandler.bind(this)
       {urls: ['<all_urls>']}
-      ['blocking']
+      ['asyncBlocking']
     )
     chrome.webRequest.onCompleted.addListener(
       @_requestDone.bind(this)
@@ -60,8 +60,13 @@ module.exports = class ProxyAuth
   _proxies: {}
   _fallbacks: []
   _requests: null
-  authHandler: (details) ->
-    return {} unless details.isProxy
+  authHandler: (details, callback) ->
+    respond = (result) ->
+      if callback?
+        callback(result)
+      else
+        result
+    return respond({}) unless details.isProxy
     req = @_requests[details.requestId]
     if not req?
       @_requests[details.requestId] = req = {authTries: 0}
@@ -79,9 +84,9 @@ module.exports = class ProxyAuth
       proxy = @_fallbacks[req.authTries - listLen]
     @log.log('ProxyAuth', key, req.authTries, proxy?.name)
 
-    return {} unless proxy?
+    return respond({}) unless proxy?
     req.authTries++
-    return authCredentials: proxy.auth
+    return respond(authCredentials: proxy.auth)
 
   _requestDone: (details) ->
     delete @_requests[details.requestId]

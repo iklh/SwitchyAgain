@@ -7,14 +7,14 @@ module.exports =
   target:
     files:
       'build/js/omega_target.min.js':
-        'node_modules/omega-target/omega_target.min.js'
+        '../omega-target/omega_target.min.js'
   target_self:
     src: 'omega_target_chromium_extension.min.js'
     dest: 'build/js/'
   target_popup:
     expand: true
     cwd: 'src/js'
-    src: 'omega_target_popup.js'
+    src: ['omega_target_popup.js', 'mv3_compat.js']
     dest: 'build/js/'
   overlay:
     expand: true

@@ -16,11 +16,11 @@ msgstr ""
 
 #, fuzzy
 msgid "appNameShort"
-msgstr "SwitchyOmega"
+msgstr "SwitchyAgain"
 
 #, fuzzy
 msgid "manifest_app_name"
-msgstr "Proxy SwitchyOmega"
+msgstr "Proxy SwitchyAgain"
 
 msgid "manifest_app_description"
 msgstr "Spravuj a prepínaj medzi viacerými proxy rýchlo a jednoducho."
@@ -173,7 +173,7 @@ msgid "inputClear_restore"
 msgstr ""
 
 msgid "options_title"
-msgstr ""
+msgstr "SwitchyAgain Options"
 
 msgid "options_experimental_badge"
 msgstr "α"

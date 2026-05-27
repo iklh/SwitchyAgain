@@ -45,7 +45,17 @@ drawIcon = (resultColor, profileColor) ->
   return icon if icon
   try
     if not drawContext?
-      drawContext = document.getElementById('canvas-icon').getContext('2d')
+      if typeof OffscreenCanvas != 'undefined'
+        drawContext = new OffscreenCanvas(38, 38).getContext('2d')
+      else if typeof document != 'undefined'
+        canvas = document.getElementById('canvas-icon')
+        if not canvas?
+          canvas = document.createElement('canvas')
+          canvas.id = 'canvas-icon'
+          document.body?.appendChild(canvas)
+        drawContext = canvas.getContext('2d')
+      else
+        throw new Error('Canvas is unavailable in this background context.')
 
     icon = {}
     for size in [16, 19, 24, 32, 38]
@@ -318,7 +328,7 @@ encodeError = (obj) ->
     obj
 
 refreshActivePageIfEnabled = ->
-  return if localStorage['omega.local.refreshOnProfileChange'] == 'false'
+  return unless options._options['-refreshOnProfileChange']
   chrome.tabs.query {active: true, lastFocusedWindow: true}, (tabs) ->
     url = tabs[0].url
     return if not url

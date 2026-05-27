@@ -15,10 +15,10 @@ msgstr ""
 "X-Generator: Weblate 5.7-dev\n"
 
 msgid "appNameShort"
-msgstr "سوییچی‌اومگا"
+msgstr "SwitchyAgain"
 
 msgid "manifest_app_name"
-msgstr "سوییچی‌اومگای پیشکار"
+msgstr "Proxy SwitchyAgain"
 
 msgid "manifest_app_description"
 msgstr "مدیریت و تعویض سریع و آسان بین چندین پیشکار."
@@ -217,7 +217,7 @@ msgid "inputClear_restore"
 msgstr "بازگردانی"
 
 msgid "options_title"
-msgstr "گزینه‌های سوییچی‌اومگا"
+msgstr "SwitchyAgain Options"
 
 msgid "options_experimental_badge"
 msgstr "α"

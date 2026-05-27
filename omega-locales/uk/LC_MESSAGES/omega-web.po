@@ -16,10 +16,10 @@ msgstr ""
 "X-Generator: Weblate 5.8.2-dev\n"
 
 msgid "appNameShort"
-msgstr "SwitchyOmega"
+msgstr "SwitchyAgain"
 
 msgid "manifest_app_name"
-msgstr "Проксі SwitchyOmega"
+msgstr "Proxy SwitchyAgain"
 
 msgid "manifest_app_description"
 msgstr "Керуйте і перемикайтеся між проксі серверами швидко і легко."
@@ -227,7 +227,7 @@ msgid "inputClear_restore"
 msgstr "Відновити"
 
 msgid "options_title"
-msgstr "Налаштування SwitchyOmega"
+msgstr "SwitchyAgain Options"
 
 msgid "options_experimental_badge"
 msgstr "α"

@@ -3,6 +3,21 @@ localStorage['log'] = ''
 localStorage['logLastError'] = ''
 
 window.OmegaContextMenuQuickSwitchHandler = -> null
+window.OmegaContextMenuClickHandlers ?= {}
+actionContext = if chrome.action? then "action" else "browser_action"
+addContextMenu = (options, onclick) ->
+  if onclick
+    if options.id
+      window.OmegaContextMenuClickHandlers[options.id] = onclick
+    else
+      options.id = 'omega-context-' + Object.keys(
+        window.OmegaContextMenuClickHandlers).length
+      window.OmegaContextMenuClickHandlers[options.id] = onclick
+  chrome.contextMenus.create(options)
+
+if chrome.contextMenus?.onClicked?
+  chrome.contextMenus.onClicked.addListener (info, tab) ->
+    window.OmegaContextMenuClickHandlers[info.menuItemId]?(info, tab)
 
 if chrome.contextMenus?
   # We don't need this API. However its presence indicates that Chrome >= 35
@@ -10,23 +25,22 @@ if chrome.contextMenus?
   # https://developer.chrome.com/extensions/contextMenus
   if chrome.i18n.getUILanguage?
     # We must create the menu item here before others to make it first in menu.
-    chrome.contextMenus.create({
+    addContextMenu({
       id: 'enableQuickSwitch'
       title: chrome.i18n.getMessage('contextMenu_enableQuickSwitch')
       type: 'checkbox'
       checked: false
-      contexts: ["browser_action"]
-      onclick: (info) -> window.OmegaContextMenuQuickSwitchHandler(info)
-    })
+      contexts: [actionContext]
+    }, (info) -> window.OmegaContextMenuQuickSwitchHandler(info))
 
-  chrome.contextMenus.create({
+  addContextMenu({
+    id: 'reportIssues'
     title: chrome.i18n.getMessage('popup_reportIssues')
-    contexts: ["browser_action"]
-    onclick: OmegaDebug.reportIssue
-  })
+    contexts: [actionContext]
+  }, OmegaDebug.reportIssue)
 
-  chrome.contextMenus.create({
+  addContextMenu({
+    id: 'errorLog'
     title: chrome.i18n.getMessage('popup_errorLog')
-    contexts: ["browser_action"]
-    onclick: OmegaDebug.downloadLog
-  })
+    contexts: [actionContext]
+  }, OmegaDebug.downloadLog)

@@ -33,11 +33,11 @@ module.exports =
         'src/js/omega_webext_proxy_script.js'
     options:
       alias:
-        'omega-pac': 'omega-pac/omega_pac.min.js'
+        'omega-pac': path.resolve('../omega-pac/omega_pac.min.js')
       plugin:
         if process.env.BUILD == 'release'
           [['minifyify', {map: false}]]
         else
           []
       browserifyOptions:
-        noParse: [require.resolve('omega-pac/omega_pac.min.js')]
+        noParse: [path.resolve('../omega-pac/omega_pac.min.js')]

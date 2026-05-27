@@ -31,21 +31,23 @@
 
   function applyProfile(profileName) {
     $script.ready('om-target', function() {
-      OmegaTargetPopup.applyProfile(profileName, closePopup);
+      OmegaTargetPopup.applyProfile(profileName);
     });
+    closePopup();
   }
 
   function setDefaultProfile(profileName, defaultProfileName) {
     $script.ready('om-target', function() {
-      OmegaTargetPopup.setDefaultProfile(profileName, defaultProfileName,
-        closePopup);
+      OmegaTargetPopup.setDefaultProfile(profileName, defaultProfileName);
     });
+    closePopup();
   }
 
   function addTempRule(domain, profileName) {
     $script.ready('om-target', function() {
-      OmegaTargetPopup.addTempRule(domain, profileName, closePopup);
+      OmegaTargetPopup.addTempRule(domain, profileName);
     });
+    closePopup();
   }
 
   function showTempRuleDropdown() {

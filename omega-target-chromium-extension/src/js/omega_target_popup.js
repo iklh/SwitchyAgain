@@ -21,10 +21,13 @@ function callBackground(method, args, cb) {
 }
 
 var requestInfoCallback = null;
+var isManifestV3 = chrome.runtime.getManifest &&
+  chrome.runtime.getManifest().manifest_version >= 3;
 
 OmegaTargetPopup = {
   getState: function (keys, cb) {
-    if (typeof localStorage === 'undefined' || !localStorage.length) {
+    if (isManifestV3 || typeof localStorage === 'undefined' ||
+        !localStorage.length) {
       callBackground('getState', [keys], cb);
       return;
     }
@@ -42,7 +45,9 @@ OmegaTargetPopup = {
     callBackgroundNoReply('applyProfile', [name], cb);
   },
   openOptions: function (hash, cb) {
-    var options_url = chrome.extension.getURL('options.html');
+    var getURL = chrome.extension && chrome.extension.getURL ||
+      chrome.runtime.getURL.bind(chrome.runtime);
+    var options_url = getURL('options.html');
 
     chrome.tabs.query({
       url: options_url
