@@ -6,5 +6,5 @@ module.exports =
       'grunt/*'
     tasks: ['coffeelint:tasks', 'default']
   src:
-    files: ['src/**/*.coffee', 'test/**/*.coffee']
+    files: ['src/**/*.coffee', 'src/**/*.js', 'test/**/*.coffee']
     tasks: ['default']

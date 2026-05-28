@@ -6,8 +6,8 @@ module.exports =
   OptionsSync: require('./src/options_sync')
   OmegaPac: require('omega-pac')
 
-for name, value of require('./src/utils.coffee')
+for name, value of require('./src/utils')
   module.exports[name] = value
 
-for name, value of require('./src/errors.coffee')
+for name, value of require('./src/errors')
   module.exports[name] = value
