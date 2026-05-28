@@ -1,7 +1,7 @@
 SwitchyAgain
 ============
 
-Current version: 1.0.2
+![Version](https://img.shields.io/github/v/tag/iklh/SwitchyAgain?label=version)
 
 SwitchyAgain is a fork of [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega) focused on keeping the proxy switching
 workflow available on modern browsers.
