@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.1.1
+
+Maintenance release for the PAC rule engine migration.
+
+- Converted the omega-pac source modules from CoffeeScript to JavaScript.
+- Fixed the omega-pac test script so it runs on the current local toolchain.
+- Removed legacy CircleCI, GitHub issue template, pull request template, and
+  Tern project metadata.
+
 ## v1.1.0
 
 Maintenance and packaging updates for SwitchyAgain.
