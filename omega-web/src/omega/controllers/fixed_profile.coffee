@@ -1,17 +1,15 @@
 angular.module('omega').controller 'FixedProfileCtrl', ($scope, $modal,
   trFilter) ->
-  $scope.urlSchemes = ['', 'http', 'https', 'ftp']
+  $scope.urlSchemes = ['', 'http', 'https']
   $scope.urlSchemeDefault = 'fallbackProxy'
   proxyProperties =
     '': 'fallbackProxy'
     'http': 'proxyForHttp'
     'https': 'proxyForHttps'
-    'ftp': 'proxyForFtp'
   $scope.schemeDisp =
     '': null
     'http': 'http://'
     'https': 'https://'
-    'ftp': 'ftp://'
 
   defaultPort =
     'http': 80

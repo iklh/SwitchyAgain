@@ -9,10 +9,6 @@ module.exports =
     files:
       'node_modules/omega-pac/omega_pac.min.js'
     tasks: 'copy:pac'
-  copy_lib:
-    files:
-      'lib/**/*'
-    tasks: 'copy:lib'
   copy_img:
     files:
       'img/**/*'

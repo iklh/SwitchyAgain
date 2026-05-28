@@ -6,6 +6,5 @@ module.exports =
     'autoprefixer'
     'coffeelint'
     'coffee'
-    'bower'
   ]
   test: ['mochaTest']
