@@ -5,5 +5,5 @@ module.exports =
   RuleList: require('./src/rule_list')
   ShexpUtils: require('./src/shexp_utils')
 
-for name, value of require('./src/utils.coffee')
+for name, value of require('./src/utils')
   module.exports[name] = value
