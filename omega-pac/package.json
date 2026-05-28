@@ -30,6 +30,6 @@
   },
   "scripts": {
     "dev": "npm link",
-    "test": "TZ=Europe/London grunt test"
+    "test": "TZ=Europe/London _mocha --reporter spec --require coffee-script/register test/*.coffee"
   }
 }
