@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowJs": false,
+    "declaration": false,
+    "ignoreDeprecations": "6.0",
+    "module": "none",
+    "noEmit": false,
+    "outDir": "src/js",
+    "rootDir": "src/js",
+    "sourceMap": false,
+    "target": "es5"
+  },
+  "include": [
+    "src/js/**/*.ts",
+    "types/**/*.d.ts"
+  ]
+}
