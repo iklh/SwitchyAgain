@@ -20,7 +20,7 @@
     "uglify-js-real": "./uglifyjs.js"
   },
   "scripts": {
-    "build": "npm run build:ts && browserify index.source.js --standalone OmegaPac --exclude uglify-js --exclude ip-address -o index.js && browserify index.source.js --standalone OmegaPac --exclude uglify-js --exclude ip-address | uglifyjs -c -m -o omega_pac.min.js",
+    "build": "npm run build:ts && browserify index.source.js --standalone OmegaPac --exclude uglify-js --exclude ip-address -o index.js && browserify index.source.js --standalone OmegaPac | uglifyjs -c -m -o omega_pac.min.js",
     "build:ts": "tsc -p tsconfig.build.json",
     "dev": "npm link",
     "test": "TZ=Europe/London _mocha --reporter spec test/*.js",

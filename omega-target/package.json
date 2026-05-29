@@ -21,7 +21,7 @@
     "omega-pac": "./omega_pac_shim.js"
   },
   "scripts": {
-    "build": "npm run build:ts && browserify index.source.js --standalone OmegaTarget --exclude bluebird --exclude jsondiffpatch --exclude omega-pac -o index.js && browserify index.source.js --standalone OmegaTarget --exclude bluebird --exclude jsondiffpatch --exclude omega-pac | uglifyjs -c -m -o omega_target.min.js",
+    "build": "npm run build:ts && browserify index.source.js --standalone OmegaTarget --exclude bluebird --exclude jsondiffpatch --exclude omega-pac -o index.js && browserify index.source.js --standalone OmegaTarget | uglifyjs -c -m -o omega_target.min.js",
     "build:ts": "../omega-pac/node_modules/.bin/tsc -p tsconfig.build.json",
     "dev": "npm link omega-pac && npm link",
     "test": "NODE_PATH=.. TZ=Europe/London _mocha --reporter spec test/*.js",
