@@ -18,7 +18,8 @@
     "grunt-mocha-test": "~0.11.0",
     "load-grunt-config": "^0.13.1",
     "minifyify": "^4.1.1",
-    "po2json": "^0.3.2"
+    "po2json": "^0.3.2",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
     "heap": "^0.2.6",
@@ -32,7 +33,9 @@
   },
   "scripts": {
     "build": "node ../omega-pac/node_modules/grunt-cli/bin/grunt default",
+    "build:ts": "tsc -p tsconfig.build.json",
     "dev": "npm link omega-target && npm link omega-web && npm link omega-pac",
-    "release": "node ../omega-pac/node_modules/grunt-cli/bin/grunt release"
+    "release": "node ../omega-pac/node_modules/grunt-cli/bin/grunt release",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   }
 }
