@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.1.6
+
+Maintenance release for the omega-web TypeScript migration.
+
+- Converted omega-web page scripts from CoffeeScript to JavaScript.
+- Added TypeScript build configuration for omega-web page scripts.
+- Converted omega-web page scripts from JavaScript to TypeScript.
+- Converted omega-web popup script from CoffeeScript to JavaScript.
+- Converted omega-web AngularJS app sources from CoffeeScript to JavaScript.
+- Added TypeScript build configuration for omega-web AngularJS app sources.
+- Converted omega-web AngularJS app sources from JavaScript to TypeScript
+  while preserving the generated JavaScript build output.
+
 ## v1.1.5
 
 Maintenance release for the chromium extension runtime scripts TypeScript
