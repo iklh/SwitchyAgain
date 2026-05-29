@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.1.7
+
+Maintenance release for removing the legacy CoffeeScript and Grunt build
+tooling.
+
+- Converted the remaining CoffeeScript tests, entry points, and build
+  configuration to JavaScript.
+- Removed the remaining CoffeeScript source and toolchain dependencies.
+- Replaced package-level Grunt test and build tasks with direct npm scripts.
+- Replaced omega-web and chromium extension Grunt builds with Node build
+  scripts.
+- Removed the remaining Grunt build configuration and omega-build hub package.
+
 ## v1.1.6
 
 Maintenance release for the omega-web TypeScript migration.
