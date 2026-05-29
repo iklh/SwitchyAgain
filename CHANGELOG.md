@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.1.4
+
+Maintenance release for the chromium extension module TypeScript migration.
+
+- Converted chromium extension module sources from CoffeeScript to JavaScript.
+- Added TypeScript build and typecheck configuration for chromium extension
+  modules.
+- Converted chromium extension module sources from JavaScript to TypeScript
+  while preserving the generated JavaScript build output.
+
 ## v1.1.3
 
 Maintenance release for the omega-target TypeScript migration.
