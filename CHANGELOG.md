@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.1.5
+
+Maintenance release for the chromium extension runtime scripts TypeScript
+migration.
+
+- Converted chromium extension runtime scripts from CoffeeScript to JavaScript.
+- Added TypeScript build configuration for chromium extension runtime scripts.
+- Converted chromium extension runtime scripts from JavaScript to TypeScript
+  while preserving the generated JavaScript build output.
+
 ## v1.1.4
 
 Maintenance release for the chromium extension module TypeScript migration.
