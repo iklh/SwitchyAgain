@@ -28,8 +28,8 @@ module.exports = {
     tasks: ['copy:target_popup']
   },
   scripts: {
-    files: ['index.coffee', 'src/module/**/*.js', 'src/js/**/*.js'],
-    tasks: ['coffeelint:src', 'browserify', 'copy:runtime_scripts', 'copy:target_self']
+    files: ['index.source.js', 'src/module/**/*.js', 'src/js/**/*.js'],
+    tasks: ['browserify', 'copy:runtime_scripts', 'copy:target_self']
   },
   browserify_omega_webext_proxy_script: {
     files: ['src/js/omega_webext_proxy_script.js'],

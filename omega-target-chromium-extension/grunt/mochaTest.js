@@ -2,9 +2,8 @@
 module.exports = {
   test: {
     options: {
-      reporter: 'spec',
-      require: 'coffee-script/register'
+      reporter: 'spec'
     },
-    src: ['test/**/*.coffee']
+    src: ['test/**/*.js']
   }
 };

@@ -2,26 +2,23 @@
 module.exports = {
   index: {
     files: {
-      'index.js': 'index.coffee'
+      'index.js': 'index.source.js'
     },
     options: {
-      transform: ['coffeeify'],
       exclude: ['bluebird', 'jsondiffpatch', 'omega-pac'],
       browserifyOptions: {
-        extensions: '.coffee',
         builtins: [],
-        standalone: 'index.coffee',
+        standalone: 'OmegaTarget',
         debug: true
       }
     }
   },
   browser: {
     files: {
-      'omega_target.min.js': 'index.coffee'
+      'omega_target.min.js': 'index.source.js'
     },
     options: {
-      alias: ['./index.coffee:OmegaTarget'],
-      transform: ['coffeeify'],
+      alias: ['./index.source.js:OmegaTarget'],
       plugin: process.env.BUILD === 'release' ? [
         [
           'minifyify', {
@@ -30,7 +27,6 @@ module.exports = {
         ]
       ] : [],
       browserifyOptions: {
-        extensions: '.coffee',
         standalone: 'OmegaTarget'
       }
     }

@@ -8,7 +8,7 @@ module.exports = {
     tasks: ['default']
   },
   src: {
-    files: ['index.coffee', 'src/**/*.js', 'test/**/*.coffee'],
+    files: ['index.source.js', 'src/**/*.js', 'test/**/*.js'],
     tasks: ['default']
   }
 };

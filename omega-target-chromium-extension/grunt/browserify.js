@@ -6,26 +6,23 @@ path = require('path');
 module.exports = {
   index: {
     files: {
-      'index.js': 'index.coffee'
+      'index.js': 'index.source.js'
     },
     options: {
-      transform: ['coffeeify'],
       exclude: ['bluebird', 'omega-pac', 'omega-target'],
       browserifyOptions: {
-        extensions: '.coffee',
         builtins: [],
-        standalone: 'index.coffee',
+        standalone: 'OmegaTargetChromium',
         debug: true
       }
     }
   },
   browser: {
     files: {
-      'omega_target_chromium_extension.min.js': 'index.coffee'
+      'omega_target_chromium_extension.min.js': 'index.source.js'
     },
     options: {
-      alias: ['./index.coffee:OmegaTargetChromium'],
-      transform: ['coffeeify'],
+      alias: ['./index.source.js:OmegaTargetChromium'],
       plugin: process.env.BUILD === 'release' ? [
         [
           'minifyify', {
@@ -34,7 +31,6 @@ module.exports = {
         ]
       ] : [],
       browserifyOptions: {
-        extensions: '.coffee',
         standalone: 'OmegaTargetChromium'
       }
     }
