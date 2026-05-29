@@ -17,4 +17,4 @@ module.exports =
 
   gruntfile: ['Gruntfile.coffee']
   tasks: ['grunt/**/*.coffee']
-  src: ['*.coffee', 'src/**/*.coffee', 'test/**/*.coffee']
+  src: ['*.coffee', 'src/module/**/*.coffee', 'test/**/*.coffee']

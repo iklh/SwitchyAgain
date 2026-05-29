@@ -21,6 +21,16 @@ module.exports =
     cwd: 'src/js'
     src: ['omega_target_popup.js', 'mv3_compat.js']
     dest: 'build/js/'
+  runtime_scripts:
+    expand: true
+    cwd: 'src/js'
+    src: [
+      'background.js'
+      'background_preload.js'
+      'omega_debug.js'
+      'omega_target_web.js'
+    ]
+    dest: 'build/js/'
   overlay:
     expand: true
     cwd: 'overlay'
