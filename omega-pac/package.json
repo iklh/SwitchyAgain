@@ -13,7 +13,7 @@
     "uglify-js-real": "./uglifyjs.js"
   },
   "scripts": {
-    "build": "npm run build:ts && ../node_modules/.bin/browserify index.source.js --standalone OmegaPac --exclude uglify-js --exclude ip-address -o index.js && ../node_modules/.bin/browserify index.source.js --standalone OmegaPac | ../node_modules/.bin/uglifyjs -c -m -o omega_pac.min.js",
+    "build": "npm run build:ts && ../node_modules/.bin/browserify index.source.js --standalone OmegaPac --exclude uglify-js --exclude ip-address -o index.js && ../node_modules/.bin/browserify index.source.js --standalone OmegaPac | ../node_modules/.bin/esbuild --loader=js --minify > omega_pac.min.js",
     "build:ts": "../node_modules/.bin/tsc -p tsconfig.build.json",
     "dev": "npm link",
     "test": "TZ=Europe/London ../node_modules/.bin/_mocha --reporter spec test/*.js",

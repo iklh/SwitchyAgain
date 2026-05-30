@@ -3,6 +3,7 @@ const fsp = require('fs/promises');
 const path = require('path');
 const browserify = require('browserify');
 const archiver = require('archiver');
+const esbuild = require('esbuild');
 const po2json = require('po2json');
 
 const root = __dirname;
@@ -33,6 +34,14 @@ async function copyTree(src, dest, filter = () => true) {
   }
 }
 
+async function minifyBundle(output) {
+  const result = await esbuild.transform(output.toString(), {
+    loader: 'js',
+    minify: true
+  });
+  return result.code;
+}
+
 function bundle(options) {
   return new Promise((resolve, reject) => {
     const b = browserify(options.browserifyOptions || {});
@@ -45,9 +54,6 @@ function bundle(options) {
     for (const item of options.require || []) {
       b.require(item.file, {expose: item.expose});
     }
-    if (isRelease && options.minify) {
-      b.plugin('minifyify', {map: false});
-    }
     b.bundle((error, output) => {
       if (error) {
         reject(error);
@@ -59,7 +65,10 @@ function bundle(options) {
 }
 
 async function writeBundle(dest, options) {
-  const output = await bundle(options);
+  let output = await bundle(options);
+  if (isRelease && options.minify) {
+    output = await minifyBundle(output);
+  }
   await ensureDir(dest);
   await fsp.writeFile(dest, output);
 }
