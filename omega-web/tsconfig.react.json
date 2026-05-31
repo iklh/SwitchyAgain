@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "allowJs": false,
+    "declaration": false,
+    "ignoreDeprecations": "6.0",
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "noEmit": true,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "strict": false,
+    "target": "es2020"
+  },
+  "include": [
+    "src/react/**/*.ts",
+    "src/react/**/*.tsx",
+    "types/**/*.d.ts"
+  ]
+}

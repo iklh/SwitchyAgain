@@ -2,6 +2,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const jade = require('jade');
 const less = require('less');
+const esbuild = require('esbuild');
 const postcss = require('postcss');
 const autoprefixer = require('autoprefixer-core');
 const root = __dirname;
@@ -33,6 +34,38 @@ async function renderJade(src, dest) {
   const html = jade.renderFile(path.join(root, src), {pretty: true});
   await ensureDir(path.join(root, dest));
   await fs.writeFile(path.join(root, dest), html);
+}
+
+async function writeReactHtml(dest, title, script) {
+  const html = [
+    '<!doctype html>',
+    '<html>',
+    '<head>',
+    '  <meta charset="utf-8">',
+    `  <title>${title}</title>`,
+    '</head>',
+    '<body>',
+    '  <div id="react-root"></div>',
+    `  <script src="${script}"></script>`,
+    '</body>',
+    '</html>',
+    ''
+  ].join('\n');
+  await ensureDir(path.join(root, dest));
+  await fs.writeFile(path.join(root, dest), html);
+}
+
+async function bundleReact(entry, dest) {
+  await ensureDir(path.join(root, dest));
+  await esbuild.build({
+    bundle: true,
+    entryPoints: [path.join(root, entry)],
+    format: 'iife',
+    minify: true,
+    outfile: path.join(root, dest),
+    platform: 'browser',
+    target: 'es2020'
+  });
 }
 
 async function renderLess(src, tmpDest, buildDest) {
@@ -132,6 +165,8 @@ async function main() {
 
   await renderJade('src/options.jade', 'build/options.html');
   await renderJade('src/popup.jade', 'build/popup.html');
+  await writeReactHtml('build/react/options_experiment.html', 'SwitchyAgain', 'options_experiment.js');
+  await bundleReact('src/react/options_experiment.tsx', 'build/react/options_experiment.js');
 
   const partials = [
     'about',
