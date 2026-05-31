@@ -14,10 +14,10 @@
     "omega-target": "./omega_target_shim.js"
   },
   "scripts": {
-    "build": "npm --prefix ../omega-pac run build && npm --prefix ../omega-target run build && npm --prefix ../omega-web run build && npm run build:ts && node build.js",
+    "build": "npm run build --workspace omega-pac && npm run build --workspace omega-target && npm run build --workspace omega-web && npm run build:ts && node build.js",
     "build:ts": "tsc -p tsconfig.build.json && tsc -p tsconfig.scripts.json",
     "dev": "npm link omega-target && npm link omega-web && npm link omega-pac",
-    "release": "npm --prefix ../omega-pac run build && npm --prefix ../omega-target run build && npm --prefix ../omega-web run build && npm run build:ts && node build.js release",
+    "release": "npm run build --workspace omega-pac && npm run build --workspace omega-target && npm run build --workspace omega-web && npm run build:ts && node build.js release",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.scripts.json --noEmit"
   }
 }

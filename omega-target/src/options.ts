@@ -318,7 +318,7 @@ Options = (function() {
       };
     })(this))["catch"]((function(_this) {
       return function(err) {
-        if (!err instanceof ProfileNotExistError) {
+        if (!(err instanceof ProfileNotExistError)) {
           _this.log.error(err);
         }
         return _this.applyProfile(_this.fallbackProfileName);

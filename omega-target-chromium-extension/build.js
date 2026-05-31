@@ -4,7 +4,7 @@ const path = require('path');
 const browserify = require('browserify');
 const archiver = require('archiver');
 const esbuild = require('esbuild');
-const po2json = require('po2json');
+const po2json = require('po2json/index.js');
 
 const root = __dirname;
 const isRelease = process.argv.includes('release');
