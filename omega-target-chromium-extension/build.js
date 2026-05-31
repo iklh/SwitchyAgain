@@ -231,7 +231,7 @@ async function main() {
     const firefoxManifest = path.join(root, 'tmp/manifest-firefox.json');
     await writeReleaseManifest(chromeManifest, 'chrome');
     await writeReleaseManifest(firefoxManifest, 'firefox');
-    await zipRelease(path.join(releaseDir, 'release.zip'), chromeManifest);
+    await zipRelease(path.join(releaseDir, 'chromium-release.zip'), chromeManifest);
     await zipRelease(path.join(releaseDir, 'firefox-unsigned.xpi'), firefoxManifest);
   }
 }
