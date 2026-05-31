@@ -109,11 +109,14 @@ async function writeLocale(dest, src) {
   await fsp.writeFile(dest, JSON.stringify(convertPo(src)));
 }
 
-async function writeReleaseManifest() {
+async function writeReleaseManifest(dest, target) {
   const manifestPath = path.join(root, 'overlay/manifest.json');
   const manifest = JSON.parse(await fsp.readFile(manifestPath, 'utf8'));
   manifest.permissions = manifest.permissions.filter((permission) => permission !== 'downloads');
-  const dest = path.join(root, 'tmp/manifest.json');
+  if (target === 'firefox') {
+    delete manifest.key;
+    delete manifest.minimum_chrome_version;
+  }
   await ensureDir(dest);
   await fsp.writeFile(dest, JSON.stringify(manifest));
 }
@@ -138,8 +141,8 @@ async function listFiles(dir, filter = () => true) {
   return files;
 }
 
-async function zipRelease() {
-  const archivePath = path.join(root, 'release.zip');
+async function zipRelease(archivePath, manifestPath) {
+  await ensureDir(archivePath);
   await fsp.rm(archivePath, {force: true});
   const output = fs.createWriteStream(archivePath);
   const archive = archiver.create('zip');
@@ -159,7 +162,7 @@ async function zipRelease() {
   for (const file of files) {
     archive.file(file, {name: path.relative(buildDir, file).replace(/\\/g, '/')});
   }
-  archive.file(path.join(root, 'tmp/manifest.json'), {name: 'manifest.json'});
+  archive.file(manifestPath, {name: 'manifest.json'});
   archive.finalize();
   await finished;
 }
@@ -223,8 +226,13 @@ async function main() {
   await writeLocale(path.join(root, 'build/_locales/zh_TW/messages.json'), path.join(localeRoot, 'zh_TW/LC_MESSAGES/omega-web.po'));
 
   if (isRelease) {
-    await writeReleaseManifest();
-    await zipRelease();
+    const releaseDir = path.join(root, 'release');
+    const chromeManifest = path.join(root, 'tmp/manifest-chrome.json');
+    const firefoxManifest = path.join(root, 'tmp/manifest-firefox.json');
+    await writeReleaseManifest(chromeManifest, 'chrome');
+    await writeReleaseManifest(firefoxManifest, 'firefox');
+    await zipRelease(path.join(releaseDir, 'release.zip'), chromeManifest);
+    await zipRelease(path.join(releaseDir, 'firefox-unsigned.xpi'), firefoxManifest);
   }
 }
 

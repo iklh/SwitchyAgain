@@ -19,4 +19,4 @@ node_modules
 /omega-target-chromium-extension/tmp/
 /omega-target-chromium-extension/build/
 /omega-target-chromium-extension/build-ts/
-/omega-target-chromium-extension/release.zip
+/omega-target-chromium-extension/release/

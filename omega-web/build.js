@@ -2,6 +2,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const jade = require('jade');
 const less = require('less');
+const postcss = require('postcss');
 const autoprefixer = require('autoprefixer-core');
 const root = __dirname;
 const workspaceRoot = path.join(root, '..');
@@ -46,7 +47,7 @@ async function renderLess(src, tmpDest, buildDest) {
     });
   });
   const css = typeof rendered === 'string' ? rendered : rendered.css;
-  const prefixed = autoprefixer({cascade: true}).process(css, {
+  const prefixed = postcss([autoprefixer({cascade: true})]).process(css, {
     map: false,
     from: path.join(root, tmpDest),
     to: path.join(root, buildDest)
