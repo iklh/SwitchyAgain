@@ -8,3 +8,9 @@ declare var jsondiffpatch: any;
 declare var OmegaPac: any;
 declare var saveAs: any;
 declare var Shepherd: any;
+
+interface Window {
+  OmegaReactBackupRestore?: {
+    mount: (element: Element, props?: any) => () => void;
+  };
+}

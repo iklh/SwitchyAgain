@@ -12,30 +12,7 @@ section.settings-group
       input(type='checkbox' ng-model='options["-exportLegacyRuleList"]')
       span {{'options_exportLegacyRuleList' | tr}}
     p.help-block(omega-html="'options_exportLegacyRuleListHelp' | tr")
-section.settings-group
-  h3 {{'options_group_importExportSettings' | tr}}
-  p
-    button.btn.btn-default(ng-click='exportOptions()')
-      span.glyphicon.glyphicon-floppy-save
-      = ' '
-      | {{'options_makeBackup' | tr}}
-    span.help-inline {{'options_makeBackupHelp' | tr}}
-  p
-    input#restore-local-file(type='file' omega-upload='restoreLocal($content)'
-      omega-error='restoreLocalError($error)')
-    button.btn.btn-default(ng-click='triggerFileInput()'
-      ladda='restoringLocal' data-spinner-color="#000000")
-      span.glyphicon.glyphicon-folder-open
-      = ' '
-      | {{'options_restoreLocal' | tr}}
-    span.help-inline {{'options_restoreLocalHelp' | tr}}
-  div
-    label {{'options_restoreOnline' | tr}}
-    .input-group.width-limit
-      input.form-control(type='url' ng-model='restoreOnlineUrl' placeholder="{{'options_restoreOnlinePlaceholder' | tr}}")
-      span.input-group-btn
-        button.btn.btn-default(ng-click='restoreOnline()' ladda='restoringOnline' data-spinner-color="#000000")
-          | {{'options_restoreOnlineSubmit' | tr}}
+div(omega-react-backup-restore)
 section.settings-group
   h3 {{'options_group_syncing' | tr}}
   div(ng-show='syncOptions == "pristine" || syncOptions == "disabled"')

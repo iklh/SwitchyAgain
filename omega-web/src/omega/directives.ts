@@ -66,6 +66,37 @@
     };
   });
 
+  angular.module('omega').directive('omegaReactBackupRestore', function($timeout, omegaTarget) {
+    return {
+      restrict: 'A',
+      link: function(scope, element) {
+        var unmount;
+        $timeout(function() {
+          var bridge;
+          bridge = window.OmegaReactBackupRestore;
+          if (bridge != null ? bridge.mount : void 0) {
+            unmount = bridge.mount(element[0], {
+              embedded: true,
+              onOptionsReset: function() {
+                return omegaTarget.refresh();
+              },
+              showAlert: function(alert) {
+                return scope.$evalAsync(function() {
+                  return scope.$root.showAlert(alert);
+                });
+              }
+            });
+          }
+        });
+        return scope.$on('$destroy', function() {
+          if (typeof unmount === 'function') {
+            return unmount();
+          }
+        });
+      }
+    };
+  });
+
   angular.module('omega').directive('omegaIp2str', function() {
     return {
       restrict: 'A',

@@ -12,6 +12,18 @@ import {
 
 const RESTORE_URL_STATE = 'omega.local.web.restoreOnlineUrl';
 
+type Alert = {
+  type: 'success' | 'error';
+  i18n?: string;
+  message?: string;
+};
+
+type BackupRestoreProps = {
+  embedded?: boolean;
+  onOptionsReset?: (options: Options) => Promise<any> | any;
+  showAlert?: (alert: Alert) => void;
+};
+
 function htmlMessage(key: string, fallback: string) {
   return {__html: message(key, fallback)};
 }
@@ -29,7 +41,7 @@ function readTextFile(file: File) {
   });
 }
 
-function BackupRestore() {
+function BackupRestore({embedded = false, onOptionsReset, showAlert}: BackupRestoreProps) {
   const [options, setOptions] = useState<Options | null>(null);
   const [restoreUrl, setRestoreUrl] = useState('');
   const [status, setStatus] = useState<'loading' | 'ready' | 'exporting' | 'restoringLocal' | 'restoringOnline' | 'success' | 'error'>('loading');
@@ -54,12 +66,31 @@ function BackupRestore() {
   }, []);
 
   function showSuccess() {
+    if (embedded && showAlert) {
+      showAlert({
+        type: 'success',
+        i18n: 'options_importSuccess',
+        message: 'Options imported.'
+      });
+      setStatus('ready');
+      return;
+    }
     setError('');
     setStatus('success');
   }
 
   function showError(err: any, fallbackKey: string, fallback: string) {
-    setError(errorMessage(err) || message(fallbackKey, fallback));
+    const messageText = errorMessage(err) || message(fallbackKey, fallback);
+    if (embedded && showAlert) {
+      showAlert({
+        type: 'error',
+        i18n: fallbackKey,
+        message: messageText
+      });
+      setStatus('ready');
+      return;
+    }
+    setError(messageText);
     setStatus('error');
   }
 
@@ -80,6 +111,8 @@ function BackupRestore() {
     setStatus(restoringStatus);
     resetOptions(content).then((loadedOptions) => {
       setOptions(loadedOptions);
+      return Promise.resolve(onOptionsReset ? onOptionsReset(loadedOptions) : null);
+    }).then(() => {
       showSuccess();
     }).catch((err) => {
       showError(err, 'options_importFormatError', 'Invalid backup file!');
@@ -125,15 +158,8 @@ function BackupRestore() {
 
   const busy = status === 'loading' || status === 'exporting' || status === 'restoringLocal' || status === 'restoringOnline';
 
-  return (
-    <main className="container-fluid react-options">
-      <div className="page-header">
-        <h2>{message('options_tab_importExport', 'Import/Export')}</h2>
-        <p className="text-muted">
-          React preview · {message('manifest_app_name', 'SwitchyAgain')} {manifestVersion()} · runtime {runtimeAvailable() ? 'available' : 'unavailable'}
-        </p>
-      </div>
-
+  const settingsSection = (
+    <section className="settings-group">
       {status === 'error' && (
         <div className="alert alert-danger" role="alert">
           <span className="glyphicon glyphicon-remove" /> {error || message('options_importFormatError', 'Invalid backup file!')}
@@ -145,48 +171,63 @@ function BackupRestore() {
         </div>
       )}
 
-      <section className="settings-group">
-        <h3>{message('options_group_importExportSettings', 'Settings')}</h3>
-        <p className="react-action-row">
-          <button type="button" className="btn btn-default" disabled={!options || busy} onClick={exportOptions}>
-            <span className="glyphicon glyphicon-floppy-save" /> {message('options_makeBackup', 'Make backup')}
-          </button>
-          <span className="help-inline">{message('options_makeBackupHelp', 'Make a full backup of your options (including profiles and all other options).')}</span>
-        </p>
+      <h3>{message('options_group_importExportSettings', 'Settings')}</h3>
+      <p className="react-action-row">
+        <button type="button" className="btn btn-default" disabled={!options || busy} onClick={exportOptions}>
+          <span className="glyphicon glyphicon-floppy-save" /> {message('options_makeBackup', 'Make backup')}
+        </button>{' '}
+        <span className="help-inline">{message('options_makeBackupHelp', 'Make a full backup of your options (including profiles and all other options).')}</span>
+      </p>
 
-        <p className="react-action-row">
+      <p className="react-action-row">
+        <input
+          ref={fileInputRef}
+          id="react-restore-local-file"
+          type="file"
+          style={{display: 'none'}}
+          onChange={restoreLocal}
+        />
+        <button type="button" className="btn btn-default" disabled={busy} onClick={() => fileInputRef.current?.click()}>
+          <span className="glyphicon glyphicon-folder-open" /> {status === 'restoringLocal' ? message('options_restoreOnlineSubmit', 'Restore') + '...' : message('options_restoreLocal', 'Restore from file')}
+        </button>{' '}
+        <span className="help-inline">{message('options_restoreLocalHelp', 'Restore your SwitchyAgain options from a local file.')}</span>
+      </p>
+
+      <div className="form-group">
+        <label htmlFor="react-restore-online-url">{message('options_restoreOnline', 'Restore from online')}</label>
+        <div className="input-group width-limit">
           <input
-            ref={fileInputRef}
-            id="react-restore-local-file"
-            type="file"
-            className="react-hidden-file"
-            onChange={restoreLocal}
+            id="react-restore-online-url"
+            className="form-control"
+            type="url"
+            value={restoreUrl}
+            placeholder={message('options_restoreOnlinePlaceholder', "Options file URL (e.g. 'http://example.com/switchy.bak')")}
+            onChange={(event) => setRestoreUrl(event.currentTarget.value)}
           />
-          <button type="button" className="btn btn-default" disabled={busy} onClick={() => fileInputRef.current?.click()}>
-            <span className="glyphicon glyphicon-folder-open" /> {status === 'restoringLocal' ? message('options_restoreOnlineSubmit', 'Restore') + '...' : message('options_restoreLocal', 'Restore from file')}
-          </button>
-          <span className="help-inline">{message('options_restoreLocalHelp', 'Restore your SwitchyAgain options from a local file.')}</span>
-        </p>
-
-        <div className="form-group">
-          <label htmlFor="react-restore-online-url">{message('options_restoreOnline', 'Restore from online')}</label>
-          <div className="input-group width-limit">
-            <input
-              id="react-restore-online-url"
-              className="form-control"
-              type="url"
-              value={restoreUrl}
-              placeholder={message('options_restoreOnlinePlaceholder', "Options file URL (e.g. 'http://example.com/switchy.bak')")}
-              onChange={(event) => setRestoreUrl(event.currentTarget.value)}
-            />
-            <span className="input-group-btn">
-              <button type="button" className="btn btn-default" disabled={busy || !restoreUrl.trim()} onClick={restoreOnline}>
-                {status === 'restoringOnline' ? message('options_restoreOnlineSubmit', 'Restore') + '...' : message('options_restoreOnlineSubmit', 'Restore')}
-              </button>
-            </span>
-          </div>
+          <span className="input-group-btn">
+            <button type="button" className="btn btn-default" disabled={busy || !restoreUrl.trim()} onClick={restoreOnline}>
+              {status === 'restoringOnline' ? message('options_restoreOnlineSubmit', 'Restore') + '...' : message('options_restoreOnlineSubmit', 'Restore')}
+            </button>
+          </span>
         </div>
-      </section>
+      </div>
+    </section>
+  );
+
+  if (embedded) {
+    return settingsSection;
+  }
+
+  return (
+    <main className="container-fluid react-options">
+      <div className="page-header">
+        <h2>{message('options_tab_importExport', 'Import/Export')}</h2>
+        <p className="text-muted">
+          React preview · {message('manifest_app_name', 'SwitchyAgain')} {manifestVersion()} · runtime {runtimeAvailable() ? 'available' : 'unavailable'}
+        </p>
+      </div>
+
+      {settingsSection}
 
       <section className="settings-group">
         <h3>{message('options_group_importExportProfile', 'Profile')}</h3>
@@ -207,10 +248,19 @@ function BackupRestore() {
   );
 }
 
-const rootElement = document.getElementById('react-root');
-
-if (!rootElement) {
-  throw new Error('Missing React root element.');
+function mount(element: Element, props: BackupRestoreProps = {}) {
+  const root = createRoot(element);
+  root.render(<BackupRestore {...props} />);
+  return () => root.unmount();
 }
 
-createRoot(rootElement).render(<BackupRestore />);
+const globalWindow = window as any;
+globalWindow.OmegaReactBackupRestore = {
+  mount
+};
+
+const rootElement = document.getElementById('react-root');
+
+if (rootElement) {
+  mount(rootElement);
+}
