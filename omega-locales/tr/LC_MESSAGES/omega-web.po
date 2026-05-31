@@ -380,7 +380,7 @@ msgid "options_restoreLocal"
 msgstr "Dosyadan eski haline getir"
 
 msgid "options_restoreLocalHelp"
-msgstr "SwitchyOmega seçeneklerini bir dosyadan eski haline getir."
+msgstr "SwitchyAgain seçeneklerini bir dosyadan eski haline getir."
 
 msgid "options_restoreOnline"
 msgstr "Çevirimiçi eski haline getir"

@@ -321,13 +321,13 @@ msgstr ""
 
 msgid "options_conflicts_lowerPriority"
 msgstr ""
-"SwitchyOmegaのアイコンにこのような赤いバッジが表示されるのは、他のアプリの方が優先度が高く、SwitchyOmegaが設定をコントロールできな"
-"いことを示しています。SwitchyOmegaを一度アンインストールして再インストールすると、SwitchyOmegaの優先順位が上がるはずなので、試して"
+"SwitchyAgainのアイコンにこのような赤いバッジが表示されるのは、他のアプリの方が優先度が高く、SwitchyAgainが設定をコントロールできな"
+"いことを示しています。SwitchyAgainを一度アンインストールして再インストールすると、SwitchyAgainの優先順位が上がるはずなので、試して"
 "みてください。再インストール後も競合が発生する場合は、競合の原因となっている他のアプリを削除することを検討してください。"
 
 msgid "options_conflicts_higherPriority"
 msgstr ""
-"If SwitchyOmega has higher priority, you can give the control back to other "
+"If SwitchyAgain has higher priority, you can give the control back to other "
 "apps or system settings by selecting $SYSTEMPROFILE$ in the popup menu."
 
 msgid "options_showExternalProfile"
@@ -423,7 +423,7 @@ msgid "options_restoreLocal"
 msgstr "Restore from file"
 
 msgid "options_restoreLocalHelp"
-msgstr "Restore your SwitchyOmega options from a local file."
+msgstr "Restore your SwitchyAgain options from a local file."
 
 msgid "options_restoreOnline"
 msgstr "Restore from online"

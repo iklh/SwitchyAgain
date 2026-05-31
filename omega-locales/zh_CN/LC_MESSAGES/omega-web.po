@@ -306,14 +306,14 @@ msgstr ""
 
 msgid "options_conflicts_lowerPriority"
 msgstr ""
-"如果 SwitchyOmega 图标上显示这样的红色徽章，表示另一个应用优先级较高，因此"
-"SwitchyOmega 无法控制代理设置。请尝试卸载 SwitchyOmega 再重新安装，这样可能可"
-"以提高 SwitchyOmega 的优先级。如果重装后您仍然看到冲突，那么请考虑移除那个"
+"如果 SwitchyAgain 图标上显示这样的红色徽章，表示另一个应用优先级较高，因此"
+"SwitchyAgain 无法控制代理设置。请尝试卸载 SwitchyAgain 再重新安装，这样可能可"
+"以提高 SwitchyAgain 的优先级。如果重装后您仍然看到冲突，那么请考虑移除那个"
 "导致冲突的应用。"
 
 msgid "options_conflicts_higherPriority"
 msgstr ""
-"如果 SwitchyOmega 的优先级较高，那么您可以在弹出菜单中选择 $SYSTEMPROFILE$ 来"
+"如果 SwitchyAgain 的优先级较高，那么您可以在弹出菜单中选择 $SYSTEMPROFILE$ 来"
 "把控制权还给其他应用或系统设置。"
 
 msgid "options_showExternalProfile"
