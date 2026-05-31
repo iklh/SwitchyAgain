@@ -30,8 +30,8 @@
   },
   "scripts": {
     "build": "npm run build:ts && node build.js",
-    "build:ts": "../node_modules/.bin/tsc -p tsconfig.app.json && ../node_modules/.bin/tsc -p tsconfig.scripts.json",
+    "build:ts": "tsc -p tsconfig.app.json && tsc -p tsconfig.scripts.json",
     "dev": "npm link omega-pac && npm link",
-    "typecheck": "../node_modules/.bin/tsc -p tsconfig.app.json --noEmit && ../node_modules/.bin/tsc -p tsconfig.scripts.json --noEmit"
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.scripts.json --noEmit"
   }
 }
