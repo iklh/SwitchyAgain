@@ -54,6 +54,10 @@ export function patchOptions(patch: Options) {
   return callBackground<Options>('patch', patch);
 }
 
+export function resetOptions(options?: any) {
+  return callBackground<Options>('reset', options);
+}
+
 export function optionPatch(before: Options, after: Options, keys: string[]) {
   const patch: Options = {};
   for (const key of keys) {
@@ -64,3 +68,14 @@ export function optionPatch(before: Options, after: Options, keys: string[]) {
   return patch;
 }
 
+export function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
