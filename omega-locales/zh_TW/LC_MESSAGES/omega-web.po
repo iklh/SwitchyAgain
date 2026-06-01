@@ -1111,6 +1111,18 @@ msgstr "一個代理設定工具"
 msgid "about_version"
 msgstr "版本 $VERSION$"
 
+msgid "about_projectHomepage"
+msgstr "專案首頁"
+
+msgid "about_basedOnSwitchyOmega"
+msgstr "基於 SwitchyOmega，版權所有 2012-2017 __SWITCHYOMEGA_AUTHORS__。"
+
+msgid "about_switchyagainChangesCopyright"
+msgstr "SwitchyAgain 修改部分版權所有 2026 __SWITCHYAGAIN_AUTHORS__。"
+
+msgid "about_licenseLine"
+msgstr "使用 __GPL_LICENSE__ 版本 3 或更新版本授權。"
+
 msgid "about_experimental_warning_moz"
 msgstr "Mozilla Firefox 瀏覽器支持目前仍處於早期實驗階段！如果您遇到任何問題，請使用下方的按鈕進行回報。"
 

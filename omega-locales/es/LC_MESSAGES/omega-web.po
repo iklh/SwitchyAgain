@@ -1317,6 +1317,18 @@ msgstr "Una herramienta de configuración de proxy"
 msgid "about_version"
 msgstr "Versión $VERSION$"
 
+msgid "about_projectHomepage"
+msgstr ""
+
+msgid "about_basedOnSwitchyOmega"
+msgstr ""
+
+msgid "about_switchyagainChangesCopyright"
+msgstr ""
+
+msgid "about_licenseLine"
+msgstr ""
+
 msgid "about_experimental_warning_moz"
 msgstr ""
 "¡El soporte de Mozilla Firefox es altamente experimental! Si tienes "

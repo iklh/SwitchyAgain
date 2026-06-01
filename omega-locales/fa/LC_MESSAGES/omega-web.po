@@ -1278,6 +1278,18 @@ msgstr "ابزار پیکربندی پراکسی"
 msgid "about_version"
 msgstr "نسخه $VERSION$"
 
+msgid "about_projectHomepage"
+msgstr ""
+
+msgid "about_basedOnSwitchyOmega"
+msgstr ""
+
+msgid "about_switchyagainChangesCopyright"
+msgstr ""
+
+msgid "about_licenseLine"
+msgstr ""
+
 msgid "about_experimental_warning_moz"
 msgstr ""
 "پشتیبانی از فایرفاکس کاملا آزمایشی میباشد! در صورت مواجه با خطا، لطفا از "

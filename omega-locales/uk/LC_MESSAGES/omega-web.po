@@ -1413,6 +1413,18 @@ msgstr "Інструмент для налаштування проксі-сер
 msgid "about_version"
 msgstr "Версія $VERSION$"
 
+msgid "about_projectHomepage"
+msgstr ""
+
+msgid "about_basedOnSwitchyOmega"
+msgstr ""
+
+msgid "about_switchyagainChangesCopyright"
+msgstr ""
+
+msgid "about_licenseLine"
+msgstr ""
+
 msgid "about_experimental_warning_moz"
 msgstr ""
 "Підтримка браузеру Mozilla Firefox вкрай експериментальна! Якщо ви "

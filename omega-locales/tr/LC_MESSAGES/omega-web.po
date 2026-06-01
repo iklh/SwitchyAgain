@@ -1098,6 +1098,18 @@ msgstr "Proxy yapılandırma aracı"
 msgid "about_version"
 msgstr "Sürüm $VERSION$"
 
+msgid "about_projectHomepage"
+msgstr ""
+
+msgid "about_basedOnSwitchyOmega"
+msgstr ""
+
+msgid "about_switchyagainChangesCopyright"
+msgstr ""
+
+msgid "about_licenseLine"
+msgstr ""
+
 msgid "about_experimental_warning_moz"
 msgstr ""
 "Mozilla Firefox seteği yüksek oranda deneyseldir! Hatalar ile "

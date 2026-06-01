@@ -188,6 +188,47 @@
     };
   });
 
+  angular.module('omega').directive('omegaReactAbout', function($timeout, $modal, omegaDebug) {
+    return {
+      restrict: 'A',
+      link: function(scope, element) {
+        var bridge, mounted, props;
+        props = function() {
+          var version;
+          try {
+            version = omegaDebug.getProjectVersion();
+          } catch (error) {
+            version = '?.?.?';
+          }
+          return {
+            embedded: true,
+            isExperimental: scope.isExperimental,
+            version: version,
+            onDownloadLog: omegaDebug.downloadLog,
+            onResetOptions: function() {
+              return $modal.open({
+                templateUrl: 'partials/reset_options_confirm.html'
+              }).result.then(function() {
+                return omegaDebug.resetOptions();
+              });
+            }
+          };
+        };
+        $timeout(function() {
+          bridge = window.OmegaReactAbout;
+          if (bridge != null ? bridge.mount : void 0) {
+            mounted = bridge.mount(element[0], props());
+          }
+        });
+        return scope.$on('$destroy', function() {
+          if (mounted != null ? mounted.unmount : void 0) {
+            return mounted.unmount();
+          }
+        });
+      }
+    };
+  });
+
   angular.module('omega').directive('omegaIp2str', function() {
     return {
       restrict: 'A',
