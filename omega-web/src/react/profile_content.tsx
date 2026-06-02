@@ -101,6 +101,20 @@ type SwitchAttachedProfileProps = {
   updating?: boolean;
 };
 
+type ConditionHelpGroup = {
+  group: string;
+  types: string[];
+};
+
+type SwitchConditionHelpProps = {
+  advancedConditionTypes?: ConditionHelpGroup[];
+  basicConditionTypes?: ConditionHelpGroup[];
+  isUrlConditionType?: Record<string, boolean>;
+  onClose?: () => void;
+  show?: boolean;
+  showConditionTypes?: number;
+};
+
 function messageWithNodes(
   key: string,
   fallback: string,
@@ -585,6 +599,70 @@ function SwitchAttachedProfile({
   );
 }
 
+function htmlMessage(key: string, fallback = key) {
+  return {__html: message(key, fallback)};
+}
+
+function SwitchConditionHelp({
+  advancedConditionTypes = [],
+  basicConditionTypes = [],
+  isUrlConditionType = {},
+  onClose,
+  show = false,
+  showConditionTypes = 0
+}: SwitchConditionHelpProps) {
+  const [expandedId, setExpandedId] = useState(0);
+  const groups = showConditionTypes === 0 ? basicConditionTypes : advancedConditionTypes;
+
+  if (!show) {
+    return null;
+  }
+
+  return (
+    <section className="condition-help-section settings-group">
+      <h3>
+        {message('options_group_conditionHelp', 'Condition Help')}
+        <button type="button" className="close close-condition-help" onClick={() => onClose?.()}>
+          <span aria-hidden="true">{'\u00d7'}</span>
+          <span className="sr-only">{message('dialog_close', 'Close')}</span>
+        </button>
+      </h3>
+      {groups.map((group, groupIndex) => {
+        const groupTitle = message(`condition_group_${group.group}`, '');
+        return (
+          <div className="condition-help" key={group.group}>
+            {!!groupTitle && (
+              <h4>
+                <a role="button" onClick={() => setExpandedId(groupIndex)}>
+                  <span className={`glyphicon ${expandedId === groupIndex ? 'glyphicon-chevron-down' : 'glyphicon-chevron-right'}`} /> {groupTitle}
+                </a>
+              </h4>
+            )}
+            {expandedId === groupIndex && (
+              <dl>
+                {group.types.map((type) => (
+                  <React.Fragment key={type}>
+                    <dt>{message(`condition_${type}`, type)}</dt>
+                    <dd>
+                      <div dangerouslySetInnerHTML={htmlMessage(`condition_help_${type}`, '')} />
+                      {isUrlConditionType[type] && (
+                        <div className="text-danger">
+                          <span className="glyphicon glyphicon-alert" />{' '}
+                          <span dangerouslySetInnerHTML={htmlMessage('condition_alert_fullUrlLimitation', '')} />
+                        </div>
+                      )}
+                    </dd>
+                  </React.Fragment>
+                ))}
+              </dl>
+            )}
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
 function RuleListProfile({
   dispName,
   onDownload,
@@ -832,12 +910,26 @@ function mountSwitchAttachedProfile(element: Element, props: SwitchAttachedProfi
   };
 }
 
+function mountSwitchConditionHelp(element: Element, props: SwitchConditionHelpProps = {}) {
+  const root = createRoot(element);
+  root.render(<SwitchConditionHelp {...props} />);
+  return {
+    render(nextProps: SwitchConditionHelpProps = {}) {
+      root.render(<SwitchConditionHelp {...nextProps} />);
+    },
+    unmount() {
+      root.unmount();
+    }
+  };
+}
+
 const globalWindow = window as any;
 globalWindow.OmegaReactProfileContent = {
   mountFixedProfile,
   mountPacProfile,
   mountRuleListProfile,
   mountSwitchAttachedProfile,
+  mountSwitchConditionHelp,
   mountUnsupportedProfile,
   mountVirtualProfile
 };

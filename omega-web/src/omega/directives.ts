@@ -723,6 +723,53 @@
     };
   });
 
+  angular.module('omega').directive('omegaReactSwitchConditionHelp', function($timeout) {
+    return {
+      restrict: 'A',
+      link: function(scope, element) {
+        var bridge, mounted, props, render, unwatchShow, unwatchTypes;
+        props = function() {
+          return {
+            advancedConditionTypes: scope.advancedConditionTypes,
+            basicConditionTypes: scope.basicConditionTypes,
+            isUrlConditionType: scope.isUrlConditionType,
+            onClose: function() {
+              return scope.$evalAsync(function() {
+                return scope.conditionHelp.show = false;
+              });
+            },
+            show: scope.conditionHelp && scope.conditionHelp.show,
+            showConditionTypes: scope.showConditionTypes
+          };
+        };
+        render = function() {
+          if (mounted != null ? mounted.render : void 0) {
+            return mounted.render(props());
+          }
+        };
+        $timeout(function() {
+          bridge = window.OmegaReactProfileContent;
+          if (bridge != null ? bridge.mountSwitchConditionHelp : void 0) {
+            mounted = bridge.mountSwitchConditionHelp(element[0], props());
+            unwatchShow = scope.$watch('conditionHelp.show', render);
+            unwatchTypes = scope.$watch('showConditionTypes', render);
+          }
+        });
+        return scope.$on('$destroy', function() {
+          if (unwatchShow) {
+            unwatchShow();
+          }
+          if (unwatchTypes) {
+            unwatchTypes();
+          }
+          if (mounted != null ? mounted.unmount : void 0) {
+            return mounted.unmount();
+          }
+        });
+      }
+    };
+  });
+
   angular.module('omega').directive('omegaReactOptionsWelcome', function($timeout) {
     return {
       restrict: 'A',
