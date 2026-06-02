@@ -229,6 +229,34 @@
     };
   });
 
+  angular.module('omega').directive('omegaReactConfirmModal', function($timeout) {
+    return {
+      restrict: 'A',
+      link: function(scope, element, attrs) {
+        var bridge, mounted;
+        $timeout(function() {
+          bridge = window.OmegaReactConfirmModal;
+          if (bridge != null ? bridge.mount : void 0) {
+            mounted = bridge.mount(element[0], {
+              kind: attrs.modalKind,
+              onClose: function() {
+                return scope.$close('ok');
+              },
+              onDismiss: function() {
+                return scope.$dismiss();
+              }
+            });
+          }
+        });
+        return scope.$on('$destroy', function() {
+          if (mounted != null ? mounted.unmount : void 0) {
+            return mounted.unmount();
+          }
+        });
+      }
+    };
+  });
+
   angular.module('omega').directive('omegaIp2str', function() {
     return {
       restrict: 'A',
