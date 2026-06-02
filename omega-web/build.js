@@ -220,6 +220,7 @@ async function main() {
 
   await concat([
     'build-ts/omega/app.js',
+    'build-ts/omega/switch_profile_rules.js',
     'build-ts/omega/filters.js',
     'build-ts/omega/directives.js',
     'build-ts/omega/controllers/about.js',

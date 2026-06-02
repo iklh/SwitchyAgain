@@ -185,39 +185,14 @@
       return rulesReadyDefer.resolve(rules);
     });
     $scope.addRule = function() {
-      var ref, rule, templ;
-      rule = $scope.profile.rules.length > 0 ? ((ref = $scope.profile.rules, templ = ref[ref.length - 1], ref), angular.copy(templ)) : {
-        condition: {
-          conditionType: 'HostWildcardCondition',
-          pattern: ''
-        },
-        profileName: $scope.attachedOptions.defaultProfileName
-      };
-      if (rule.condition.pattern) {
-        rule.condition.pattern = '';
-      }
-      $scope.profile.rules.push(rule);
+      OmegaSwitchProfileRules.addRule($scope.profile.rules, $scope.attachedOptions.defaultProfileName);
       return $scope.visibleRuleCount = $scope.profile.rules.length;
     };
     $scope.validateCondition = function(condition, pattern) {
-      var _;
-      if (condition.conditionType.indexOf('Regex') >= 0) {
-        try {
-          new RegExp(pattern);
-        } catch (error1) {
-          _ = error1;
-          return false;
-        }
-      }
-      return true;
+      return OmegaSwitchProfileRules.validateCondition(condition, pattern);
     };
     $scope.conditionHasWarning = function(condition) {
-      var pattern;
-      if (condition.conditionType === 'HostWildcardCondition') {
-        pattern = condition.pattern;
-        return pattern.indexOf(':') >= 0 || pattern.indexOf('/') >= 0;
-      }
-      return false;
+      return OmegaSwitchProfileRules.conditionHasWarning(condition);
     };
     $scope.validateIpCondition = function(condition, input) {
       var ip;
@@ -229,17 +204,12 @@
     };
     $scope.getWeekdayList = OmegaPac.Conditions.getWeekdayList;
     $scope.updateDay = function(condition, i, selected) {
-      var char;
-      condition.days || (condition.days = '-------');
-      char = selected ? 'SMTWtFs'[i] : '-';
-      condition.days = condition.days.substr(0, i) + char + condition.days.substr(i + 1);
-      delete condition.startDay;
-      return delete condition.endDay;
+      return OmegaSwitchProfileRules.updateDay(condition, i, selected);
     };
     $scope.removeRule = function(index) {
       var removeForReal, scope;
       removeForReal = function() {
-        $scope.profile.rules.splice(index, 1);
+        OmegaSwitchProfileRules.removeRule($scope.profile.rules, index);
         return $scope.visibleRuleCount = Math.min($scope.visibleRuleCount, $scope.profile.rules.length);
       };
       if ($scope.options['-confirmDeletion']) {
@@ -257,9 +227,7 @@
       }
     };
     $scope.cloneRule = function(index) {
-      var rule;
-      rule = angular.copy($scope.profile.rules[index]);
-      $scope.profile.rules.splice(index + 1, 0, rule);
+      OmegaSwitchProfileRules.cloneRule($scope.profile.rules, index);
       $scope.visibleRuleCount = $scope.profile.rules.length;
       return $timeout(function() {
         var input, ref, ref1;
@@ -276,9 +244,7 @@
       return unwatchRulesShowNote();
     };
     unwatchRulesShowNote = $scope.$watch('profile.rules', (function(rules) {
-      if (rules && rules.some(function(rule) {
-        return !!rule.note;
-      })) {
+      if (OmegaSwitchProfileRules.hasNotes(rules)) {
         $scope.showNotes = true;
         return unwatchRulesShowNote();
       }
@@ -293,14 +259,7 @@
         templateUrl: 'partials/rule_reset_confirm.html',
         scope: scope
       }).result.then(function() {
-        var k, len1, ref, results, rule;
-        ref = $scope.profile.rules;
-        results = [];
-        for (k = 0, len1 = ref.length; k < len1; k++) {
-          rule = ref[k];
-          results.push(rule.profileName = $scope.attachedOptions.defaultProfileName);
-        }
-        return results;
+        return OmegaSwitchProfileRules.resetRuleProfiles($scope.profile.rules, $scope.attachedOptions.defaultProfileName);
       });
     };
     $scope.sortableOptions = {
