@@ -64,6 +64,31 @@ type PacProfileProps = {
   updating?: boolean;
 };
 
+type ProxyEditor = {
+  host?: string;
+  port?: number | string;
+  scheme?: string;
+};
+
+type ProxyOption = {
+  label: string;
+  value?: string;
+};
+
+type FixedProfileProps = {
+  bypassList?: string;
+  isProxyAuthActive?: (scheme: string) => boolean;
+  onBypassListChange?: (value: string) => void;
+  onEditProxyAuth?: (scheme: string) => void;
+  onProxyEditorChange?: (scheme: string, field: keyof ProxyEditor, value?: string | number) => void;
+  onShowAdvanced?: () => void;
+  optionsForScheme?: Record<string, ProxyOption[]>;
+  proxyEditors?: Record<string, ProxyEditor>;
+  schemeDisp?: Record<string, string | null>;
+  showAdvanced?: boolean;
+  urlSchemes?: string[];
+};
+
 function messageWithNodes(
   key: string,
   fallback: string,
@@ -271,6 +296,164 @@ function PacProfile({
             />
           </div>
         )}
+      </section>
+    </div>
+  );
+}
+
+function cloneProxyEditors(proxyEditors?: Record<string, ProxyEditor>) {
+  const cloned: Record<string, ProxyEditor> = {};
+  for (const scheme of Object.keys(proxyEditors || {})) {
+    cloned[scheme] = {...proxyEditors?.[scheme]};
+  }
+  return cloned;
+}
+
+function FixedProfileContent({
+  bypassList = '',
+  isProxyAuthActive,
+  onBypassListChange,
+  onEditProxyAuth,
+  onProxyEditorChange,
+  onShowAdvanced,
+  optionsForScheme = {},
+  proxyEditors = {},
+  schemeDisp = {},
+  showAdvanced = false,
+  urlSchemes = []
+}: FixedProfileProps) {
+  const [draftEditors, setDraftEditors] = useState<Record<string, ProxyEditor>>(() => cloneProxyEditors(proxyEditors));
+  const [draftBypassList, setDraftBypassList] = useState(bypassList || '');
+
+  useEffect(() => {
+    setDraftEditors(cloneProxyEditors(proxyEditors));
+  }, [proxyEditors]);
+
+  useEffect(() => {
+    setDraftBypassList(bypassList || '');
+  }, [bypassList]);
+
+  function changeProxyEditor(scheme: string, field: keyof ProxyEditor, value?: string | number) {
+    const nextValue = field === 'scheme' && value === '' ? undefined : value;
+    setDraftEditors((current) => ({
+      ...current,
+      [scheme]: {
+        ...(current[scheme] || {}),
+        [field]: nextValue
+      }
+    }));
+    onProxyEditorChange?.(scheme, field, nextValue);
+  }
+
+  const defaultEditor = draftEditors[''] || {};
+  const visibleSchemes = urlSchemes.filter((scheme) => scheme === '' || showAdvanced);
+
+  return (
+    <div>
+      <section className="settings-group settings-group-fixed-servers">
+        <h3>{message('options_group_proxyServers', 'Proxy Servers')}</h3>
+        <div className="table-responsive">
+          <table className="fixed-servers table table-bordered table-striped width-limit-lg">
+            <thead>
+              <tr>
+                <th>{message('options_proxy_scheme', 'Scheme')}</th>
+                <th>{message('options_proxy_protocol', 'Protocol')}</th>
+                <th>{message('options_proxy_server', 'Server')}</th>
+                <th>{message('options_proxy_port', 'Port')}</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {visibleSchemes.map((scheme) => {
+                const editor = draftEditors[scheme] || {};
+                const hasScheme = !!editor.scheme;
+                return (
+                  <tr key={scheme || 'default'}>
+                    <td>{schemeDisp[scheme] || message('options_scheme_default', 'Default')}</td>
+                    <td>
+                      <select
+                        className="form-control"
+                        value={editor.scheme || ''}
+                        onChange={(event) => changeProxyEditor(scheme, 'scheme', event.currentTarget.value)}
+                      >
+                        {(optionsForScheme[scheme] || []).map((option) => (
+                          <option key={option.value || ''} value={option.value || ''}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      {hasScheme ? (
+                        <input
+                          className="form-control"
+                          type="text"
+                          required
+                          value={editor.host || ''}
+                          onChange={(event) => changeProxyEditor(scheme, 'host', event.currentTarget.value)}
+                        />
+                      ) : (
+                        <input className="form-control" type="text" value="" placeholder={defaultEditor.host || ''} disabled />
+                      )}
+                    </td>
+                    <td>
+                      {hasScheme ? (
+                        <input
+                          className="form-control"
+                          type="number"
+                          min={1}
+                          required
+                          value={editor.port ?? ''}
+                          onChange={(event) => changeProxyEditor(scheme, 'port', event.currentTarget.value ? Number(event.currentTarget.value) : undefined)}
+                        />
+                      ) : (
+                        <input className="form-control" type="number" value="" placeholder={defaultEditor.port != null ? String(defaultEditor.port) : ''} disabled />
+                      )}
+                    </td>
+                    <td className="proxy-actions">
+                      <button
+                        type="button"
+                        role="button"
+                        className={`btn btn-xs proxy-auth-toggle ${isProxyAuthActive?.(scheme) ? 'btn-success' : 'btn-default'}`}
+                        title={message('options_proxy_auth', 'Proxy Authentication')}
+                        onClick={() => onEditProxyAuth?.(scheme)}
+                      >
+                        <span className="glyphicon glyphicon-lock" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            {!showAdvanced && (
+              <tbody>
+                <tr className="fixed-show-advanced">
+                  <td colSpan={7}>
+                    <button type="button" className="btn btn-link" onClick={() => onShowAdvanced?.()}>
+                      <span className="glyphicon glyphicon-chevron-down" /> {message('options_proxy_expand', 'Show Advanced')}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            )}
+          </table>
+        </div>
+      </section>
+      <section className="settings-group">
+        <h3>{message('options_group_bypassList', 'Bypass List')}</h3>
+        <p className="help-block">{message('options_bypassListHelp', 'Requests matching the bypass list will not use the proxy.')}</p>
+        <p className="help-block">
+          <a href="https://developer.chrome.com/extensions/proxy#bypass_list" target="_blank" rel="noreferrer">
+            {message('options_bypassListHelpLinkText', 'Learn more about bypass list syntax.')}
+          </a>
+        </p>
+        <textarea
+          className="monospace form-control width-limit"
+          rows={10}
+          value={draftBypassList}
+          onChange={(event) => setDraftBypassList(event.currentTarget.value)}
+          onBlur={() => onBypassListChange?.(draftBypassList)}
+        />
       </section>
     </div>
   );
@@ -497,8 +680,22 @@ function mountPacProfile(element: Element, props: PacProfileProps = {}) {
   };
 }
 
+function mountFixedProfile(element: Element, props: FixedProfileProps = {}) {
+  const root = createRoot(element);
+  root.render(<FixedProfileContent {...props} />);
+  return {
+    render(nextProps: FixedProfileProps = {}) {
+      root.render(<FixedProfileContent {...nextProps} />);
+    },
+    unmount() {
+      root.unmount();
+    }
+  };
+}
+
 const globalWindow = window as any;
 globalWindow.OmegaReactProfileContent = {
+  mountFixedProfile,
   mountPacProfile,
   mountRuleListProfile,
   mountUnsupportedProfile,

@@ -522,6 +522,83 @@
     };
   });
 
+  angular.module('omega').directive('omegaReactFixedProfile', function($timeout) {
+    return {
+      restrict: 'A',
+      link: function(scope, element) {
+        var bridge, mounted, props, render, unwatchers;
+        unwatchers = [];
+        props = function() {
+          return {
+            bypassList: scope.bypassList,
+            isProxyAuthActive: function(scheme) {
+              return scope.isProxyAuthActive(scheme);
+            },
+            onBypassListChange: function(value) {
+              return scope.$evalAsync(function() {
+                return scope.bypassList = value;
+              });
+            },
+            onEditProxyAuth: function(scheme) {
+              return scope.editProxyAuth(scheme);
+            },
+            onProxyEditorChange: function(scheme, field, value) {
+              return scope.$evalAsync(function() {
+                var base;
+                if (!scope.proxyEditors[scheme]) {
+                  scope.proxyEditors[scheme] = {};
+                }
+                base = scope.proxyEditors[scheme];
+                if (typeof value === 'undefined') {
+                  return delete base[field];
+                } else {
+                  return base[field] = value;
+                }
+              });
+            },
+            onShowAdvanced: function() {
+              return scope.$evalAsync(function() {
+                return scope.showAdvanced = true;
+              });
+            },
+            optionsForScheme: scope.optionsForScheme,
+            proxyEditors: angular.copy(scope.proxyEditors),
+            schemeDisp: scope.schemeDisp,
+            showAdvanced: scope.showAdvanced,
+            urlSchemes: scope.urlSchemes
+          };
+        };
+        render = function() {
+          if (mounted != null ? mounted.render : void 0) {
+            return mounted.render(props());
+          }
+        };
+        $timeout(function() {
+          bridge = window.OmegaReactProfileContent;
+          if (bridge != null ? bridge.mountFixedProfile : void 0) {
+            mounted = bridge.mountFixedProfile(element[0], props());
+            unwatchers.push(scope.$watch('proxyEditors', render, true));
+            unwatchers.push(scope.$watch('bypassList', render));
+            unwatchers.push(scope.$watch('showAdvanced', render));
+            unwatchers.push(scope.$watch('profile.auth', render, true));
+          }
+        });
+        return scope.$on('$destroy', function() {
+          var i, len, unwatch;
+          for (i = 0, len = unwatchers.length; i < len; i++) {
+            unwatch = unwatchers[i];
+            if (unwatch) {
+              unwatch();
+            }
+          }
+          if (mounted != null ? mounted.unmount : void 0) {
+            return mounted.unmount();
+          }
+        });
+      }
+    };
+  });
+
   angular.module('omega').directive('omegaReactRuleListProfile', function($timeout, $filter) {
     return {
       restrict: 'A',
