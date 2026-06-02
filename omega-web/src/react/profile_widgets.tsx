@@ -58,16 +58,18 @@ export function ProfileSelect({
   dispName,
   name,
   onChange,
-  options
+  options,
+  profiles
 }: {
   dispName?: (profile: Profile) => string;
   name: string;
   onChange: (name: string) => void;
   options?: Options | null;
+  profiles?: Profile[];
 }) {
   const [open, setOpen] = useState(false);
-  const profiles = useMemo(() => profilesFromOptions(options), [options]);
-  const selectedProfile = profiles.find((profile) => profile.name === name) || null;
+  const profileList = useMemo(() => profiles || profilesFromOptions(options), [options, profiles]);
+  const selectedProfile = profileList.find((profile) => profile.name === name) || null;
   return (
     <div className={`btn-group omega-profile-select ${open ? 'open' : ''}`} style={{display: 'inline-block'}}>
       <button
@@ -84,7 +86,7 @@ export function ProfileSelect({
       </button>
       {open && (
         <ul className="dropdown-menu" role="listbox">
-          {profiles.map((profile) => (
+          {profileList.map((profile) => (
             <li key={profile.name} role="option" className={name === profile.name ? 'active' : ''}>
               <a onClick={() => {
                 onChange(profile.name || '');

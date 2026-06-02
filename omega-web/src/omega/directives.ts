@@ -380,6 +380,42 @@
     };
   });
 
+  angular.module('omega').directive('omegaReactVirtualProfile', function($timeout, $filter) {
+    return {
+      restrict: 'A',
+      link: function(scope, element) {
+        var bridge, mounted, props;
+        props = function() {
+          return {
+            dispName: scope.dispNameFilter,
+            onReplaceProfile: function(fromName, toName) {
+              return scope.replaceProfile(fromName, toName);
+            },
+            onTargetChange: function(name) {
+              return scope.$evalAsync(function() {
+                return scope.profile.defaultProfileName = name;
+              });
+            },
+            options: scope.options,
+            profile: scope.profile,
+            targetProfiles: $filter('profiles')(scope.options, scope.profile)
+          };
+        };
+        $timeout(function() {
+          bridge = window.OmegaReactProfileContent;
+          if (bridge != null ? bridge.mountVirtualProfile : void 0) {
+            mounted = bridge.mountVirtualProfile(element[0], props());
+          }
+        });
+        return scope.$on('$destroy', function() {
+          if (mounted != null ? mounted.unmount : void 0) {
+            return mounted.unmount();
+          }
+        });
+      }
+    };
+  });
+
   angular.module('omega').directive('omegaIp2str', function() {
     return {
       restrict: 'A',

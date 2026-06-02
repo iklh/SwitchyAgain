@@ -41,6 +41,10 @@ interface Window {
       render: (props?: any) => void;
       unmount: () => void;
     };
+    mountVirtualProfile: (element: Element, props?: any) => {
+      render: (props?: any) => void;
+      unmount: () => void;
+    };
   };
   OmegaReactUiSettings?: {
     mount: (element: Element, props?: any) => {
