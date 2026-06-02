@@ -416,6 +416,34 @@
     };
   });
 
+  angular.module('omega').directive('omegaReactOptionsWelcome', function($timeout) {
+    return {
+      restrict: 'A',
+      link: function(scope, element) {
+        var bridge, mounted;
+        $timeout(function() {
+          bridge = window.OmegaReactOptionsModals;
+          if (bridge != null ? bridge.mountWelcome : void 0) {
+            mounted = bridge.mountWelcome(element[0], {
+              onClose: function(result) {
+                return scope.$close(result);
+              },
+              onDismiss: function() {
+                return scope.$dismiss();
+              },
+              upgrade: scope.upgrade
+            });
+          }
+        });
+        return scope.$on('$destroy', function() {
+          if (mounted != null ? mounted.unmount : void 0) {
+            return mounted.unmount();
+          }
+        });
+      }
+    };
+  });
+
   angular.module('omega').directive('omegaIp2str', function() {
     return {
       restrict: 'A',

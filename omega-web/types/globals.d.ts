@@ -46,6 +46,12 @@ interface Window {
       unmount: () => void;
     };
   };
+  OmegaReactOptionsModals?: {
+    mountWelcome: (element: Element, props?: any) => {
+      render: (props?: any) => void;
+      unmount: () => void;
+    };
+  };
   OmegaReactUiSettings?: {
     mount: (element: Element, props?: any) => {
       render: (props?: any) => void;
