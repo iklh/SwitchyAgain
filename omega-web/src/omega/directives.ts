@@ -770,6 +770,62 @@
     };
   });
 
+  angular.module('omega').directive('omegaReactSwitchRulesHeader', function($timeout) {
+    return {
+      restrict: 'A',
+      link: function(scope, element) {
+        var bridge, mounted, props, render, unwatchEditSource, unwatchSource, unwatchUrlConditions;
+        props = function() {
+          return {
+            editSource: scope.editSource,
+            hasUrlConditions: scope.hasUrlConditions,
+            onSourceChange: function(code) {
+              return scope.$evalAsync(function() {
+                if (scope.source) {
+                  scope.source.code = code;
+                  scope.source.touched = true;
+                  return scope.$root.optionsDirty = true;
+                }
+              });
+            },
+            onToggleSource: function() {
+              return scope.toggleSource();
+            },
+            source: scope.source
+          };
+        };
+        render = function() {
+          if (mounted != null ? mounted.render : void 0) {
+            return mounted.render(props());
+          }
+        };
+        $timeout(function() {
+          bridge = window.OmegaReactProfileContent;
+          if (bridge != null ? bridge.mountSwitchRulesHeader : void 0) {
+            mounted = bridge.mountSwitchRulesHeader(element[0], props());
+            unwatchEditSource = scope.$watch('editSource', render);
+            unwatchSource = scope.$watch('source', render, true);
+            unwatchUrlConditions = scope.$watch('hasUrlConditions', render);
+          }
+        });
+        return scope.$on('$destroy', function() {
+          if (unwatchEditSource) {
+            unwatchEditSource();
+          }
+          if (unwatchSource) {
+            unwatchSource();
+          }
+          if (unwatchUrlConditions) {
+            unwatchUrlConditions();
+          }
+          if (mounted != null ? mounted.unmount : void 0) {
+            return mounted.unmount();
+          }
+        });
+      }
+    };
+  });
+
   angular.module('omega').directive('omegaReactOptionsWelcome', function($timeout) {
     return {
       restrict: 'A',

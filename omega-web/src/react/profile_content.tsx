@@ -115,6 +115,19 @@ type SwitchConditionHelpProps = {
   showConditionTypes?: number;
 };
 
+type SwitchRulesHeaderProps = {
+  editSource?: boolean;
+  hasUrlConditions?: boolean;
+  onSourceChange?: (code: string) => void;
+  onToggleSource?: () => void;
+  source?: {
+    code?: string;
+    error?: {
+      message?: string;
+    };
+  } | null;
+};
+
 function messageWithNodes(
   key: string,
   fallback: string,
@@ -663,6 +676,72 @@ function SwitchConditionHelp({
   );
 }
 
+function SwitchRulesHeader({
+  editSource = false,
+  hasUrlConditions = false,
+  onSourceChange,
+  onToggleSource,
+  source
+}: SwitchRulesHeaderProps) {
+  const [sourceCode, setSourceCode] = useState(source?.code || '');
+
+  useEffect(() => {
+    setSourceCode(source?.code || '');
+  }, [source?.code]);
+
+  function changeSource(code: string) {
+    setSourceCode(code);
+    onSourceChange?.(code);
+  }
+
+  return (
+    <>
+      <h3>
+        {message('options_group_switchRules', 'Switch Rules')}{' '}
+        <button
+          type="button"
+          className={`btn ${editSource ? 'btn-primary active' : 'btn-default'}`}
+          onClick={() => onToggleSource?.()}
+        >
+          <span className="glyphicon glyphicon-edit" /> {message('options_profileEditSource', 'Edit Source')}
+        </button>{' '}
+        {editSource && (
+          <a
+            className="btn btn-link btn-sm clear-padding toggle-condition-help"
+            target="_blank"
+            rel="noreferrer"
+            title={message('options_profileEditSourceHelp', 'Edit source help')}
+            href={message('options_profileEditSourceHelpUrl', '#')}
+          >
+            <span className="glyphicon glyphicon-question-sign" />
+          </a>
+        )}
+      </h3>
+      {source?.error && (
+        <div className="alert alert-danger width-limit">
+          <span className="glyphicon glyphicon-remove" /> {source.error.message}
+        </div>
+      )}
+      {hasUrlConditions && (
+        <div className="alert alert-danger">
+          <span className="glyphicon glyphicon-alert" />{' '}
+          <span dangerouslySetInnerHTML={htmlMessage('condition_alert_fullUrlLimitation', '')} />
+        </div>
+      )}
+      {editSource && (
+        <div className="rules-source">
+          <textarea
+            className="monospace form-control width-limit"
+            rows={20}
+            value={sourceCode}
+            onChange={(event) => changeSource(event.currentTarget.value)}
+          />
+        </div>
+      )}
+    </>
+  );
+}
+
 function RuleListProfile({
   dispName,
   onDownload,
@@ -923,6 +1002,19 @@ function mountSwitchConditionHelp(element: Element, props: SwitchConditionHelpPr
   };
 }
 
+function mountSwitchRulesHeader(element: Element, props: SwitchRulesHeaderProps = {}) {
+  const root = createRoot(element);
+  root.render(<SwitchRulesHeader {...props} />);
+  return {
+    render(nextProps: SwitchRulesHeaderProps = {}) {
+      root.render(<SwitchRulesHeader {...nextProps} />);
+    },
+    unmount() {
+      root.unmount();
+    }
+  };
+}
+
 const globalWindow = window as any;
 globalWindow.OmegaReactProfileContent = {
   mountFixedProfile,
@@ -930,6 +1022,7 @@ globalWindow.OmegaReactProfileContent = {
   mountRuleListProfile,
   mountSwitchAttachedProfile,
   mountSwitchConditionHelp,
+  mountSwitchRulesHeader,
   mountUnsupportedProfile,
   mountVirtualProfile
 };
