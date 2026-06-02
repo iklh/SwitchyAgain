@@ -178,6 +178,7 @@ async function main() {
   await writeReactHtml('build/react/about.html', 'SwitchyAgain About', 'about.js');
   await bundleReact('src/react/about.tsx', 'build/react/about.js');
   await bundleReact('src/react/confirm_modals.tsx', 'build/react/confirm_modals.js');
+  await bundleReact('src/react/profile_modals.tsx', 'build/react/profile_modals.js');
   await writeReactHtml('build/react/backup_restore.html', 'SwitchyAgain Backup / Restore', 'backup_restore.js');
   await bundleReact('src/react/backup_restore.tsx', 'build/react/backup_restore.js');
 
