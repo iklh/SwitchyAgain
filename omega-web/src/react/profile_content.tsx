@@ -46,6 +46,24 @@ type RuleListProfileProps = {
   updating?: boolean;
 };
 
+type PacProfileModel = Profile & {
+  auth?: Record<string, any>;
+  lastUpdate?: string;
+  pacScript?: string;
+  pacUrl?: string;
+};
+
+type PacProfileProps = {
+  formattedLastUpdate?: string;
+  onDownload?: (name: string) => void;
+  onEditProxyAuth?: () => void;
+  onProfileChange?: (field: keyof PacProfileModel, value: string) => void;
+  pacProfilesUnsupported?: boolean;
+  profile?: PacProfileModel | null;
+  referenced?: boolean;
+  updating?: boolean;
+};
+
 function messageWithNodes(
   key: string,
   fallback: string,
@@ -118,6 +136,143 @@ function UnsupportedProfile({profile}: UnsupportedProfileProps) {
       </div>
       <p>{message('options_profileUnsupportedHelp', 'The options could be broken, or from a newer version of this program.')}</p>
     </>
+  );
+}
+
+const PAC_URL_REGEX = /^(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?$/;
+const PAC_URL_WITH_FILE_REGEX = /^(ftp|http|https|file):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?$/;
+
+function isFileUrl(url: string) {
+  return /^file:\/\//i.test(url || '');
+}
+
+function PacProfile({
+  formattedLastUpdate = '',
+  onDownload,
+  onEditProxyAuth,
+  onProfileChange,
+  pacProfilesUnsupported = false,
+  profile,
+  referenced = false,
+  updating = false
+}: PacProfileProps) {
+  const [draft, setDraft] = useState({
+    pacScript: profile?.pacScript || '',
+    pacUrl: profile?.pacUrl || ''
+  });
+
+  useEffect(() => {
+    setDraft({
+      pacScript: profile?.pacScript || '',
+      pacUrl: profile?.pacUrl || ''
+    });
+  }, [profile?.name, profile?.pacScript, profile?.pacUrl]);
+
+  function changeField(field: keyof PacProfileModel, value: string) {
+    setDraft((current) => ({...current, [field]: value}));
+    onProfileChange?.(field, value);
+  }
+
+  const pacUrl = draft.pacUrl;
+  const pacUrlIsFile = isFileUrl(pacUrl);
+  const pacUrlPattern = referenced ? PAC_URL_REGEX : PAC_URL_WITH_FILE_REGEX;
+  const pacUrlInvalid = !!pacUrl && !pacUrlPattern.test(pacUrl);
+  const authAll = !!profile?.auth?.all;
+
+  return (
+    <div>
+      {pacProfilesUnsupported && (
+        <p className="alert alert-danger width-limit">
+          <span className="glyphicon glyphicon-remove" /> {message('options_pac_profile_unsupported_moz', 'PAC Profiles WILL NOT work in Mozilla Firefox due to technical limitations!')}
+        </p>
+      )}
+      <section className="settings-group">
+        <h3>{message('options_group_pacUrl', 'PAC URL')}</h3>
+        <div className="width-limit">
+          <ClearableInput
+            type="text"
+            value={pacUrl}
+            onChange={(value) => changeField('pacUrl', value)}
+          />
+        </div>
+        <p className="help-block">{message('options_pacUrlHelp', 'The PAC script will be downloaded from this URL.')}</p>
+        {pacUrlIsFile && !referenced && (
+          <div className="has-warning">
+            <p className="help-block">
+              <span className="glyphicon glyphicon-warning-sign" /> {message('options_pacUrlFile', 'Loading PAC scripts from file: URLs is not recommended.')}
+            </p>
+          </div>
+        )}
+        {pacUrlIsFile && referenced && (
+          <div className="has-error">
+            <p className="help-block">
+              <span className="glyphicon glyphicon-remove-sign" /> {message('options_pacUrlFile', 'Loading PAC scripts from file: URLs is not recommended.')}
+            </p>
+            <p className="help-block">{message('options_pacUrlFileDisabled', 'File URLs are disabled for referenced PAC profiles.')}</p>
+          </div>
+        )}
+        {pacUrl && !pacUrlIsFile && (
+          <p>
+            <button
+              type="button"
+              className={`btn ${pacUrl && !profile?.lastUpdate ? 'btn-primary' : 'btn-default'}`}
+              disabled={updating}
+              onClick={() => onDownload?.(profile?.name || '')}
+            >
+              <span className="glyphicon glyphicon-download-alt" /> {message('options_downloadProfileNow', 'Download Profile Now')}
+            </button>
+          </p>
+        )}
+      </section>
+      <section className="settings-group">
+        <h3>
+          {message('options_group_pacScript', 'PAC Script')}{' '}
+          <button
+            type="button"
+            role="button"
+            className={`btn btn-xs proxy-auth-toggle ${authAll ? 'btn-success' : 'btn-default'}`}
+            title={message('options_proxy_auth', 'Proxy Authentication')}
+            onClick={() => onEditProxyAuth?.()}
+          >
+            <span className="glyphicon glyphicon-lock" />
+          </button>
+        </h3>
+        {authAll && (
+          <div className="alert alert-warning width-limit">
+            <p>{message('options_proxy_authAllWarningPac', 'Proxy authentication will be applied to all proxies returned by this PAC profile.')}</p>
+            {pacUrl ? (
+              <p>{message('options_proxy_authAllWarningPacUrl', 'Make sure the downloaded PAC script only returns proxies that share these credentials.')}</p>
+            ) : (
+              <p>{message('options_proxy_authAllWarningPacScript', 'Make sure the PAC script only returns proxies that share these credentials.')}</p>
+            )}
+            {referenced && (
+              <p>
+                <span className="glyphicon glyphicon-warning-sign" /> {message('options_proxy_authReferencedWarning', 'This profile is referenced by other profiles.')}
+              </p>
+            )}
+          </div>
+        )}
+        {!pacUrlIsFile && (
+          <div>
+            {pacUrl && profile?.lastUpdate && (
+              <p className="alert alert-success width-limit">
+                {message('options_pacScriptLastUpdate', 'Last update: $1', formattedLastUpdate)}
+              </p>
+            )}
+            {pacUrl && !profile?.lastUpdate && (
+              <p className="alert alert-danger width-limit">{message('options_pacScriptObsolete', 'PAC script is obsolete. Please download it now.')}</p>
+            )}
+            <textarea
+              className="monospace form-control width-limit"
+              rows={20}
+              value={draft.pacScript}
+              disabled={pacUrlInvalid || !!pacUrl}
+              onChange={(event) => changeField('pacScript', event.currentTarget.value)}
+            />
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
 
@@ -329,8 +484,22 @@ function mountRuleListProfile(element: Element, props: RuleListProfileProps = {}
   };
 }
 
+function mountPacProfile(element: Element, props: PacProfileProps = {}) {
+  const root = createRoot(element);
+  root.render(<PacProfile {...props} />);
+  return {
+    render(nextProps: PacProfileProps = {}) {
+      root.render(<PacProfile {...nextProps} />);
+    },
+    unmount() {
+      root.unmount();
+    }
+  };
+}
+
 const globalWindow = window as any;
 globalWindow.OmegaReactProfileContent = {
+  mountPacProfile,
   mountRuleListProfile,
   mountUnsupportedProfile,
   mountVirtualProfile

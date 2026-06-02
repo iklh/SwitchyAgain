@@ -416,6 +416,112 @@
     };
   });
 
+  angular.module('omega').directive('omegaReactPacProfile', function($timeout, $modal, $filter) {
+    return {
+      restrict: 'A',
+      link: function(scope, element) {
+        var bridge, mounted, oldLastUpdate, oldPacScript, oldPacUrl, props, referenced, render, unwatchProfile, unwatchUpdating;
+        oldPacUrl = null;
+        oldLastUpdate = null;
+        oldPacScript = null;
+        referenced = function() {
+          var set;
+          set = OmegaPac.Profiles.referencedBySet(scope.profile, scope.options);
+          return Object.keys(set).length > 0;
+        };
+        props = function() {
+          var name, ref;
+          name = ((ref = scope.profile) != null ? ref.name : void 0) || '';
+          return {
+            formattedLastUpdate: scope.profile && scope.profile.lastUpdate ? $filter('date')(scope.profile.lastUpdate, 'medium') : '',
+            onDownload: function(profileName) {
+              return scope.updateProfile(profileName);
+            },
+            onEditProxyAuth: function() {
+              var auth, modalScope, prop, ref1;
+              prop = 'all';
+              auth = (ref1 = scope.profile.auth) != null ? ref1[prop] : void 0;
+              modalScope = scope.$new('isolate');
+              modalScope.auth = auth && angular.copy(auth);
+              return $modal.open({
+                templateUrl: 'partials/fixed_auth_edit.html',
+                scope: modalScope,
+                size: 'sm'
+              }).result.then(function(auth) {
+                var base;
+                if (!(auth != null ? auth.username : void 0)) {
+                  if (scope.profile.auth) {
+                    return scope.profile.auth[prop] = void 0;
+                  }
+                } else {
+                  if ((base = scope.profile).auth == null) {
+                    base.auth = {};
+                  }
+                  return scope.profile.auth[prop] = auth;
+                }
+              });
+            },
+            onProfileChange: function(field, value) {
+              return scope.$evalAsync(function() {
+                var previousPacUrl;
+                if (!scope.profile) {
+                  return;
+                }
+                if (field === 'pacUrl') {
+                  previousPacUrl = scope.profile.pacUrl;
+                  if (value !== previousPacUrl) {
+                    if (scope.profile.lastUpdate) {
+                      oldPacUrl = previousPacUrl;
+                      oldLastUpdate = scope.profile.lastUpdate;
+                      oldPacScript = scope.profile.pacScript;
+                      scope.profile.lastUpdate = null;
+                    } else if (oldPacUrl && value === oldPacUrl) {
+                      scope.profile.lastUpdate = oldLastUpdate;
+                      scope.profile.pacScript = oldPacScript;
+                    }
+                  }
+                }
+                return scope.profile[field] = value;
+              });
+            },
+            pacProfilesUnsupported: scope.pacProfilesUnsupported,
+            profile: scope.profile,
+            referenced: referenced(),
+            updating: !!(scope.updatingProfile && scope.updatingProfile[name])
+          };
+        };
+        render = function() {
+          if (mounted != null ? mounted.render : void 0) {
+            return mounted.render(props());
+          }
+        };
+        $timeout(function() {
+          bridge = window.OmegaReactProfileContent;
+          if (bridge != null ? bridge.mountPacProfile : void 0) {
+            mounted = bridge.mountPacProfile(element[0], props());
+            unwatchProfile = scope.$watch('profile', render, true);
+            unwatchUpdating = scope.$watch(function() {
+              var name, ref;
+              name = ((ref = scope.profile) != null ? ref.name : void 0) || '';
+              return scope.updatingProfile && scope.updatingProfile[name];
+            }, render);
+          }
+        });
+        return scope.$on('$destroy', function() {
+          if (unwatchProfile) {
+            unwatchProfile();
+          }
+          if (unwatchUpdating) {
+            unwatchUpdating();
+          }
+          if (mounted != null ? mounted.unmount : void 0) {
+            return mounted.unmount();
+          }
+        });
+      }
+    };
+  });
+
   angular.module('omega').directive('omegaReactRuleListProfile', function($timeout, $filter) {
     return {
       restrict: 'A',
