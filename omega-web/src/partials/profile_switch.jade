@@ -6,7 +6,7 @@ div(ng-controller='SwitchProfileCtrl')
       table.switch-rules.table.table-bordered.table-condensed.width-limit-xl(ng-if='loadRules')
         thead(omega-react-switch-rule-table-header)
         tbody(ui-sortable='sortableOptions' ng-model='profile.rules')
-          tr.switch-rule-row(ng-repeat='rule in profile.rules')
+          tr.switch-rule-row(ng-repeat='rule in profile.rules | limitTo:visibleRuleCount')
             td.sort-bar
               span.glyphicon.glyphicon-sort
             td(ng-class='{"has-icon": isUrlConditionType[rule.condition.conditionType]}')

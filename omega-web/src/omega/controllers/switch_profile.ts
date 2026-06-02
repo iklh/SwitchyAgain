@@ -1,8 +1,8 @@
 (function() {
   var hasProp = {}.hasOwnProperty;
 
-  angular.module('omega').controller('SwitchProfileCtrl', function($scope, $rootScope, $location, $timeout, $q, $modal, profileIcons, getAttachedName, omegaTarget, trFilter, downloadFile) {
-    var advancedConditionTypesExpanded, attachedReady, attachedReadyDefer, basicConditionTypeSet, basicConditionTypesExpanded, expandGroups, exportLegacyRuleList, exportRuleList, j, len, oldLastUpdate, oldRuleList, oldSourceUrl, onAttachedChange, parseOmegaRules, parseSource, rulesReady, rulesReadyDefer, stateEditorKey, stopWatchingForRules, type, unwatchRules, unwatchRulesShowNote, updateHasConditionTypes;
+  angular.module('omega').controller('SwitchProfileCtrl', function($scope, $rootScope, $location, $timeout, $q, $modal, profileIcons, getAttachedName, omegaTarget, trFilter, downloadFile, $window) {
+    var advancedConditionTypesExpanded, attachedReady, attachedReadyDefer, basicConditionTypeSet, basicConditionTypesExpanded, cancelRuleBatchSchedule, expandGroups, exportLegacyRuleList, exportRuleList, initialRuleBatchSize, j, len, oldLastUpdate, oldRuleList, oldSourceUrl, onAttachedChange, parseOmegaRules, parseSource, renderRuleBatch, renderRuleBatchSize, renderRuleBatchTimer, resetVisibleRules, rulesReady, rulesReadyDefer, scheduleRuleBatch, stateEditorKey, stopWatchingForRules, type, unwatchRules, unwatchRulesShowNote, updateHasConditionTypes;
     $scope.ruleListFormats = OmegaPac.Profiles.ruleListFormats;
     exportRuleList = function() {
       var blob, eol, fileName, info, text;
@@ -196,7 +196,8 @@
       if (rule.condition.pattern) {
         rule.condition.pattern = '';
       }
-      return $scope.profile.rules.push(rule);
+      $scope.profile.rules.push(rule);
+      return $scope.visibleRuleCount = $scope.profile.rules.length;
     };
     $scope.validateCondition = function(condition, pattern) {
       var _;
@@ -238,7 +239,8 @@
     $scope.removeRule = function(index) {
       var removeForReal, scope;
       removeForReal = function() {
-        return $scope.profile.rules.splice(index, 1);
+        $scope.profile.rules.splice(index, 1);
+        return $scope.visibleRuleCount = Math.min($scope.visibleRuleCount, $scope.profile.rules.length);
       };
       if ($scope.options['-confirmDeletion']) {
         scope = $scope.$new('isolate');
@@ -258,6 +260,7 @@
       var rule;
       rule = angular.copy($scope.profile.rules[index]);
       $scope.profile.rules.splice(index + 1, 0, rule);
+      $scope.visibleRuleCount = $scope.profile.rules.length;
       return $timeout(function() {
         var input, ref, ref1;
         input = angular.element(".switch-rule-row:nth-child(" + (index + 2) + ") input");
@@ -411,6 +414,65 @@
     };
     stateEditorKey = 'web._profileEditor.' + $scope.profile.name;
     $scope.loadRules = false;
+    initialRuleBatchSize = 15;
+    renderRuleBatchSize = 8;
+    renderRuleBatchTimer = null;
+    $scope.visibleRuleCount = 0;
+    scheduleRuleBatch = function() {
+      if (renderRuleBatchTimer) {
+        return;
+      }
+      renderRuleBatchTimer = {};
+      if ($window.requestAnimationFrame) {
+        return renderRuleBatchTimer.frame = $window.requestAnimationFrame(function() {
+          if (!renderRuleBatchTimer) {
+            return;
+          }
+          renderRuleBatchTimer.frame = null;
+          return renderRuleBatchTimer.timeout = $timeout(renderRuleBatch, 0);
+        });
+      }
+      return renderRuleBatchTimer.timeout = $timeout(renderRuleBatch, 0);
+    };
+    cancelRuleBatchSchedule = function() {
+      if (!renderRuleBatchTimer) {
+        return;
+      }
+      if (renderRuleBatchTimer.frame && $window.cancelAnimationFrame) {
+        $window.cancelAnimationFrame(renderRuleBatchTimer.frame);
+      }
+      if (renderRuleBatchTimer.timeout) {
+        $timeout.cancel(renderRuleBatchTimer.timeout);
+      }
+      return renderRuleBatchTimer = null;
+    };
+    renderRuleBatch = function() {
+      var next, rules;
+      renderRuleBatchTimer = null;
+      rules = $scope.profile.rules || [];
+      if (!$scope.loadRules) {
+        return;
+      }
+      next = Math.min(rules.length, $scope.visibleRuleCount + renderRuleBatchSize);
+      if (next !== $scope.visibleRuleCount) {
+        $scope.visibleRuleCount = next;
+      }
+      if ($scope.visibleRuleCount < rules.length) {
+        return scheduleRuleBatch();
+      }
+    };
+    resetVisibleRules = function() {
+      var rules;
+      cancelRuleBatchSchedule();
+      rules = $scope.profile.rules || [];
+      $scope.visibleRuleCount = Math.min(initialRuleBatchSize, rules.length);
+      if ($scope.visibleRuleCount < rules.length) {
+        return scheduleRuleBatch();
+      }
+    };
+    $scope.$on('$destroy', function() {
+      return cancelRuleBatchSchedule();
+    });
     $scope.editSource = false;
     parseOmegaRules = function(code, arg) {
       var detect, err, key, name, ref, refs, requireResult, setError;
@@ -515,6 +577,7 @@
           }
           $scope.source = null;
           $scope.loadRules = true;
+          resetVisibleRules();
         }
         return omegaTarget.state(stateEditorKey, {
           editSource: $scope.editSource
@@ -563,6 +626,7 @@
         return $scope.toggleSource();
       } else {
         $scope.loadRules = true;
+        resetVisibleRules();
         getState = omegaTarget.state(['web.switchGuide', 'firstRun']);
         return $q.all([rulesReady, getState]).then(function(arg) {
           var _, firstRun, ref, switchGuide;
