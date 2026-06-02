@@ -328,6 +328,36 @@
     };
   });
 
+  angular.module('omega').directive('omegaReactProxyAuth', function($timeout) {
+    return {
+      restrict: 'A',
+      link: function(scope, element) {
+        var bridge, mounted;
+        $timeout(function() {
+          bridge = window.OmegaReactProfileModals;
+          if (bridge != null ? bridge.mountProxyAuth : void 0) {
+            mounted = bridge.mountProxyAuth(element[0], {
+              auth: scope.auth,
+              authSupported: scope.authSupported,
+              onClose: function(auth) {
+                return scope.$close(auth);
+              },
+              onDismiss: function() {
+                return scope.$dismiss();
+              },
+              protocolDisp: scope.protocolDisp
+            });
+          }
+        });
+        return scope.$on('$destroy', function() {
+          if (mounted != null ? mounted.unmount : void 0) {
+            return mounted.unmount();
+          }
+        });
+      }
+    };
+  });
+
   angular.module('omega').directive('omegaIp2str', function() {
     return {
       restrict: 'A',

@@ -27,6 +27,10 @@ interface Window {
       render: (props?: any) => void;
       unmount: () => void;
     };
+    mountProxyAuth: (element: Element, props?: any) => {
+      render: (props?: any) => void;
+      unmount: () => void;
+    };
     mountRenameProfile: (element: Element, props?: any) => {
       render: (props?: any) => void;
       unmount: () => void;

@@ -20,6 +20,19 @@ type NewProfileProps = {
   profileByName?: (name: string) => any;
 };
 
+type ProxyAuth = {
+  password?: string;
+  username?: string;
+};
+
+type ProxyAuthProps = {
+  auth?: ProxyAuth | null;
+  authSupported?: boolean;
+  onClose?: (auth: ProxyAuth) => void;
+  onDismiss?: () => void;
+  protocolDisp?: string;
+};
+
 const PROFILE_ICONS: Record<string, string> = {
   FixedProfile: 'glyphicon-globe',
   PacProfile: 'glyphicon-file',
@@ -308,6 +321,151 @@ function NewProfileModal({
   );
 }
 
+function ClearableInput({
+  onChange,
+  placeholder,
+  type,
+  value
+}: {
+  onChange: (value: string) => void;
+  placeholder: string;
+  type: string;
+  value: string;
+}) {
+  const [oldValue, setOldValue] = useState('');
+  function toggleClear() {
+    onChange(oldValue);
+    setOldValue(value);
+  }
+  function updateValue(nextValue: string) {
+    onChange(nextValue);
+    if (nextValue) {
+      setOldValue('');
+    }
+  }
+  return (
+    <div className="input-group">
+      <input
+        className="form-control"
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={(event) => updateValue(event.currentTarget.value)}
+      />
+      <span className="input-group-btn">
+        <button
+          type="button"
+          className="btn btn-default input-group-clear-btn"
+          disabled={!value && !oldValue}
+          title={oldValue ? message('inputClear_restore', 'Restore') : message('inputClear_clear', 'Clear')}
+          onClick={toggleClear}
+        >
+          <span className={`glyphicon ${oldValue ? 'glyphicon-repeat' : 'glyphicon-remove'}`} />
+        </button>
+      </span>
+    </div>
+  );
+}
+
+function ProxyAuthModal({
+  auth,
+  authSupported = true,
+  onClose,
+  onDismiss,
+  protocolDisp = ''
+}: ProxyAuthProps) {
+  const [username, setUsername] = useState(auth?.username || '');
+  const [password, setPassword] = useState(auth?.password || '');
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    setUsername(auth?.username || '');
+    setPassword(auth?.password || '');
+  }, [auth]);
+
+  function submit(event: React.FormEvent) {
+    event.preventDefault();
+    onClose?.({username, password});
+  }
+
+  return (
+    <form onSubmit={submit}>
+      <div className="modal-header">
+        <button type="button" className="close" onClick={onDismiss}>
+          <span aria-hidden="true">{'\u00d7'}</span>
+          <span className="sr-only">{message('dialog_close', 'Close')}</span>
+        </button>
+        <h4 className="modal-title">{message('options_modalHeader_proxyAuth', 'Proxy Authentication')}</h4>
+      </div>
+      <div className="modal-body" style={{paddingBottom: 0}}>
+        {!authSupported && (
+          <div className="form-group">
+            <div className="alert alert-danger">
+              <span className="glyphicon glyphicon-warning-sign" />{' '}
+              {message(
+                'options_proxy_authNotSupported',
+                `Your browser DOES NOT support ${protocolDisp} proxy authentication! Please do not report this issue to SwitchyOmega. Contact the support for your browser instead.`,
+                protocolDisp
+              )}
+            </div>
+          </div>
+        )}
+        <div className="form-group">
+          <label className="sr-only">{message('options_proxyAuthUsername', 'Username')}</label>
+          <ClearableInput
+            type="text"
+            value={username}
+            placeholder={message('options_proxyAuthUsername', 'Username')}
+            onChange={setUsername}
+          />
+        </div>
+        <div className="form-group">
+          <label className="sr-only">{message('options_proxyAuthPassword', 'Password')}</label>
+          <div className="input-group">
+            {username ? (
+              <input
+                className="form-control"
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={password}
+                placeholder={message('options_proxyAuthPassword', 'Password')}
+                onChange={(event) => setPassword(event.currentTarget.value)}
+              />
+            ) : (
+              <input
+                className="form-control"
+                type="text"
+                value=""
+                placeholder={message('options_proxyAuthNone', 'No Authentication')}
+                disabled
+              />
+            )}
+            <span className="input-group-btn">
+              <button
+                type="button"
+                className="btn btn-default"
+                title={showPassword ? message('options_proxyAuthHidePassword', 'Hide password') : message('options_proxyAuthShowPassword', 'Show password')}
+                disabled={!username}
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                <span className={`glyphicon ${showPassword ? 'glyphicon-eye-open' : 'glyphicon-eye-close'}`} />
+              </button>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div className="modal-footer">
+        <button type="button" className="btn btn-default" onClick={onDismiss}>
+          {message('dialog_cancel', 'Cancel')}
+        </button>
+        <button type="submit" className="btn btn-primary">
+          {message('dialog_save', 'Save')}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function mountRenameProfile(element: Element, props: RenameProfileProps = {}) {
   const root = createRoot(element);
   root.render(<RenameProfileModal {...props} />);
@@ -334,8 +492,22 @@ function mountNewProfile(element: Element, props: NewProfileProps = {}) {
   };
 }
 
+function mountProxyAuth(element: Element, props: ProxyAuthProps = {}) {
+  const root = createRoot(element);
+  root.render(<ProxyAuthModal {...props} />);
+  return {
+    render(nextProps: ProxyAuthProps = {}) {
+      root.render(<ProxyAuthModal {...nextProps} />);
+    },
+    unmount() {
+      root.unmount();
+    }
+  };
+}
+
 const globalWindow = window as any;
 globalWindow.OmegaReactProfileModals = {
   mountNewProfile,
+  mountProxyAuth,
   mountRenameProfile
 };
