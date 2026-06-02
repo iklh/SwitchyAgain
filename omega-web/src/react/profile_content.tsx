@@ -30,6 +30,7 @@ type VirtualProfileProps = {
 type RuleListProfileModel = Profile & {
   defaultProfileName?: string;
   format?: string;
+  lastUpdate?: string;
   matchProfileName?: string;
   ruleList?: string;
   sourceUrl?: string;
@@ -87,6 +88,17 @@ type FixedProfileProps = {
   schemeDisp?: Record<string, string | null>;
   showAdvanced?: boolean;
   urlSchemes?: string[];
+};
+
+type SwitchAttachedProfileProps = {
+  attached?: RuleListProfileModel | null;
+  attachedRuleListError?: {message?: string} | null;
+  formattedLastUpdate?: string;
+  onAttachNew?: () => void;
+  onAttachedChange?: (field: keyof RuleListProfileModel, value: string) => void;
+  onDownload?: (name: string) => void;
+  ruleListFormats?: string[];
+  updating?: boolean;
 };
 
 function messageWithNodes(
@@ -459,6 +471,120 @@ function FixedProfileContent({
   );
 }
 
+function SwitchAttachedProfile({
+  attached,
+  attachedRuleListError,
+  formattedLastUpdate = '',
+  onAttachNew,
+  onAttachedChange,
+  onDownload,
+  ruleListFormats = [],
+  updating = false
+}: SwitchAttachedProfileProps) {
+  const [draft, setDraft] = useState({
+    format: attached?.format || '',
+    ruleList: attached?.ruleList || '',
+    sourceUrl: attached?.sourceUrl || ''
+  });
+
+  useEffect(() => {
+    setDraft({
+      format: attached?.format || '',
+      ruleList: attached?.ruleList || '',
+      sourceUrl: attached?.sourceUrl || ''
+    });
+  }, [attached?.name, attached?.format, attached?.ruleList, attached?.sourceUrl]);
+
+  function changeField(field: keyof RuleListProfileModel, value: string) {
+    setDraft((current) => ({...current, [field]: value}));
+    onAttachedChange?.(field, value);
+  }
+
+  if (!attached) {
+    return (
+      <section className="settings-group">
+        <h3>{message('options_group_attachProfile', 'Attach Profile')}</h3>
+        <p className="help-block">{message('options_attachProfileHelp', 'Attach a rule list profile to import rules from a URL or text.')}</p>
+        <button type="button" className="btn btn-default" onClick={() => onAttachNew?.()}>
+          <span className="glyphicon glyphicon-plus" /> {message('options_attachProfile', 'Attach Profile')}
+        </button>
+      </section>
+    );
+  }
+
+  return (
+    <div>
+      <section className="settings-group">
+        <h3>{message('options_group_ruleListConfig', 'Rule List Config')}</h3>
+        <form>
+          <div className="form-group">
+            <label>{message('options_ruleListFormat', 'Rule List Format')}</label>
+            {ruleListFormats.map((format) => (
+              <div key={format} className="radio inline-form-control no-min-width">
+                <label>
+                  <input
+                    type="radio"
+                    name="formatInput"
+                    value={format}
+                    checked={draft.format === format}
+                    onChange={(event) => changeField('format', event.currentTarget.value)}
+                  />
+                  {message(`ruleListFormat_${format}`, format)}
+                </label>
+              </div>
+            ))}
+          </div>
+          <div className="form-group">
+            <label>{message('options_group_ruleListUrl', 'Rule List URL')}</label>{' '}
+            <div className="width-limit inline-form-control" style={{verticalAlign: 'middle'}}>
+              <ClearableInput
+                type="url"
+                value={draft.sourceUrl}
+                onChange={(value) => changeField('sourceUrl', value)}
+              />
+            </div>
+          </div>
+          <p className="help-block">{message('options_ruleListUrlHelp', 'The rule list will be downloaded from this URL.')}</p>
+        </form>
+        <p>
+          <button
+            type="button"
+            className={`btn ${draft.sourceUrl && !attached.lastUpdate ? 'btn-primary' : 'btn-default'}`}
+            disabled={!draft.sourceUrl || updating}
+            onClick={() => onDownload?.(attached.name || '')}
+          >
+            <span className="glyphicon glyphicon-download-alt" /> {message('options_downloadProfileNow', 'Download Profile Now')}
+          </button>
+        </p>
+      </section>
+      <section className="settings-group">
+        <h3>{message('options_group_ruleListText', 'Rule List Text')}</h3>
+        {draft.sourceUrl && attached.lastUpdate && (
+          <p className="alert alert-success width-limit">
+            {message('options_ruleListLastUpdate', 'Last update: $1', formattedLastUpdate)}
+          </p>
+        )}
+        {draft.sourceUrl && !attached.lastUpdate && (
+          <p className="alert alert-danger width-limit">{message('options_ruleListObsolete', 'Rule list is obsolete. Please download it now.')}</p>
+        )}
+        {attachedRuleListError && (
+          <p className="alert alert-danger width-limit">
+            <span className="glyphicon glyphicon-remove" /> {attachedRuleListError.message}
+          </p>
+        )}
+        <textarea
+          id="attached-rulelist"
+          className="monospace form-control width-limit"
+          rows={20}
+          value={draft.ruleList}
+          disabled={!!draft.sourceUrl}
+          onChange={(event) => changeField('ruleList', event.currentTarget.value)}
+        />
+      </section>
+    </div>
+  );
+}
+
 function RuleListProfile({
   dispName,
   onDownload,
@@ -693,11 +819,25 @@ function mountFixedProfile(element: Element, props: FixedProfileProps = {}) {
   };
 }
 
+function mountSwitchAttachedProfile(element: Element, props: SwitchAttachedProfileProps = {}) {
+  const root = createRoot(element);
+  root.render(<SwitchAttachedProfile {...props} />);
+  return {
+    render(nextProps: SwitchAttachedProfileProps = {}) {
+      root.render(<SwitchAttachedProfile {...nextProps} />);
+    },
+    unmount() {
+      root.unmount();
+    }
+  };
+}
+
 const globalWindow = window as any;
 globalWindow.OmegaReactProfileContent = {
   mountFixedProfile,
   mountPacProfile,
   mountRuleListProfile,
+  mountSwitchAttachedProfile,
   mountUnsupportedProfile,
   mountVirtualProfile
 };

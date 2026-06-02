@@ -658,6 +658,71 @@
     };
   });
 
+  angular.module('omega').directive('omegaReactSwitchAttachedProfile', function($timeout, $filter) {
+    return {
+      restrict: 'A',
+      link: function(scope, element) {
+        var bridge, mounted, props, render, unwatchAttached, unwatchError, unwatchUpdating;
+        props = function() {
+          var name, ref;
+          name = ((ref = scope.attached) != null ? ref.name : void 0) || '';
+          return {
+            attached: scope.attached,
+            attachedRuleListError: scope.attachedRuleListError,
+            formattedLastUpdate: scope.attached && scope.attached.lastUpdate ? $filter('date')(scope.attached.lastUpdate, 'medium') : '',
+            onAttachNew: function() {
+              return scope.attachNew();
+            },
+            onAttachedChange: function(field, value) {
+              return scope.$evalAsync(function() {
+                if (scope.attached) {
+                  return scope.attached[field] = value;
+                }
+              });
+            },
+            onDownload: function(profileName) {
+              return scope.updateProfile(profileName);
+            },
+            ruleListFormats: scope.ruleListFormats,
+            updating: !!(scope.updatingProfile && scope.updatingProfile[name])
+          };
+        };
+        render = function() {
+          if (mounted != null ? mounted.render : void 0) {
+            return mounted.render(props());
+          }
+        };
+        $timeout(function() {
+          bridge = window.OmegaReactProfileContent;
+          if (bridge != null ? bridge.mountSwitchAttachedProfile : void 0) {
+            mounted = bridge.mountSwitchAttachedProfile(element[0], props());
+            unwatchAttached = scope.$watch('attached', render, true);
+            unwatchError = scope.$watch('attachedRuleListError', render);
+            unwatchUpdating = scope.$watch(function() {
+              var name, ref;
+              name = ((ref = scope.attached) != null ? ref.name : void 0) || '';
+              return scope.updatingProfile && scope.updatingProfile[name];
+            }, render);
+          }
+        });
+        return scope.$on('$destroy', function() {
+          if (unwatchAttached) {
+            unwatchAttached();
+          }
+          if (unwatchError) {
+            unwatchError();
+          }
+          if (unwatchUpdating) {
+            unwatchUpdating();
+          }
+          if (mounted != null ? mounted.unmount : void 0) {
+            return mounted.unmount();
+          }
+        });
+      }
+    };
+  });
+
   angular.module('omega').directive('omegaReactOptionsWelcome', function($timeout) {
     return {
       restrict: 'A',

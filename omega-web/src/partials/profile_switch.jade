@@ -150,41 +150,4 @@ div(ng-controller='SwitchProfileCtrl')
               button.btn.btn-info.btn-sm(title="{{'options_resetRules_help' | tr}}" ng-click='resetRules()')
                 span.glyphicon.glyphicon-chevron-up
             td(ng-if='showNotes')
-  section.settings-group(ng-if='!attached')
-    h3 {{'options_group_attachProfile' | tr}}
-    p.help-block {{'options_attachProfileHelp' | tr}}
-    button.btn.btn-default(ng-click='attachNew()')
-      span.glyphicon.glyphicon-plus
-      = ' '
-      | {{'options_attachProfile' | tr}}
-  section.settings-group(ng-if='attached')
-    h3 {{'options_group_ruleListConfig' | tr}}
-    form
-      .form-group
-        label {{'options_ruleListFormat' | tr}}
-        .radio.inline-form-control.no-min-width(ng-repeat='format in ruleListFormats')
-          label
-            input(type='radio' name='formatInput' value='{{format}}' ng-model='attached.format')
-            | {{'ruleListFormat_' + format | tr}}
-      .form-group
-        label {{'options_group_ruleListUrl' | tr}}
-        .width-limit.inline-form-control(input-group-clear type='url' model='attached.sourceUrl'
-          style='vertical-align: middle')
-      p.help-block {{'options_ruleListUrlHelp' | tr}}
-    p
-      button.btn.btn-default(ng-disabled='!attached.sourceUrl' ng-click='updateProfile(attached.name)'
-          ladda='updatingProfile[attached.name]' data-spinner-color="#000000"
-          ng-class='attached.sourceUrl && !attached.lastUpdate ? "btn-primary" : "btn-default"')
-        | #[span.glyphicon.glyphicon-download-alt] {{'options_downloadProfileNow' | tr}}
-  section.settings-group(ng-if='attached')
-    h3 {{'options_group_ruleListText' | tr}}
-    p.alert.alert-success.width-limit(ng-show='attached.sourceUrl && attached.lastUpdate')
-      | {{'options_ruleListLastUpdate' | tr:[(attached.lastUpdate | date:'medium')]}}
-    p.alert.alert-danger.width-limit(ng-show='attached.sourceUrl && !attached.lastUpdate')
-      | {{'options_ruleListObsolete' | tr}}
-    p.alert.alert-danger.width-limit(ng-show='attachedRuleListError')
-      span.glyphicon.glyphicon-remove
-      = ' '
-      | {{attachedRuleListError.message}}
-    textarea#attached-rulelist.monospace.form-control.width-limit(rows=20
-      ng-model='attached.ruleList' ng-disabled='!!attached.sourceUrl')
+  div(omega-react-switch-attached-profile)
