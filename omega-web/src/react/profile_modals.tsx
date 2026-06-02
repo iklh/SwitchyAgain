@@ -1,6 +1,7 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {message} from './options_client';
+import {PROFILE_ICONS} from './profile_widgets';
 
 type RenameProfileProps = {
   fromName?: string;
@@ -31,13 +32,6 @@ type ProxyAuthProps = {
   onClose?: (auth: ProxyAuth) => void;
   onDismiss?: () => void;
   protocolDisp?: string;
-};
-
-const PROFILE_ICONS: Record<string, string> = {
-  FixedProfile: 'glyphicon-globe',
-  PacProfile: 'glyphicon-file',
-  SwitchProfile: 'glyphicon-retweet',
-  VirtualProfile: 'glyphicon-question-sign'
 };
 
 function profileNameErrors(
