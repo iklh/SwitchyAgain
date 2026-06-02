@@ -1,4 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
+import {flushSync} from 'react-dom';
 import {createRoot} from 'react-dom/client';
 import {
   downloadBlob,
@@ -21,6 +22,7 @@ type Alert = {
 type BackupRestoreProps = {
   embedded?: boolean;
   onOptionsReset?: (options: Options) => Promise<any> | any;
+  options?: Options | null;
   showAlert?: (alert: Alert) => void;
 };
 
@@ -41,20 +43,28 @@ function readTextFile(file: File) {
   });
 }
 
-function BackupRestore({embedded = false, onOptionsReset, showAlert}: BackupRestoreProps) {
-  const [options, setOptions] = useState<Options | null>(null);
-  const [restoreUrl, setRestoreUrl] = useState('');
-  const [status, setStatus] = useState<'loading' | 'ready' | 'exporting' | 'restoringLocal' | 'restoringOnline' | 'success' | 'error'>('loading');
+function storedRestoreUrl() {
+  try {
+    const storedUrl = window.localStorage.getItem(RESTORE_URL_STATE);
+    return storedUrl ? JSON.parse(storedUrl) : '';
+  } catch (err) {
+    return '';
+  }
+}
+
+function BackupRestore({embedded = false, onOptionsReset, options: initialOptions, showAlert}: BackupRestoreProps) {
+  const [options, setOptions] = useState<Options | null>(() => embedded && initialOptions ? initialOptions : null);
+  const [restoreUrl, setRestoreUrl] = useState(storedRestoreUrl);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'exporting' | 'restoringLocal' | 'restoringOnline' | 'success' | 'error'>(() => embedded && initialOptions ? 'ready' : 'loading');
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    try {
-      const storedUrl = window.localStorage.getItem(RESTORE_URL_STATE);
-      if (storedUrl) {
-        setRestoreUrl(JSON.parse(storedUrl));
-      }
-    } catch (err) {}
+    if (embedded && initialOptions) {
+      setOptions(initialOptions);
+      setStatus('ready');
+      return;
+    }
 
     loadOptions().then((loadedOptions) => {
       setOptions(loadedOptions);
@@ -63,7 +73,7 @@ function BackupRestore({embedded = false, onOptionsReset, showAlert}: BackupRest
       setError(errorMessage(err));
       setStatus('error');
     });
-  }, []);
+  }, [embedded, initialOptions]);
 
   function showSuccess() {
     if (embedded && showAlert) {
@@ -250,7 +260,9 @@ function BackupRestore({embedded = false, onOptionsReset, showAlert}: BackupRest
 
 function mount(element: Element, props: BackupRestoreProps = {}) {
   const root = createRoot(element);
-  root.render(<BackupRestore {...props} />);
+  flushSync(() => {
+    root.render(<BackupRestore {...props} />);
+  });
   return () => root.unmount();
 }
 

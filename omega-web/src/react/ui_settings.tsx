@@ -1,4 +1,5 @@
 import React, {useEffect, useMemo, useState} from 'react';
+import {flushSync} from 'react-dom';
 import {createRoot} from 'react-dom/client';
 import {
   Options,
@@ -38,9 +39,9 @@ function openShortcutConfig() {
 }
 
 function UiSettings({embedded = false, options, onOptionsChange, onOpenShortcutConfig}: UiSettingsProps) {
-  const [savedOptions, setSavedOptions] = useState<Options | null>(null);
-  const [draftOptions, setDraftOptions] = useState<Options | null>(null);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'saving' | 'saved' | 'error'>('loading');
+  const [savedOptions, setSavedOptions] = useState<Options | null>(() => embedded && options ? cloneOptions(options) : null);
+  const [draftOptions, setDraftOptions] = useState<Options | null>(() => embedded && options ? cloneOptions(options) : null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'saving' | 'saved' | 'error'>(() => embedded && options ? 'ready' : 'loading');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -235,7 +236,9 @@ function UiSettings({embedded = false, options, onOptionsChange, onOpenShortcutC
 
 function mount(element: Element, props: UiSettingsProps = {}) {
   const root = createRoot(element);
-  root.render(<UiSettings {...props} />);
+  flushSync(() => {
+    root.render(<UiSettings {...props} />);
+  });
   return {
     render(nextProps: UiSettingsProps = {}) {
       root.render(<UiSettings {...nextProps} />);

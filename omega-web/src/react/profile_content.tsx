@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import {flushSync} from 'react-dom';
 import {createRoot} from 'react-dom/client';
 import {Options} from './options_client';
 import {message} from './options_client';
@@ -1119,7 +1120,9 @@ function mountFixedProfile(element: Element, props: FixedProfileProps = {}) {
 
 function mountSwitchAttachedProfile(element: Element, props: SwitchAttachedProfileProps = {}) {
   const root = createRoot(element);
-  root.render(<SwitchAttachedProfile {...props} />);
+  flushSync(() => {
+    root.render(<SwitchAttachedProfile {...props} />);
+  });
   return {
     render(nextProps: SwitchAttachedProfileProps = {}) {
       root.render(<SwitchAttachedProfile {...nextProps} />);
@@ -1132,7 +1135,9 @@ function mountSwitchAttachedProfile(element: Element, props: SwitchAttachedProfi
 
 function mountSwitchConditionHelp(element: Element, props: SwitchConditionHelpProps = {}) {
   const root = createRoot(element);
-  root.render(<SwitchConditionHelp {...props} />);
+  flushSync(() => {
+    root.render(<SwitchConditionHelp {...props} />);
+  });
   return {
     render(nextProps: SwitchConditionHelpProps = {}) {
       root.render(<SwitchConditionHelp {...nextProps} />);
@@ -1145,7 +1150,9 @@ function mountSwitchConditionHelp(element: Element, props: SwitchConditionHelpPr
 
 function mountSwitchRulesHeader(element: Element, props: SwitchRulesHeaderProps = {}) {
   const root = createRoot(element);
-  root.render(<SwitchRulesHeader {...props} />);
+  flushSync(() => {
+    root.render(<SwitchRulesHeader {...props} />);
+  });
   return {
     render(nextProps: SwitchRulesHeaderProps = {}) {
       root.render(<SwitchRulesHeader {...nextProps} />);
@@ -1158,7 +1165,9 @@ function mountSwitchRulesHeader(element: Element, props: SwitchRulesHeaderProps 
 
 function mountSwitchRuleTableHeader(element: Element, props: SwitchRuleTableHeaderProps = {}) {
   const root = createRoot(element);
-  root.render(<SwitchRuleTableHeader {...props} />);
+  flushSync(() => {
+    root.render(<SwitchRuleTableHeader {...props} />);
+  });
   return {
     render(nextProps: SwitchRuleTableHeaderProps = {}) {
       root.render(<SwitchRuleTableHeader {...nextProps} />);
@@ -1171,7 +1180,9 @@ function mountSwitchRuleTableHeader(element: Element, props: SwitchRuleTableHead
 
 function mountSwitchRuleFooter(element: Element, props: SwitchRuleFooterProps = {}) {
   const root = createRoot(element);
-  root.render(<SwitchRuleFooter {...props} />);
+  flushSync(() => {
+    root.render(<SwitchRuleFooter {...props} />);
+  });
   return {
     render(nextProps: SwitchRuleFooterProps = {}) {
       root.render(<SwitchRuleFooter {...nextProps} />);

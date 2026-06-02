@@ -70,13 +70,14 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var unmount;
-        $timeout(function() {
+        var mount, unmount;
+        mount = function() {
           var bridge;
           bridge = window.OmegaReactBackupRestore;
           if (bridge != null ? bridge.mount : void 0) {
             unmount = bridge.mount(element[0], {
               embedded: true,
+              options: scope.$root.options,
               onOptionsReset: function() {
                 return omegaTarget.refresh();
               },
@@ -87,7 +88,11 @@
               }
             });
           }
-        });
+        };
+        mount();
+        if (!unmount) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (typeof unmount === 'function') {
             return unmount();
@@ -101,7 +106,7 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted, props, unwatch;
+        var bridge, mount, mounted, props, unwatch;
         props = function() {
           return {
             embedded: true,
@@ -118,7 +123,7 @@
             }
           };
         };
-        $timeout(function() {
+        mount = function() {
           bridge = window.OmegaReactGeneralSettings;
           if (bridge != null ? bridge.mount : void 0) {
             mounted = bridge.mount(element[0], props());
@@ -128,7 +133,11 @@
               }
             });
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (unwatch) {
             unwatch();
@@ -145,7 +154,7 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted, props, unwatch;
+        var bridge, mount, mounted, props, unwatch;
         props = function() {
           return {
             embedded: true,
@@ -165,7 +174,7 @@
             }
           };
         };
-        $timeout(function() {
+        mount = function() {
           bridge = window.OmegaReactUiSettings;
           if (bridge != null ? bridge.mount : void 0) {
             mounted = bridge.mount(element[0], props());
@@ -175,7 +184,11 @@
               }
             });
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (unwatch) {
             unwatch();
@@ -192,7 +205,7 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted, props;
+        var bridge, mount, mounted, props;
         props = function() {
           var version;
           try {
@@ -214,12 +227,16 @@
             }
           };
         };
-        $timeout(function() {
+        mount = function() {
           bridge = window.OmegaReactAbout;
           if (bridge != null ? bridge.mount : void 0) {
             mounted = bridge.mount(element[0], props());
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (mounted != null ? mounted.unmount : void 0) {
             return mounted.unmount();
@@ -233,8 +250,8 @@
     return {
       restrict: 'A',
       link: function(scope, element, attrs) {
-        var bridge, mounted;
-        $timeout(function() {
+        var bridge, mount, mounted;
+        mount = function() {
           bridge = window.OmegaReactConfirmModal;
           if (bridge != null ? bridge.mount : void 0) {
             mounted = bridge.mount(element[0], {
@@ -256,7 +273,11 @@
               toName: scope.toName
             });
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (mounted != null ? mounted.unmount : void 0) {
             return mounted.unmount();
@@ -270,8 +291,8 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted;
-        $timeout(function() {
+        var bridge, mount, mounted;
+        mount = function() {
           bridge = window.OmegaReactProfileModals;
           if (bridge != null ? bridge.mountRenameProfile : void 0) {
             mounted = bridge.mountRenameProfile(element[0], {
@@ -287,7 +308,11 @@
               profileByName: scope.profileByName
             });
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (mounted != null ? mounted.unmount : void 0) {
             return mounted.unmount();
@@ -301,8 +326,8 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted;
-        $timeout(function() {
+        var bridge, mount, mounted;
+        mount = function() {
           bridge = window.OmegaReactProfileModals;
           if (bridge != null ? bridge.mountNewProfile : void 0) {
             mounted = bridge.mountNewProfile(element[0], {
@@ -318,7 +343,11 @@
               profileByName: scope.profileByName
             });
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (mounted != null ? mounted.unmount : void 0) {
             return mounted.unmount();
@@ -332,8 +361,8 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted;
-        $timeout(function() {
+        var bridge, mount, mounted;
+        mount = function() {
           bridge = window.OmegaReactProfileModals;
           if (bridge != null ? bridge.mountProxyAuth : void 0) {
             mounted = bridge.mountProxyAuth(element[0], {
@@ -348,7 +377,11 @@
               protocolDisp: scope.protocolDisp
             });
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (mounted != null ? mounted.unmount : void 0) {
             return mounted.unmount();
@@ -362,15 +395,19 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted;
-        $timeout(function() {
+        var bridge, mount, mounted;
+        mount = function() {
           bridge = window.OmegaReactProfileContent;
           if (bridge != null ? bridge.mountUnsupportedProfile : void 0) {
             mounted = bridge.mountUnsupportedProfile(element[0], {
               profile: scope.profile
             });
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (mounted != null ? mounted.unmount : void 0) {
             return mounted.unmount();
@@ -384,7 +421,7 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted, props;
+        var bridge, mount, mounted, props;
         props = function() {
           return {
             dispName: scope.dispNameFilter,
@@ -401,12 +438,16 @@
             targetProfiles: $filter('profiles')(scope.options, scope.profile)
           };
         };
-        $timeout(function() {
+        mount = function() {
           bridge = window.OmegaReactProfileContent;
           if (bridge != null ? bridge.mountVirtualProfile : void 0) {
             mounted = bridge.mountVirtualProfile(element[0], props());
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (mounted != null ? mounted.unmount : void 0) {
             return mounted.unmount();
@@ -420,7 +461,7 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted, oldLastUpdate, oldPacScript, oldPacUrl, props, referenced, render, unwatchProfile, unwatchUpdating;
+        var bridge, mount, mounted, oldLastUpdate, oldPacScript, oldPacUrl, props, referenced, render, unwatchProfile, unwatchUpdating;
         oldPacUrl = null;
         oldLastUpdate = null;
         oldPacScript = null;
@@ -495,7 +536,7 @@
             return mounted.render(props());
           }
         };
-        $timeout(function() {
+        mount = function() {
           bridge = window.OmegaReactProfileContent;
           if (bridge != null ? bridge.mountPacProfile : void 0) {
             mounted = bridge.mountPacProfile(element[0], props());
@@ -506,7 +547,11 @@
               return scope.updatingProfile && scope.updatingProfile[name];
             }, render);
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (unwatchProfile) {
             unwatchProfile();
@@ -526,7 +571,7 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted, props, render, unwatchers;
+        var bridge, mount, mounted, props, render, unwatchers;
         unwatchers = [];
         props = function() {
           return {
@@ -573,7 +618,7 @@
             return mounted.render(props());
           }
         };
-        $timeout(function() {
+        mount = function() {
           bridge = window.OmegaReactProfileContent;
           if (bridge != null ? bridge.mountFixedProfile : void 0) {
             mounted = bridge.mountFixedProfile(element[0], props());
@@ -582,7 +627,11 @@
             unwatchers.push(scope.$watch('showAdvanced', render));
             unwatchers.push(scope.$watch('profile.auth', render, true));
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           var i, len, unwatch;
           for (i = 0, len = unwatchers.length; i < len; i++) {
@@ -603,7 +652,7 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted, props, render, unwatchProfile, unwatchUpdating;
+        var bridge, mount, mounted, props, render, unwatchProfile, unwatchUpdating;
         props = function() {
           var name, ref;
           name = ((ref = scope.profile) != null ? ref.name : void 0) || '';
@@ -631,7 +680,7 @@
             return mounted.render(props());
           }
         };
-        $timeout(function() {
+        mount = function() {
           bridge = window.OmegaReactProfileContent;
           if (bridge != null ? bridge.mountRuleListProfile : void 0) {
             mounted = bridge.mountRuleListProfile(element[0], props());
@@ -642,7 +691,11 @@
               return scope.updatingProfile && scope.updatingProfile[name];
             }, render);
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (unwatchProfile) {
             unwatchProfile();
@@ -662,7 +715,7 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted, props, render, unwatchAttached, unwatchError, unwatchUpdating;
+        var bridge, mount, mounted, props, render, unwatchAttached, unwatchError, unwatchUpdating;
         props = function() {
           var name, ref;
           name = ((ref = scope.attached) != null ? ref.name : void 0) || '';
@@ -692,7 +745,7 @@
             return mounted.render(props());
           }
         };
-        $timeout(function() {
+        mount = function() {
           bridge = window.OmegaReactProfileContent;
           if (bridge != null ? bridge.mountSwitchAttachedProfile : void 0) {
             mounted = bridge.mountSwitchAttachedProfile(element[0], props());
@@ -704,7 +757,11 @@
               return scope.updatingProfile && scope.updatingProfile[name];
             }, render);
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (unwatchAttached) {
             unwatchAttached();
@@ -727,7 +784,7 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted, props, render, unwatchShow, unwatchTypes;
+        var bridge, mount, mounted, props, render, unwatchShow, unwatchTypes;
         props = function() {
           return {
             advancedConditionTypes: scope.advancedConditionTypes,
@@ -747,14 +804,18 @@
             return mounted.render(props());
           }
         };
-        $timeout(function() {
+        mount = function() {
           bridge = window.OmegaReactProfileContent;
           if (bridge != null ? bridge.mountSwitchConditionHelp : void 0) {
             mounted = bridge.mountSwitchConditionHelp(element[0], props());
             unwatchShow = scope.$watch('conditionHelp.show', render);
             unwatchTypes = scope.$watch('showConditionTypes', render);
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (unwatchShow) {
             unwatchShow();
@@ -774,7 +835,7 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted, props, render, unwatchEditSource, unwatchSource, unwatchUrlConditions;
+        var bridge, mount, mounted, props, render, unwatchEditSource, unwatchSource, unwatchUrlConditions;
         props = function() {
           return {
             editSource: scope.editSource,
@@ -799,7 +860,7 @@
             return mounted.render(props());
           }
         };
-        $timeout(function() {
+        mount = function() {
           bridge = window.OmegaReactProfileContent;
           if (bridge != null ? bridge.mountSwitchRulesHeader : void 0) {
             mounted = bridge.mountSwitchRulesHeader(element[0], props());
@@ -807,7 +868,11 @@
             unwatchSource = scope.$watch('source', render, true);
             unwatchUrlConditions = scope.$watch('hasUrlConditions', render);
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (unwatchEditSource) {
             unwatchEditSource();
@@ -830,7 +895,7 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted, props, render, unwatchShowNotes;
+        var bridge, mount, mounted, props, render, unwatchShowNotes;
         props = function() {
           return {
             onToggleConditionHelp: function() {
@@ -846,13 +911,17 @@
             return mounted.render(props());
           }
         };
-        $timeout(function() {
+        mount = function() {
           bridge = window.OmegaReactProfileContent;
           if (bridge != null ? bridge.mountSwitchRuleTableHeader : void 0) {
             mounted = bridge.mountSwitchRuleTableHeader(element[0], props());
             unwatchShowNotes = scope.$watch('showNotes', render);
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (unwatchShowNotes) {
             unwatchShowNotes();
@@ -869,7 +938,7 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted, props, render, unwatchAttached, unwatchAttachedOptions, unwatchShowNotes;
+        var bridge, mount, mounted, props, render, unwatchAttached, unwatchAttachedOptions, unwatchShowNotes;
         props = function() {
           return {
             attached: scope.attached,
@@ -912,7 +981,7 @@
             return mounted.render(props());
           }
         };
-        $timeout(function() {
+        mount = function() {
           bridge = window.OmegaReactProfileContent;
           if (bridge != null ? bridge.mountSwitchRuleFooter : void 0) {
             mounted = bridge.mountSwitchRuleFooter(element[0], props());
@@ -920,7 +989,11 @@
             unwatchAttachedOptions = scope.$watch('attachedOptions', render, true);
             unwatchShowNotes = scope.$watch('showNotes', render);
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (unwatchAttached) {
             unwatchAttached();
@@ -943,8 +1016,8 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mounted;
-        $timeout(function() {
+        var bridge, mount, mounted;
+        mount = function() {
           bridge = window.OmegaReactOptionsModals;
           if (bridge != null ? bridge.mountWelcome : void 0) {
             mounted = bridge.mountWelcome(element[0], {
@@ -957,7 +1030,11 @@
               upgrade: scope.upgrade
             });
           }
-        });
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
         return scope.$on('$destroy', function() {
           if (mounted != null ? mounted.unmount : void 0) {
             return mounted.unmount();

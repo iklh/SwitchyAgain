@@ -1,4 +1,5 @@
 import React, {useEffect, useMemo, useState} from 'react';
+import {flushSync} from 'react-dom';
 import {createRoot} from 'react-dom/client';
 import {
   Options,
@@ -59,9 +60,9 @@ function messageWithBadges(
 }
 
 function GeneralSettings({embedded = false, options, onOptionsChange}: GeneralSettingsProps) {
-  const [savedOptions, setSavedOptions] = useState<Options | null>(null);
-  const [draftOptions, setDraftOptions] = useState<Options | null>(null);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'saving' | 'saved' | 'error'>('loading');
+  const [savedOptions, setSavedOptions] = useState<Options | null>(() => embedded && options ? cloneOptions(options) : null);
+  const [draftOptions, setDraftOptions] = useState<Options | null>(() => embedded && options ? cloneOptions(options) : null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'saving' | 'saved' | 'error'>(() => embedded && options ? 'ready' : 'loading');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -278,7 +279,9 @@ function GeneralSettings({embedded = false, options, onOptionsChange}: GeneralSe
 
 function mount(element: Element, props: GeneralSettingsProps = {}) {
   const root = createRoot(element);
-  root.render(<GeneralSettings {...props} />);
+  flushSync(() => {
+    root.render(<GeneralSettings {...props} />);
+  });
   return {
     render(nextProps: GeneralSettingsProps = {}) {
       root.render(<GeneralSettings {...nextProps} />);

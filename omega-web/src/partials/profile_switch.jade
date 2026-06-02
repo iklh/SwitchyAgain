@@ -1,9 +1,9 @@
 div(ng-controller='SwitchProfileCtrl')
   div(omega-react-switch-condition-help)
   section.settings-group
-    div(omega-react-switch-rules-header)
-    .table-responsive.switch-rules-wrapper(ng-if='loadRules' ng-show='!editSource')
-      table.switch-rules.table.table-bordered.table-condensed.width-limit-xl
+    div.switch-rules-header-host(omega-react-switch-rules-header)
+    .table-responsive.switch-rules-wrapper(ng-show='!editSource' ng-class='{"switch-rules-wrapper-loading": !loadRules}')
+      table.switch-rules.table.table-bordered.table-condensed.width-limit-xl(ng-if='loadRules')
         thead(omega-react-switch-rule-table-header)
         tbody(ui-sortable='sortableOptions' ng-model='profile.rules')
           tr.switch-rule-row(ng-repeat='rule in profile.rules')
