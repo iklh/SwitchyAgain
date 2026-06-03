@@ -89,6 +89,13 @@
             return mounted.render(props());
           }
         };
+        omegaTarget.state('web.restoreOnlineUrl').then(function(url) {
+          if (url) {
+            return scope.$evalAsync(function() {
+              return scope.restoreOnlineUrl = url;
+            });
+          }
+        });
         mount = function() {
           var bridge;
           bridge = window.OmegaReactImportExport;

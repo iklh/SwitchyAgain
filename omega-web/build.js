@@ -238,7 +238,6 @@ async function main() {
     'build-ts/omega/filters.js',
     'build-ts/omega/directives.js',
     'build-ts/omega/controllers/fixed_profile.js',
-    'build-ts/omega/controllers/io.js',
     'build-ts/omega/controllers/master.js',
     'build-ts/omega/controllers/pac_profile.js',
     'build-ts/omega/controllers/profile.js',

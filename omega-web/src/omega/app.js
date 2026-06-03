@@ -66,8 +66,7 @@
       template: '<div class="react-settings-host-general" omega-react-general-settings></div>'
     }).state('io', {
       url: '/io',
-      template: '<div class="react-settings-host-import-export" omega-react-import-export></div>',
-      controller: 'IoCtrl'
+      template: '<div class="react-settings-host-import-export" omega-react-import-export></div>'
     }).state('profile', {
       url: '/profile/*name',
       templateUrl: 'partials/profile.html',
