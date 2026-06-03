@@ -180,6 +180,30 @@ type SwitchRuleRowProps = {
   weekdayList?: boolean[];
 };
 
+type SwitchRuleRowsProps = {
+  conditionHasWarning?: (condition: SwitchRuleCondition) => boolean;
+  conditionTypes?: ConditionTypeOption[];
+  dispName?: (profile: Profile) => string;
+  formatIpCondition?: (condition: SwitchRuleCondition) => string;
+  getWeekdayList?: (condition: SwitchRuleCondition) => boolean[];
+  isUrlConditionType?: Record<string, boolean>;
+  onAddNote?: (index: number) => void;
+  onCloneRule?: (index: number) => void;
+  onConditionFieldChange?: (index: number, field: string, value: any) => void;
+  onConditionReplace?: (index: number, condition: SwitchRuleCondition) => void;
+  onConditionTypeChange?: (index: number, type: string) => void;
+  onIpConditionInputChange?: (index: number, value: string) => void;
+  onNoteChange?: (index: number, note: string) => void;
+  onProfileChange?: (index: number, name: string) => void;
+  onRemoveRule?: (index: number) => void;
+  onWeekdayChange?: (index: number, dayIndex: number, selected: boolean) => void;
+  options?: Options | null;
+  resultProfiles?: Profile[];
+  rules?: SwitchRuleModel[];
+  showNotes?: boolean;
+  visibleRuleCount?: number;
+};
+
 type SwitchRuleFooterProps = {
   attached?: RuleListProfileModel | null;
   attachedOptions?: {
@@ -473,6 +497,61 @@ function SwitchRuleRow({
         </td>
       )}
     </tr>
+  );
+}
+
+function SwitchRuleRows({
+  conditionHasWarning,
+  conditionTypes = [],
+  dispName,
+  formatIpCondition,
+  getWeekdayList,
+  isUrlConditionType = {},
+  onAddNote,
+  onCloneRule,
+  onConditionFieldChange,
+  onConditionReplace,
+  onConditionTypeChange,
+  onIpConditionInputChange,
+  onNoteChange,
+  onProfileChange,
+  onRemoveRule,
+  onWeekdayChange,
+  options,
+  resultProfiles,
+  rules = [],
+  showNotes = false,
+  visibleRuleCount = rules.length
+}: SwitchRuleRowsProps) {
+  return (
+    <>
+      {rules.slice(0, visibleRuleCount).map((rule, index) => (
+        <SwitchRuleRow
+          conditionHasWarning={conditionHasWarning}
+          conditionTypes={conditionTypes}
+          dispName={dispName}
+          formatIpCondition={formatIpCondition}
+          index={index}
+          isUrlConditionType={isUrlConditionType}
+          key={index}
+          onAddNote={onAddNote}
+          onCloneRule={onCloneRule}
+          onConditionFieldChange={onConditionFieldChange}
+          onConditionReplace={onConditionReplace}
+          onConditionTypeChange={onConditionTypeChange}
+          onIpConditionInputChange={onIpConditionInputChange}
+          onNoteChange={onNoteChange}
+          onProfileChange={onProfileChange}
+          onRemoveRule={onRemoveRule}
+          onWeekdayChange={onWeekdayChange}
+          options={options}
+          resultProfiles={resultProfiles}
+          rule={rule}
+          showNotes={showNotes}
+          weekdayList={getWeekdayList?.(rule.condition) || []}
+        />
+      ))}
+    </>
   );
 }
 
@@ -1438,6 +1517,21 @@ function mountSwitchRuleTableHeader(element: Element, props: SwitchRuleTableHead
   };
 }
 
+function mountSwitchRuleRows(element: Element, props: SwitchRuleRowsProps = {}) {
+  const root = createRoot(element);
+  flushSync(() => {
+    root.render(<SwitchRuleRows {...props} />);
+  });
+  return {
+    render(nextProps: SwitchRuleRowsProps = {}) {
+      root.render(<SwitchRuleRows {...nextProps} />);
+    },
+    unmount() {
+      root.unmount();
+    }
+  };
+}
+
 function mountSwitchRuleFooter(element: Element, props: SwitchRuleFooterProps = {}) {
   const root = createRoot(element);
   flushSync(() => {
@@ -1461,6 +1555,7 @@ globalWindow.OmegaReactProfileContent = {
   mountSwitchAttachedProfile,
   mountSwitchConditionHelp,
   mountSwitchRuleFooter,
+  mountSwitchRuleRows,
   mountSwitchRuleTableHeader,
   mountSwitchRulesHeader,
   mountUnsupportedProfile,
