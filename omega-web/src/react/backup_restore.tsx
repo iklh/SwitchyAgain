@@ -22,6 +22,7 @@ type Alert = {
 type BackupRestoreProps = {
   embedded?: boolean;
   onExportOptions?: () => Promise<any> | any;
+  onOptionsChange?: (nextOptions: Options) => void;
   onOptionsReset?: (options: Options) => Promise<any> | any;
   onRestoreLocal?: (content: string) => Promise<any> | any;
   onRestoreOnline?: (url: string) => Promise<any> | any;
@@ -60,6 +61,7 @@ function storedRestoreUrl() {
 function BackupRestore({
   embedded = false,
   onExportOptions,
+  onOptionsChange,
   onOptionsReset,
   onRestoreLocal,
   onRestoreOnline,
@@ -214,6 +216,45 @@ function BackupRestore({
 
   const busy = status === 'loading' || status === 'exporting' || status === 'restoringLocal' || status === 'restoringOnline';
 
+  const profileSection = (
+    <section className="settings-group">
+      <h3>{message('options_group_importExportProfile', 'Profile')}</h3>
+      <div className="help-block">
+        <div className="text-info">
+          <span className="glyphicon glyphicon-info-sign" /> {message('options_exportProfileHelp', 'To export a profile, use the top-right action bar on the profile page.')}
+        </div>
+      </div>
+      {!(Number(options?.['-showConditionTypes'] || 0) > 0) && (
+        <div className="checkbox">
+          <label>
+            <input
+              type="checkbox"
+              checked={Boolean(options?.['-exportLegacyRuleList'])}
+              onChange={(event) => {
+                const nextOptions = {
+                  ...(options || {}),
+                  '-exportLegacyRuleList': event.currentTarget.checked
+                };
+                setOptions(nextOptions);
+                onOptionsChange?.({
+                  '-exportLegacyRuleList': event.currentTarget.checked
+                });
+              }}
+            />{' '}
+            <span>{message('options_exportLegacyRuleList', 'Export legacy rule lists')}</span>
+          </label>
+          <p
+            className="help-block"
+            dangerouslySetInnerHTML={htmlMessage(
+              'options_exportLegacyRuleListHelp',
+              'Enable this option only if you publish rule lists for users of those projects.'
+            )}
+          />
+        </div>
+      )}
+    </section>
+  );
+
   const settingsSection = (
     <section className="settings-group">
       {status === 'error' && (
@@ -275,7 +316,15 @@ function BackupRestore({
   );
 
   if (embedded) {
-    return settingsSection;
+    return (
+      <>
+        <div className="page-header">
+          <h2>{message('options_tab_importExport', 'Import/Export')}</h2>
+        </div>
+        {profileSection}
+        {settingsSection}
+      </>
+    );
   }
 
   return (
@@ -287,23 +336,8 @@ function BackupRestore({
         </p>
       </div>
 
+      {profileSection}
       {settingsSection}
-
-      <section className="settings-group">
-        <h3>{message('options_group_importExportProfile', 'Profile')}</h3>
-        <div className="help-block">
-          <div className="text-info">
-            <span className="glyphicon glyphicon-info-sign" /> {message('options_exportProfileHelp', 'To export a profile, use the top-right action bar on the profile page.')}
-          </div>
-        </div>
-        <p
-          className="help-block"
-          dangerouslySetInnerHTML={htmlMessage(
-            'options_exportLegacyRuleListHelp',
-            'Enable this option only if you publish rule lists for users of those projects.'
-          )}
-        />
-      </section>
     </main>
   );
 }

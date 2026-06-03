@@ -92,6 +92,17 @@
                 return scope.exportOptions();
               });
             },
+            onOptionsChange: function(nextOptions) {
+              return scope.$evalAsync(function() {
+                var key, results;
+                results = [];
+                for (key in nextOptions) {
+                  scope.$root.options[key] = nextOptions[key];
+                  results.push(scope.$root.optionsDirty = true);
+                }
+                return results;
+              });
+            },
             onRestoreLocal: function(content) {
               return invoke(function() {
                 return scope.restoreLocal(content);
