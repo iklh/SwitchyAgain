@@ -13,6 +13,7 @@ module.exports = Inspect = (function() {
 
   function Inspect(onInspect) {
     this.onInspect = onInspect;
+    this._onContextMenuClicked = this._onContextMenuClicked.bind(this);
   }
 
   Inspect.prototype.enable = function() {
@@ -26,6 +27,7 @@ module.exports = Inspect = (function() {
     if (this._enabled) {
       return;
     }
+    chrome.contextMenus.onClicked.addListener(this._onContextMenuClicked);
     webResource = ["http://*/*", "https://*/*", "ftp://*/*"];
 
     /* Not so useful...
@@ -41,21 +43,18 @@ module.exports = Inspect = (function() {
       id: 'inspectFrame',
       title: chrome.i18n.getMessage('contextMenu_inspectFrame'),
       contexts: ['frame'],
-      onclick: this.inspect.bind(this),
       documentUrlPatterns: webResource
     });
     chrome.contextMenus.create({
       id: 'inspectLink',
       title: chrome.i18n.getMessage('contextMenu_inspectLink'),
       contexts: ['link'],
-      onclick: this.inspect.bind(this),
       targetUrlPatterns: webResource
     });
     chrome.contextMenus.create({
       id: 'inspectElement',
       title: chrome.i18n.getMessage('contextMenu_inspectElement'),
       contexts: ['image', 'video', 'audio'],
-      onclick: this.inspect.bind(this),
       targetUrlPatterns: webResource
     });
     return this._enabled = true;
@@ -69,10 +68,16 @@ module.exports = Inspect = (function() {
     ref = this.propForMenuItem;
     for (menuId in ref) {
       if (!hasProp.call(ref, menuId)) continue;
+      if (menuId === 'inspectPage') {
+        continue;
+      }
       try {
-        chrome.contextMenus.remove(menuId);
+        chrome.contextMenus.remove(menuId, function() {
+          chrome.runtime.lastError;
+        });
       } catch (error) {}
     }
+    chrome.contextMenus.onClicked.removeListener(this._onContextMenuClicked);
     return this._enabled = false;
   };
 
@@ -81,6 +86,13 @@ module.exports = Inspect = (function() {
     'inspectFrame': 'frameUrl',
     'inspectLink': 'linkUrl',
     'inspectElement': 'srcUrl'
+  };
+
+  Inspect.prototype._onContextMenuClicked = function(info, tab) {
+    if (!this.propForMenuItem[info.menuItemId]) {
+      return;
+    }
+    return this.inspect(info, tab);
   };
 
   Inspect.prototype.inspect = function(info, tab) {

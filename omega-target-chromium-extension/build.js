@@ -113,6 +113,10 @@ async function writeReleaseManifest(dest, target) {
   const manifestPath = path.join(root, 'overlay/manifest.json');
   const manifest = JSON.parse(await fsp.readFile(manifestPath, 'utf8'));
   manifest.permissions = manifest.permissions.filter((permission) => permission !== 'downloads');
+  if (target === 'chrome') {
+    delete manifest.background.scripts;
+    delete manifest.background.preferred_environment;
+  }
   if (target === 'firefox') {
     delete manifest.key;
     delete manifest.minimum_chrome_version;

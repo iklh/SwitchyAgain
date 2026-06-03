@@ -4,6 +4,8 @@ function callBackgroundNoReply(method, args, cb) {
     args: args,
     noReply: true,
     refreshActivePage: true,
+  }, function() {
+    chrome.runtime.lastError;
   });
   if (cb) return cb();
 }

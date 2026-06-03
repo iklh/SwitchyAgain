@@ -189,7 +189,9 @@ ChromeOptions = (function(superClass) {
                 if (url.substr(0, 4) === 'moz-') {
                   return;
                 }
-                return chrome.tabs.reload(tab.id);
+                return chrome.tabs.reload(tab.id, function() {
+                  chrome.runtime.lastError;
+                });
               }
             });
           };

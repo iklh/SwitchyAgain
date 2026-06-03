@@ -71,6 +71,23 @@ async function bundleReact(entry, dest) {
   });
 }
 
+async function bundleGlobal(entry, dest, globalName) {
+  await ensureDir(path.join(root, dest));
+  await esbuild.build({
+    bundle: true,
+    entryPoints: [resolveSource(entry)],
+    footer: {
+      js: globalName === 'Shepherd' ? 'Shepherd = Shepherd.default || Shepherd;' : ''
+    },
+    format: 'iife',
+    globalName,
+    minify: true,
+    outfile: path.join(root, dest),
+    platform: 'browser',
+    target: 'es2020'
+  });
+}
+
 async function renderLess(src, tmpDest, buildDest) {
   const input = await fs.readFile(path.join(root, src), 'utf8');
   const rendered = await new Promise((resolve, reject) => {
@@ -147,7 +164,6 @@ async function main() {
     ['node_modules/ladda/dist/ladda.min.js', 'build/lib/ladda/ladda.min.js'],
     ['node_modules/ngprogress/build/ngprogress.min.js', 'build/lib/ngprogress/ngProgress.min.js'],
     ['node_modules/scriptjs/dist/script.min.js', 'build/lib/script.js/script.min.js'],
-    ['node_modules/shepherd.js/dist/cjs/shepherd.cjs', 'build/lib/shepherd.js/shepherd.min.js'],
     ['node_modules/shepherd.js/dist/css/shepherd.css', 'build/lib/shepherd.js/shepherd-theme-arrows.css'],
     ['node_modules/spectrum-colorpicker/spectrum.css', 'build/lib/spectrum/spectrum.css'],
     ['node_modules/spectrum-colorpicker/spectrum.js', 'build/lib/spectrum/spectrum.js'],
@@ -166,6 +182,8 @@ async function main() {
       await copyFile(src, dest);
     }
   }
+
+  await bundleGlobal('node_modules/shepherd.js/dist/js/shepherd.mjs', 'build/lib/shepherd.js/shepherd.min.js', 'Shepherd');
 
   await renderJade('src/options.jade', 'build/options.html');
   await renderJade('src/popup.jade', 'build/popup.html');

@@ -23,6 +23,8 @@
         method: method,
         args: args,
         noReply: true
+      }, function() {
+        chrome.runtime.lastError;
       });
     };
     callBackground = function() {
@@ -219,6 +221,8 @@
           if (tabs[0].url && !isChromeUrl(tabs[0].url)) {
             chrome.tabs.reload(tabs[0].id, {
               bypassCache: true
+            }, function() {
+              chrome.runtime.lastError;
             });
           }
           return d.resolve();

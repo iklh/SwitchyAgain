@@ -72,12 +72,15 @@
     // We don't have console here and alert is not implemented.
     // Throwing and messaging seems to be the only ways to communicate.
     // MOZ: alert(): https://bugzilla.mozilla.org/show_bug.cgi?id=1353510
-    browser.runtime.sendMessage({
+    var result = browser.runtime.sendMessage({
       event: 'proxyScriptLog',
       message: message,
       error: error,
       level: 'warn',
     });
+    if (result && result.catch) {
+      result.catch(function() {});
+    }
   }
 
   function init() {
@@ -93,6 +96,9 @@
         }
       }
     });
-    browser.runtime.sendMessage({event: 'proxyScriptLoaded'});
+    var result = browser.runtime.sendMessage({event: 'proxyScriptLoaded'});
+    if (result && result.catch) {
+      result.catch(function() {});
+    }
   }
 })();

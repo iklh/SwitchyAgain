@@ -119,6 +119,11 @@ ScriptProxyImpl = (function(superClass) {
       options: this._options
     }, {
       toProxyScript: true
+    }).catch(function(error) {
+      if (error && /Receiving end does not exist/.test(error.message || '')) {
+        return;
+      }
+      throw error;
     });
   };
 

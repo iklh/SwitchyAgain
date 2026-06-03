@@ -259,11 +259,6 @@
 
   options.externalApi.listen();
 
-  if (chrome.runtime.id !== OmegaTargetCurrent.SwitchySharp.extId) {
-    options.switchySharp = new OmegaTargetCurrent.SwitchySharp();
-    options.switchySharp.monitor();
-  }
-
   tabs = new OmegaTargetCurrent.ChromeTabs(actionForUrl);
 
   tabs.watch();
@@ -433,6 +428,8 @@
       }
       return chrome.tabs.reload(tabs[0].id, {
         bypassCache: true
+      }, function() {
+        chrome.runtime.lastError;
       });
     });
   };
