@@ -30,42 +30,6 @@
     };
   });
 
-  angular.module('omega').directive('omegaUpload', function() {
-    return {
-      restrict: 'A',
-      scope: {
-        success: '&omegaUpload',
-        error: '&omegaError'
-      },
-      link: function(scope, element, attrs) {
-        var input;
-        input = element[0];
-        return element.on('change', function() {
-          var reader;
-          if (input.files.length > 0 && input.files[0].name.length > 0) {
-            reader = new FileReader();
-            reader.addEventListener('load', function(e) {
-              return scope.$apply(function() {
-                return scope.success({
-                  '$content': e.target.result
-                });
-              });
-            });
-            reader.addEventListener('error', function(e) {
-              return scope.$apply(function() {
-                return scope.error({
-                  '$error': e.target.error
-                });
-              });
-            });
-            reader.readAsText(input.files[0]);
-            return input.value = '';
-          }
-        });
-      }
-    };
-  });
-
   angular.module('omega').directive('omegaReactBackupRestore', function($timeout, omegaTarget) {
     return {
       restrict: 'A',

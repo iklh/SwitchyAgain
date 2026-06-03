@@ -47,9 +47,6 @@
         message: 'Error downloading backup file!'
       });
     };
-    $scope.triggerFileInput = function() {
-      angular.element('#restore-local-file').click();
-    };
     $scope.restoreOnline = function() {
       omegaTarget.state('web.restoreOnlineUrl', $scope.restoreOnlineUrl);
       $scope.restoringOnline = true;
