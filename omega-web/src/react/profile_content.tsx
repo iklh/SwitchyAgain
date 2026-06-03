@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {flushSync} from 'react-dom';
 import {createRoot} from 'react-dom/client';
 import {Options} from './options_client';
@@ -299,6 +299,58 @@ function ClearableInput({
   );
 }
 
+function DraftInput({
+  disabled = false,
+  max,
+  min,
+  onChange,
+  placeholder,
+  required = false,
+  title,
+  type = 'text',
+  value
+}: {
+  disabled?: boolean;
+  max?: number;
+  min?: number;
+  onChange?: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  title?: string;
+  type?: string;
+  value: string;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) {
+      setDraft(value);
+    }
+  }, [value]);
+
+  function change(nextValue: string) {
+    setDraft(nextValue);
+    onChange?.(nextValue);
+  }
+
+  return (
+    <input
+      ref={inputRef}
+      className="form-control"
+      type={type}
+      min={min}
+      max={max}
+      required={required}
+      disabled={disabled}
+      placeholder={placeholder}
+      title={title}
+      value={draft}
+      onChange={(event) => change(event.currentTarget.value)}
+    />
+  );
+}
+
 function SwitchRuleRow({
   conditionHasWarning,
   conditionTypes = [],
@@ -336,12 +388,10 @@ function SwitchRuleRow({
       case 'FalseCondition':
         return condition.pattern ? (
           <span>
-            <input
-              className="form-control"
+            <DraftInput
               value={condition.pattern || ''}
               disabled
               title={message('condition_details_FalseCondition', 'Never')}
-              onChange={() => undefined}
             />
           </span>
         ) : (
@@ -350,61 +400,56 @@ function SwitchRuleRow({
       case 'HostLevelsCondition':
         return (
           <span className="host-levels-details">
-            <input
-              className="form-control"
+            <DraftInput
               type="number"
               min={1}
               max={99}
               required
-              value={condition.minValue ?? ''}
-              onChange={(event) => changeField('minValue', event.currentTarget.value)}
+              value={String(condition.minValue ?? '')}
+              onChange={(value) => changeField('minValue', value)}
             />{' '}
             <span>{message('options_hostLevelsBetween', 'to')}</span>{' '}
-            <input
-              className="form-control"
+            <DraftInput
               type="number"
               min={1}
               max={99}
               required
-              value={condition.maxValue ?? ''}
-              onChange={(event) => changeField('maxValue', event.currentTarget.value)}
+              value={String(condition.maxValue ?? '')}
+              onChange={(value) => changeField('maxValue', value)}
             />
           </span>
         );
       case 'IpCondition':
         return (
           <span>
-            <input
-              className="form-control"
+            <DraftInput
               type="text"
               required
               placeholder="127.0.0.1/8"
               value={formatIpCondition?.(condition) || ''}
-              onChange={(event) => onIpConditionInputChange?.(index, event.currentTarget.value)}
+              onChange={(value) => onIpConditionInputChange?.(index, value)}
             />
           </span>
         );
       case 'TimeCondition':
         return (
           <span className="host-levels-details">
-            <input
-              className="form-control"
+            <DraftInput
               type="number"
               min={0}
               max={23}
               required
-              value={condition.startHour ?? ''}
-              onChange={(event) => changeField('startHour', event.currentTarget.value)}
+              value={String(condition.startHour ?? '')}
+              onChange={(value) => changeField('startHour', value)}
             />{' '}
             <span>{message('options_hourBetween', 'to')}</span>{' '}
-            <input
-              className="form-control"
+            <DraftInput
               type="number"
               min={0}
               max={23}
               required
-              value={condition.endHour ?? ''}
-              onChange={(event) => changeField('endHour', event.currentTarget.value)}
+              value={String(condition.endHour ?? '')}
+              onChange={(value) => changeField('endHour', value)}
             />
           </span>
         );
@@ -425,11 +470,10 @@ function SwitchRuleRow({
         );
       default:
         return (
-          <input
-            className="form-control"
+          <DraftInput
             value={condition.pattern || ''}
             required
-            onChange={(event) => changeField('pattern', event.currentTarget.value)}
+            onChange={(value) => changeField('pattern', value)}
           />
         );
     }
@@ -489,10 +533,9 @@ function SwitchRuleRow({
       </td>
       {showNotes && (
         <td>
-          <input
-            className="form-control"
+          <DraftInput
             value={rule.note || ''}
-            onChange={(event) => onNoteChange?.(index, event.currentTarget.value)}
+            onChange={(value) => onNoteChange?.(index, value)}
           />
         </td>
       )}
