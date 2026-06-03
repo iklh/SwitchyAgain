@@ -117,7 +117,14 @@ function About({
   );
 
   if (embedded) {
-    return content;
+    return (
+      <>
+        <div className="page-header">
+          <h2>{message('about_title', 'About')}</h2>
+        </div>
+        {content}
+      </>
+    );
   }
 
   return (

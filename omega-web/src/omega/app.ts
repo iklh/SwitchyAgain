@@ -74,8 +74,7 @@
       controller: 'ProfileCtrl'
     }).state('about', {
       url: '/about',
-      templateUrl: 'partials/about.html',
-      controller: 'AboutCtrl'
+      templateUrl: 'partials/about.html'
     });
   });
 
