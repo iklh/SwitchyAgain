@@ -74,7 +74,7 @@
       controller: 'ProfileCtrl'
     }).state('about', {
       url: '/about',
-      templateUrl: 'partials/about.html'
+      template: '<div omega-react-about></div>'
     });
   });
 

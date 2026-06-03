@@ -203,7 +203,6 @@ async function main() {
   await bundleReact('src/react/import_export.tsx', 'build/react/import_export.js');
 
   const partials = [
-    'about',
     'apply_options_confirm',
     'cannot_delete_profile',
     'delete_attached',
