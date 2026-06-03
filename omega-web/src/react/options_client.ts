@@ -58,6 +58,14 @@ export function resetOptions(options?: any) {
   return callBackground<Options>('reset', options);
 }
 
+export function setOptionsSync(enabled: boolean, args?: any) {
+  return callBackground<void>('setOptionsSync', enabled, args);
+}
+
+export function resetOptionsSync() {
+  return callBackground<void>('resetOptionsSync');
+}
+
 export function optionPatch(before: Options, after: Options, keys: string[]) {
   const patch: Options = {};
   for (const key of keys) {

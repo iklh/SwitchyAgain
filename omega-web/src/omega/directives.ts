@@ -56,16 +56,6 @@
                 return scope.$root.applyOptionsConfirm();
               });
             },
-            onDisableOptionsSync: function() {
-              return invoke(function() {
-                return scope.disableOptionsSync();
-              });
-            },
-            onEnableOptionsSync: function(args) {
-              return invoke(function() {
-                return scope.enableOptionsSync(args);
-              });
-            },
             onOptionsChange: function(nextOptions) {
               return scope.$evalAsync(function() {
                 var key, results;
@@ -81,11 +71,6 @@
               return scope.$evalAsync(function() {
                 scope.restoreOnlineUrl = url;
                 return omegaTarget.state('web.restoreOnlineUrl', url);
-              });
-            },
-            onResetOptionsSync: function() {
-              return invoke(function() {
-                return scope.resetOptionsSync();
               });
             },
             onOptionsReset: function() {

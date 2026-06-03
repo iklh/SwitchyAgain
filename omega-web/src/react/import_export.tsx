@@ -8,7 +8,9 @@ import {
   message,
   Options,
   resetOptions,
-  runtimeAvailable
+  resetOptionsSync,
+  runtimeAvailable,
+  setOptionsSync
 } from './options_client';
 
 const RESTORE_URL_STATE = 'omega.local.web.restoreOnlineUrl';
@@ -22,12 +24,9 @@ type Alert = {
 type ImportExportProps = {
   embedded?: boolean;
   onApplyOptionsConfirm?: () => Promise<any> | any;
-  onDisableOptionsSync?: () => Promise<any> | any;
-  onEnableOptionsSync?: (args?: {force?: boolean}) => Promise<any> | any;
   onOptionsChange?: (nextOptions: Options) => void;
   onOptionsReset?: (options: Options) => Promise<any> | any;
   onRestoreOnlineUrlChange?: (url: string) => void;
-  onResetOptionsSync?: () => Promise<any> | any;
   options?: Options | null;
   restoreOnlineUrl?: string;
   showAlert?: (alert: Alert) => void;
@@ -63,12 +62,9 @@ function storedRestoreUrl() {
 function ImportExport({
   embedded = false,
   onApplyOptionsConfirm,
-  onDisableOptionsSync,
-  onEnableOptionsSync,
   onOptionsChange,
   onOptionsReset,
   onRestoreOnlineUrlChange,
-  onResetOptionsSync,
   options: initialOptions,
   restoreOnlineUrl,
   showAlert,
@@ -218,6 +214,27 @@ function ImportExport({
     });
   }
 
+  function reloadOptionsPage() {
+    window.location.reload();
+  }
+
+  function confirmCurrentOptions() {
+    return Promise.resolve(onApplyOptionsConfirm?.());
+  }
+
+  function enableOptionsSync(args?: {force?: boolean}) {
+    const enable = () => setOptionsSync(true, args).finally(reloadOptionsPage);
+    return args?.force ? enable() : confirmCurrentOptions().then(enable);
+  }
+
+  function disableOptionsSync() {
+    return setOptionsSync(false).then(() => confirmCurrentOptions().then(reloadOptionsPage));
+  }
+
+  function resetSyncedOptions() {
+    return resetOptionsSync().then(() => confirmCurrentOptions().then(reloadOptionsPage));
+  }
+
   const profileSection = (
     <section className="settings-group">
       <h3>{message('options_group_importExportProfile', 'Profile')}</h3>
@@ -324,7 +341,7 @@ function ImportExport({
         <>
           <p className="help-block" dangerouslySetInnerHTML={htmlMessage('options_syncPristineHelp', 'Sync your options using browser storage.')} />
           <p>
-            <button type="button" className="btn btn-default" disabled={syncBusy} onClick={() => runSyncAction('enabling', () => onEnableOptionsSync?.())}>
+            <button type="button" className="btn btn-default" disabled={syncBusy} onClick={() => runSyncAction('enabling', enableOptionsSync)}>
               <span className="glyphicon glyphicon-cloud-upload" /> {message('options_syncEnable', 'Enable sync')}
             </button>
           </p>
@@ -337,7 +354,7 @@ function ImportExport({
           </p>
           <p className="help-block" dangerouslySetInnerHTML={htmlMessage('options_syncSyncHelp', 'Your options are synchronized.')} />
           <p>
-            <button type="button" className="btn btn-warning" disabled={syncBusy} onClick={() => runSyncAction('disabling', () => onDisableOptionsSync?.())}>
+            <button type="button" className="btn btn-warning" disabled={syncBusy} onClick={() => runSyncAction('disabling', disableOptionsSync)}>
               <span className="glyphicon glyphicon-remove-sign" /> {message('options_syncDisable', 'Disable sync')}
             </button>
           </p>
@@ -350,10 +367,10 @@ function ImportExport({
           </p>
           <p className="help-block" dangerouslySetInnerHTML={htmlMessage('options_syncConflictHelp', 'Choose which options should be used for syncing.')} />
           <p>
-            <button type="button" className="btn btn-danger" disabled={syncBusy} onClick={() => runSyncAction('enabling', () => onEnableOptionsSync?.({force: true}))}>
+            <button type="button" className="btn btn-danger" disabled={syncBusy} onClick={() => runSyncAction('enabling', () => enableOptionsSync({force: true}))}>
               <span className="glyphicon glyphicon-cloud-download" /> {message('options_syncEnableForce', 'Use synced options')}
             </button>{' '}
-            <button type="button" className="btn btn-link" disabled={syncBusy} onClick={() => runSyncAction('resetting', () => onResetOptionsSync?.())}>
+            <button type="button" className="btn btn-link" disabled={syncBusy} onClick={() => runSyncAction('resetting', resetSyncedOptions)}>
               <span className="glyphicon glyphicon-erase" /> {message('options_syncReset', 'Reset sync')}
             </button>
           </p>
