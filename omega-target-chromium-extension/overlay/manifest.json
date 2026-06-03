@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "__MSG_manifest_app_name__",
-  "version": "1.1.9",
+  "version": "1.1.10",
   "description": "__MSG_manifest_app_description__",
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkhwZJT76btQ04EEMOFtZPLESD1TmSVjbLjs0OyesD9Ht8YllFPfJ3qmtbSQGVuvmxH1GK/jUO2QcEWb8bHuOjoRlq20fi5j5Aq90O8FKET+y5D8PxCyi3WmnquiEwaE5cNmaCsw/G2JlO+bZOtdQ/QKOvMxBAegABYimEGfSvCMVUEvpymys0gBhLoch72zPAiJUBkf0z8BtjYTueMRcRXkrSeRPLygUDQnZ1TkQWMYYBp/zqpD5ggxytAklEMQzR9Hn0lqu5s7iuUAgihbysPn/8Wh00Zj5FySpK//KcpG3JS7UWxC28oSt8z5ZR3YimnX+HX3P36V0mC1pgM4o7wIDAQAB",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoMpyvVR+qdx+53f1Z3cwOTl8AGWQ7lmOwMCthKUrYY3H9Kwki1Che1zEatImp7eCikBxl/POBU7NDaAiuahaKbTGe/bklKQ5+8V86llijBoYHjIWAIE4CNpUx+XoQYd/Mevj0g4mxcgHS0uB3D795mXFfb8VagoiA65XWD3iUu8tj54Wa/trNW+MTSq/SsmfG3CDyc03Zkg18sP8Yd6Ko85BOSC9JGcrchfD/CEfwW2H40jWipH0J0/qwDoiOXbgxodGTO7PVnIEYElBvw2BcoxsMsXWgsY3m/vffZiHXfRRGOL3UPtRMuy7Ri0xPVDKrHQgHE8xu0vghlD4Wixl0wIDAQAB",
   "icons": {
     "16": "img/icons/omega-action-16.png",
     "24": "img/icons/omega-action-24.png",

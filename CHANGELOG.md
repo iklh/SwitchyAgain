@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.1.10
+
+React options migration and Chrome runtime cleanup.
+
+- Migrated additional profile content surfaces to React, including fixed,
+  PAC, rule list, and switch profile sections.
+- Moved switch profile rule headers, footers, condition help, and rule rows
+  into React while preserving the existing Angular rule editing behavior.
+- Added batched switch rule row rendering to reduce the initial delay on
+  larger auto switch profiles.
+- Smoothed embedded React options page mounting to avoid visible first-frame
+  jumps and loading flashes.
+- Cleaned up Chrome MV3 runtime warnings for release manifests, context menu
+  handlers, tab reload races, and fire-and-forget extension messages.
+- Removed the obsolete SwitchySharp compatibility bridge.
+
 ## v1.1.9
 
 React options migration preview.
