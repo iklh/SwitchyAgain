@@ -51,9 +51,9 @@
             embedded: true,
             options: scope.$root.options,
             restoreOnlineUrl: scope.restoreOnlineUrl,
-            onExportOptions: function() {
+            onApplyOptionsConfirm: function() {
               return invoke(function() {
-                return scope.exportOptions();
+                return scope.$root.applyOptionsConfirm();
               });
             },
             onDisableOptionsSync: function() {
@@ -77,20 +77,10 @@
                 return results;
               });
             },
-            onRestoreLocal: function(content) {
-              return invoke(function() {
-                return scope.restoreLocal(content);
-              });
-            },
-            onRestoreOnline: function(url) {
-              return invoke(function() {
-                scope.restoreOnlineUrl = url;
-                return scope.restoreOnline();
-              });
-            },
             onRestoreOnlineUrlChange: function(url) {
               return scope.$evalAsync(function() {
-                return scope.restoreOnlineUrl = url;
+                scope.restoreOnlineUrl = url;
+                return omegaTarget.state('web.restoreOnlineUrl', url);
               });
             },
             onResetOptionsSync: function() {

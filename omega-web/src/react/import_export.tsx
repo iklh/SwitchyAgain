@@ -21,13 +21,11 @@ type Alert = {
 
 type ImportExportProps = {
   embedded?: boolean;
+  onApplyOptionsConfirm?: () => Promise<any> | any;
   onDisableOptionsSync?: () => Promise<any> | any;
   onEnableOptionsSync?: (args?: {force?: boolean}) => Promise<any> | any;
-  onExportOptions?: () => Promise<any> | any;
   onOptionsChange?: (nextOptions: Options) => void;
   onOptionsReset?: (options: Options) => Promise<any> | any;
-  onRestoreLocal?: (content: string) => Promise<any> | any;
-  onRestoreOnline?: (url: string) => Promise<any> | any;
   onRestoreOnlineUrlChange?: (url: string) => void;
   onResetOptionsSync?: () => Promise<any> | any;
   options?: Options | null;
@@ -64,13 +62,11 @@ function storedRestoreUrl() {
 
 function ImportExport({
   embedded = false,
+  onApplyOptionsConfirm,
   onDisableOptionsSync,
   onEnableOptionsSync,
-  onExportOptions,
   onOptionsChange,
   onOptionsReset,
-  onRestoreLocal,
-  onRestoreOnline,
   onRestoreOnlineUrlChange,
   onResetOptionsSync,
   options: initialOptions,
@@ -141,32 +137,19 @@ function ImportExport({
       return;
     }
     setStatus('exporting');
-    if (onExportOptions) {
-      Promise.resolve(onExportOptions()).then(() => {
-        setStatus('ready');
-      }).catch(() => {
-        setStatus('ready');
+    Promise.resolve(onApplyOptionsConfirm?.()).then(() => {
+      const plainOptions = JSON.parse(JSON.stringify(options));
+      const blob = new Blob([JSON.stringify(plainOptions)], {
+        type: 'text/plain;charset=utf-8'
       });
-      return;
-    }
-    const plainOptions = JSON.parse(JSON.stringify(options));
-    const blob = new Blob([JSON.stringify(plainOptions)], {
-      type: 'text/plain;charset=utf-8'
+      downloadBlob(blob, 'OmegaOptions.bak');
+    }).finally(() => {
+      setStatus('ready');
     });
-    downloadBlob(blob, 'OmegaOptions.bak');
-    setStatus('ready');
   }
 
   function restoreFromContent(content: string, restoringStatus: 'restoringLocal' | 'restoringOnline') {
     setStatus(restoringStatus);
-    if (onRestoreLocal && restoringStatus === 'restoringLocal') {
-      Promise.resolve(onRestoreLocal(content)).then(() => {
-        setStatus('ready');
-      }).catch((err) => {
-        showError(err, 'options_importFormatError', 'Invalid backup file!');
-      });
-      return;
-    }
     resetOptions(content).then((loadedOptions) => {
       setOptions(loadedOptions);
       return Promise.resolve(onOptionsReset ? onOptionsReset(loadedOptions) : null);
@@ -196,21 +179,16 @@ function ImportExport({
     if (!url) {
       return;
     }
-    if (onRestoreOnline) {
-      setStatus('restoringOnline');
-      Promise.resolve(onRestoreOnline(url)).then(() => {
-        setStatus('ready');
-      }).catch((err) => {
-        showError(err, 'options_importDownloadError', 'Error downloading backup file!');
-      });
-      return;
-    }
+    onRestoreOnlineUrlChange?.(url);
     try {
       window.localStorage.setItem(RESTORE_URL_STATE, JSON.stringify(url));
     } catch (err) {}
     setStatus('restoringOnline');
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 10000);
     fetch(url, {
-      cache: 'no-store'
+      cache: 'no-store',
+      signal: controller.signal
     }).then((response) => {
       if (!response.ok) {
         throw new Error(`${response.status} ${response.statusText}`);
@@ -220,6 +198,8 @@ function ImportExport({
       restoreFromContent(content, 'restoringOnline');
     }).catch((err) => {
       showError(err, 'options_importDownloadError', 'Error downloading backup file!');
+    }).finally(() => {
+      window.clearTimeout(timeout);
     });
   }
 

@@ -1,71 +1,10 @@
 (function() {
-  angular.module('omega').controller('IoCtrl', function($scope, $rootScope, $window, $http, omegaTarget, downloadFile) {
+  angular.module('omega').controller('IoCtrl', function($scope, $rootScope, $window, omegaTarget) {
     omegaTarget.state('web.restoreOnlineUrl').then(function(url) {
       if (url) {
         return $scope.restoreOnlineUrl = url;
       }
     });
-    $scope.exportOptions = function() {
-      return $rootScope.applyOptionsConfirm().then(function() {
-        var blob, content, plainOptions;
-        plainOptions = angular.fromJson(angular.toJson($rootScope.options));
-        content = JSON.stringify(plainOptions);
-        blob = new Blob([content], {
-          type: "text/plain;charset=utf-8"
-        });
-        return downloadFile(blob, "OmegaOptions.bak");
-      });
-    };
-    $scope.importSuccess = function() {
-      return $rootScope.showAlert({
-        type: 'success',
-        i18n: 'options_importSuccess',
-        message: 'Options imported.'
-      });
-    };
-    $scope.restoreLocal = function(content) {
-      $scope.restoringLocal = true;
-      return $rootScope.resetOptions(content).then((function() {
-        return $scope.importSuccess();
-      }), function() {
-        return $scope.restoreLocalError();
-      })["finally"](function() {
-        return $scope.restoringLocal = false;
-      });
-    };
-    $scope.restoreLocalError = function() {
-      return $rootScope.showAlert({
-        type: 'error',
-        i18n: 'options_importFormatError',
-        message: 'Invalid backup file!'
-      });
-    };
-    $scope.downloadError = function() {
-      return $rootScope.showAlert({
-        type: 'error',
-        i18n: 'options_importDownloadError',
-        message: 'Error downloading backup file!'
-      });
-    };
-    $scope.restoreOnline = function() {
-      omegaTarget.state('web.restoreOnlineUrl', $scope.restoreOnlineUrl);
-      $scope.restoringOnline = true;
-      return $http({
-        method: 'GET',
-        url: $scope.restoreOnlineUrl,
-        cache: false,
-        timeout: 10000,
-        responseType: "text"
-      }).then((function(result) {
-        return $rootScope.resetOptions(result.data).then((function() {
-          return $scope.importSuccess();
-        }), function() {
-          return $scope.restoreLocalError();
-        });
-      }), $scope.downloadError)["finally"](function() {
-        return $scope.restoringOnline = false;
-      });
-    };
     $scope.enableOptionsSync = function(args) {
       var enable;
       enable = function() {
