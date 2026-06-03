@@ -19,7 +19,7 @@ type Alert = {
   message?: string;
 };
 
-type BackupRestoreProps = {
+type ImportExportProps = {
   embedded?: boolean;
   onDisableOptionsSync?: () => Promise<any> | any;
   onEnableOptionsSync?: (args?: {force?: boolean}) => Promise<any> | any;
@@ -62,7 +62,7 @@ function storedRestoreUrl() {
   }
 }
 
-function BackupRestore({
+function ImportExport({
   embedded = false,
   onDisableOptionsSync,
   onEnableOptionsSync,
@@ -77,7 +77,7 @@ function BackupRestore({
   restoreOnlineUrl,
   showAlert,
   syncOptions
-}: BackupRestoreProps) {
+}: ImportExportProps) {
   const [options, setOptions] = useState<Options | null>(() => embedded && initialOptions ? initialOptions : null);
   const [restoreUrl, setRestoreUrl] = useState(() => restoreOnlineUrl || storedRestoreUrl());
   const [status, setStatus] = useState<'loading' | 'ready' | 'exporting' | 'restoringLocal' | 'restoringOnline' | 'success' | 'error'>(() => embedded && initialOptions ? 'ready' : 'loading');
@@ -414,12 +414,12 @@ function BackupRestore({
   );
 }
 
-function mount(element: Element, props: BackupRestoreProps = {}) {
+function mount(element: Element, props: ImportExportProps = {}) {
   const root = createRoot(element);
-  function render(nextProps: BackupRestoreProps = props) {
+  function render(nextProps: ImportExportProps = props) {
     props = nextProps;
     flushSync(() => {
-      root.render(<BackupRestore {...props} />);
+      root.render(<ImportExport {...props} />);
     });
   }
   render(props);
@@ -430,7 +430,7 @@ function mount(element: Element, props: BackupRestoreProps = {}) {
 }
 
 const globalWindow = window as any;
-globalWindow.OmegaReactBackupRestore = {
+globalWindow.OmegaReactImportExport = {
   mount
 };
 

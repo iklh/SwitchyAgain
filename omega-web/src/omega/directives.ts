@@ -30,7 +30,7 @@
     };
   });
 
-  angular.module('omega').directive('omegaReactBackupRestore', function($timeout, omegaTarget) {
+  angular.module('omega').directive('omegaReactImportExport', function($timeout, omegaTarget) {
     return {
       restrict: 'A',
       link: function(scope, element) {
@@ -116,7 +116,7 @@
         };
         mount = function() {
           var bridge;
-          bridge = window.OmegaReactBackupRestore;
+          bridge = window.OmegaReactImportExport;
           if (bridge != null ? bridge.mount : void 0) {
             mounted = bridge.mount(element[0], props());
             unwatchRestoreUrl = scope.$watch('restoreOnlineUrl', render);

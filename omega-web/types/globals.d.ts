@@ -64,7 +64,10 @@ interface Window {
       unmount: () => void;
     };
   };
-  OmegaReactBackupRestore?: {
-    mount: (element: Element, props?: any) => () => void;
+  OmegaReactImportExport?: {
+    mount: (element: Element, props?: any) => {
+      render: (props?: any) => void;
+      unmount: () => void;
+    };
   };
 }

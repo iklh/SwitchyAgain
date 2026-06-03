@@ -25,7 +25,7 @@
 
   $script('react/general.js', 'react-general');
 
-  $script('react/backup_restore.js', 'react-backup-restore');
+  $script('react/import_export.js', 'react-import-export');
 
   $script('lib/spin.js/spin.js', function() {
     return $script('lib/ladda/ladda.min.js', function() {
