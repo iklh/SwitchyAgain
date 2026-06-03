@@ -209,7 +209,6 @@ async function main() {
     'delete_attached',
     'delete_profile',
     'fixed_auth_edit',
-    'general',
     'input_group_clear',
     'io',
     'new_profile',
