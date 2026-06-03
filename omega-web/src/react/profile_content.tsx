@@ -134,6 +134,52 @@ type SwitchRuleTableHeaderProps = {
   showNotes?: boolean;
 };
 
+type SwitchRuleCondition = {
+  conditionType?: string;
+  days?: string;
+  endHour?: number | string;
+  maxValue?: number | string;
+  minValue?: number | string;
+  pattern?: string;
+  startHour?: number | string;
+  [key: string]: any;
+};
+
+type SwitchRuleModel = {
+  condition: SwitchRuleCondition;
+  note?: string;
+  profileName?: string;
+};
+
+type ConditionTypeOption = {
+  group: string;
+  type: string;
+};
+
+type SwitchRuleRowProps = {
+  conditionHasWarning?: (condition: SwitchRuleCondition) => boolean;
+  conditionTypes?: ConditionTypeOption[];
+  dispName?: (profile: Profile) => string;
+  formatIpCondition?: (condition: SwitchRuleCondition) => string;
+  index: number;
+  isUrlConditionType?: Record<string, boolean>;
+  onAddNote?: (index: number) => void;
+  onCloneRule?: (index: number) => void;
+  onConditionFieldChange?: (index: number, field: string, value: any) => void;
+  onConditionReplace?: (index: number, condition: SwitchRuleCondition) => void;
+  onConditionTypeChange?: (index: number, type: string) => void;
+  onIpConditionInputChange?: (index: number, value: string) => void;
+  onNoteChange?: (index: number, note: string) => void;
+  onProfileChange?: (index: number, name: string) => void;
+  onRemoveRule?: (index: number) => void;
+  onWeekdayChange?: (index: number, dayIndex: number, selected: boolean) => void;
+  options?: Options | null;
+  resultProfiles?: Profile[];
+  rule: SwitchRuleModel;
+  showNotes?: boolean;
+  weekdayList?: boolean[];
+};
+
 type SwitchRuleFooterProps = {
   attached?: RuleListProfileModel | null;
   attachedOptions?: {
@@ -152,6 +198,19 @@ type SwitchRuleFooterProps = {
   ruleListIcon?: string;
   showNotes?: boolean;
 };
+
+function groupedConditionTypes(conditionTypes: ConditionTypeOption[] = []) {
+  const groups: Record<string, ConditionTypeOption[]> = {};
+  const order: string[] = [];
+  for (const conditionType of conditionTypes) {
+    if (!groups[conditionType.group]) {
+      groups[conditionType.group] = [];
+      order.push(conditionType.group);
+    }
+    groups[conditionType.group].push(conditionType);
+  }
+  return order.map((group) => ({group, types: groups[group]}));
+}
 
 function messageWithNodes(
   key: string,
@@ -213,6 +272,207 @@ function ClearableInput({
         </button>
       </span>
     </div>
+  );
+}
+
+function SwitchRuleRow({
+  conditionHasWarning,
+  conditionTypes = [],
+  dispName,
+  formatIpCondition,
+  index,
+  isUrlConditionType = {},
+  onAddNote,
+  onCloneRule,
+  onConditionFieldChange,
+  onConditionTypeChange,
+  onIpConditionInputChange,
+  onNoteChange,
+  onProfileChange,
+  onRemoveRule,
+  onWeekdayChange,
+  options,
+  resultProfiles,
+  rule,
+  showNotes = false,
+  weekdayList = []
+}: SwitchRuleRowProps) {
+  const condition = rule.condition || {};
+  const conditionType = condition.conditionType || '';
+  const conditionGroups = groupedConditionTypes(conditionTypes);
+  const hasUrlIcon = !!isUrlConditionType[conditionType];
+  const hasWarning = conditionHasWarning?.(condition);
+
+  function changeField(field: string, value: any) {
+    onConditionFieldChange?.(index, field, value);
+  }
+
+  function renderConditionDetails() {
+    switch (conditionType) {
+      case 'FalseCondition':
+        return condition.pattern ? (
+          <span>
+            <input
+              className="form-control"
+              value={condition.pattern || ''}
+              disabled
+              title={message('condition_details_FalseCondition', 'Never')}
+              onChange={() => undefined}
+            />
+          </span>
+        ) : (
+          <span>{message('condition_details_FalseCondition', 'Never')}</span>
+        );
+      case 'HostLevelsCondition':
+        return (
+          <span className="host-levels-details">
+            <input
+              className="form-control"
+              type="number"
+              min={1}
+              max={99}
+              required
+              value={condition.minValue ?? ''}
+              onChange={(event) => changeField('minValue', event.currentTarget.value)}
+            />{' '}
+            <span>{message('options_hostLevelsBetween', 'to')}</span>{' '}
+            <input
+              className="form-control"
+              type="number"
+              min={1}
+              max={99}
+              required
+              value={condition.maxValue ?? ''}
+              onChange={(event) => changeField('maxValue', event.currentTarget.value)}
+            />
+          </span>
+        );
+      case 'IpCondition':
+        return (
+          <span>
+            <input
+              className="form-control"
+              type="text"
+              required
+              placeholder="127.0.0.1/8"
+              value={formatIpCondition?.(condition) || ''}
+              onChange={(event) => onIpConditionInputChange?.(index, event.currentTarget.value)}
+            />
+          </span>
+        );
+      case 'TimeCondition':
+        return (
+          <span className="host-levels-details">
+            <input
+              className="form-control"
+              type="number"
+              min={0}
+              max={23}
+              required
+              value={condition.startHour ?? ''}
+              onChange={(event) => changeField('startHour', event.currentTarget.value)}
+            />{' '}
+            <span>{message('options_hourBetween', 'to')}</span>{' '}
+            <input
+              className="form-control"
+              type="number"
+              min={0}
+              max={23}
+              required
+              value={condition.endHour ?? ''}
+              onChange={(event) => changeField('endHour', event.currentTarget.value)}
+            />
+          </span>
+        );
+      case 'WeekdayCondition':
+        return (
+          <span className="host-levels-details">
+            {weekdayList.map((selected, dayIndex) => (
+              <label className="checkbox-inline" key={dayIndex}>
+                <input
+                  type="checkbox"
+                  checked={!!selected}
+                  onChange={(event) => onWeekdayChange?.(index, dayIndex, event.currentTarget.checked)}
+                />
+                {message(`options_weekDayShort_${dayIndex}`, String(dayIndex))}
+              </label>
+            ))}
+          </span>
+        );
+      default:
+        return (
+          <input
+            className="form-control"
+            value={condition.pattern || ''}
+            required
+            onChange={(event) => changeField('pattern', event.currentTarget.value)}
+          />
+        );
+    }
+  }
+
+  return (
+    <tr className="switch-rule-row">
+      <td className="sort-bar">
+        <span className="glyphicon glyphicon-sort" />
+      </td>
+      <td className={hasUrlIcon ? 'has-icon' : undefined}>
+        <select
+          className="form-control"
+          value={conditionType}
+          onChange={(event) => onConditionTypeChange?.(index, event.currentTarget.value)}
+        >
+          {conditionGroups.map(({group, types}) => (
+            <optgroup key={group} label={message(group, group)}>
+              {types.map((type) => (
+                <option key={type.type} value={type.type}>
+                  {message(`condition_${type.type}`, type.type)}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        {hasUrlIcon && (
+          <a className="icon-wrapper" href={message('condition_alert_fullUrlLimitationLink', '#')} target="_blank" rel="noreferrer">
+            <span className="glyphicon glyphicon-alert text-danger" />
+          </a>
+        )}
+      </td>
+      <td className={hasWarning ? 'has-warning' : undefined}>{renderConditionDetails()}</td>
+      <td className="switch-rule-row-target">
+        <div className={conditionType === 'NeverCondition' ? 'disabled' : undefined}>
+          <ProfileSelect
+            dispName={dispName}
+            name={rule.profileName || ''}
+            onChange={(name) => onProfileChange?.(index, name)}
+            options={options}
+            profiles={resultProfiles}
+          />
+        </div>
+      </td>
+      <td>
+        <button type="button" className="btn btn-danger btn-sm" title={message('options_deleteRule', 'Delete rule')} onClick={() => onRemoveRule?.(index)}>
+          <span className="glyphicon glyphicon-trash" />
+        </button>{' '}
+        <button type="button" className="btn btn-default btn-sm" title={message('options_cloneRule', 'Clone rule')} onClick={() => onCloneRule?.(index)}>
+          <span className="glyphicon glyphicon-duplicate" />
+        </button>{' '}
+        {!showNotes && (
+          <button type="button" className="btn btn-default btn-sm" title={message('options_ruleNote', 'Note')} onClick={() => onAddNote?.(index)}>
+            <span className="glyphicon glyphicon-comment" />
+          </button>
+        )}
+      </td>
+      {showNotes && (
+        <td>
+          <input
+            className="form-control"
+            value={rule.note || ''}
+            onChange={(event) => onNoteChange?.(index, event.currentTarget.value)}
+          />
+        </td>
+      )}
+    </tr>
   );
 }
 
