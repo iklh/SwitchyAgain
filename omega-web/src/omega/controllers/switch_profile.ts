@@ -2,7 +2,7 @@
   var hasProp = {}.hasOwnProperty;
 
   angular.module('omega').controller('SwitchProfileCtrl', function($scope, $rootScope, $location, $timeout, $q, $modal, profileIcons, getAttachedName, omegaTarget, trFilter, downloadFile, $window) {
-    var advancedConditionTypesExpanded, attachedReady, attachedReadyDefer, basicConditionTypeSet, basicConditionTypesExpanded, cancelRuleBatchSchedule, expandGroups, exportLegacyRuleList, exportRuleList, initialRuleBatchSize, j, len, oldLastUpdate, oldRuleList, oldSourceUrl, onAttachedChange, parseOmegaRules, parseSource, renderRuleBatch, renderRuleBatchSize, renderRuleBatchTimer, resetVisibleRules, rulesReady, rulesReadyDefer, scheduleRuleBatch, stateEditorKey, stopWatchingForRules, type, unwatchRules, unwatchRulesShowNote, updateHasConditionTypes;
+    var advancedConditionTypesExpanded, attachedReady, attachedReadyDefer, basicConditionTypeSet, basicConditionTypesExpanded, cancelRuleBatchSchedule, exportLegacyRuleList, exportRuleList, initialRuleBatchSize, oldLastUpdate, oldRuleList, oldSourceUrl, onAttachedChange, parseOmegaRules, parseSource, renderRuleBatch, renderRuleBatchSize, renderRuleBatchTimer, resetVisibleRules, rulesReady, rulesReadyDefer, scheduleRuleBatch, stateEditorKey, stopWatchingForRules, unwatchRules, unwatchRulesShowNote, updateHasConditionTypes;
     $scope.ruleListFormats = OmegaPac.Profiles.ruleListFormats;
     exportRuleList = function() {
       var blob, eol, fileName, info, text;
@@ -54,91 +54,28 @@
     $scope.conditionHelp = {
       show: $location.search().help === 'condition'
     };
-    $scope.basicConditionTypes = [
-      {
-        group: 'default',
-        types: ['HostWildcardCondition', 'UrlWildcardCondition', 'UrlRegexCondition', 'FalseCondition']
-      }
-    ];
-    $scope.advancedConditionTypes = [
-      {
-        group: 'host',
-        types: ['HostWildcardCondition', 'HostRegexCondition', 'HostLevelsCondition', 'IpCondition']
-      }, {
-        group: 'url',
-        types: ['UrlWildcardCondition', 'UrlRegexCondition', 'KeywordCondition']
-      }, {
-        group: 'special',
-        types: ['WeekdayCondition', 'TimeCondition', 'FalseCondition']
-      }
-    ];
-    expandGroups = function(groups) {
-      var group, j, k, len, len1, ref, result, type;
-      result = [];
-      for (j = 0, len = groups.length; j < len; j++) {
-        group = groups[j];
-        ref = group.types;
-        for (k = 0, len1 = ref.length; k < len1; k++) {
-          type = ref[k];
-          result.push({
-            type: type,
-            group: 'condition_group_' + group.group
-          });
-        }
-      }
-      return result;
-    };
-    basicConditionTypesExpanded = expandGroups($scope.basicConditionTypes);
-    advancedConditionTypesExpanded = expandGroups($scope.advancedConditionTypes);
-    basicConditionTypeSet = {};
-    for (j = 0, len = basicConditionTypesExpanded.length; j < len; j++) {
-      type = basicConditionTypesExpanded[j];
-      basicConditionTypeSet[type.type] = type.type;
-    }
+    $scope.basicConditionTypes = OmegaSwitchProfileRules.getBasicConditionGroups();
+    $scope.advancedConditionTypes = OmegaSwitchProfileRules.getAdvancedConditionGroups();
+    basicConditionTypesExpanded = OmegaSwitchProfileRules.expandConditionGroups($scope.basicConditionTypes);
+    advancedConditionTypesExpanded = OmegaSwitchProfileRules.expandConditionGroups($scope.advancedConditionTypes);
+    basicConditionTypeSet = OmegaSwitchProfileRules.createConditionTypeSet(basicConditionTypesExpanded);
     $scope.conditionTypes = basicConditionTypesExpanded;
     $scope.showConditionTypes = 0;
     $scope.hasConditionTypes = 0;
     $scope.hasUrlConditions = false;
-    $scope.isUrlConditionType = {
-      'UrlWildcardCondition': true,
-      'UrlRegexCondition': true
-    };
+    $scope.isUrlConditionType = OmegaSwitchProfileRules.getUrlConditionTypeMap();
     updateHasConditionTypes = function() {
-      var k, l, len1, len2, ref, ref1, ref2, results, rule;
+      var flags, ref;
       if (((ref = $scope.profile) != null ? ref.rules : void 0) == null) {
         return;
       }
-      $scope.hasUrlConditions = false;
-      ref1 = $scope.profile.rules;
-      for (k = 0, len1 = ref1.length; k < len1; k++) {
-        rule = ref1[k];
-        if ($scope.isUrlConditionType[rule.condition.conditionType]) {
-          $scope.hasUrlConditions = true;
-          break;
-        }
-      }
-      if ($scope.hasConditionTypes !== 0) {
+      flags = OmegaSwitchProfileRules.inspectRules($scope.profile.rules, $scope.isUrlConditionType, basicConditionTypeSet, $scope.hasConditionTypes === 0);
+      $scope.hasUrlConditions = flags.hasUrlConditions;
+      if ($scope.hasConditionTypes !== 0 || !flags.hasConditionTypes) {
         return;
       }
-      ref2 = $scope.profile.rules;
-      results = [];
-      for (l = 0, len2 = ref2.length; l < len2; l++) {
-        rule = ref2[l];
-        if (rule.condition.conditionType === 'TrueCondition') {
-          rule.condition = {
-            conditionType: 'HostWildcardCondition',
-            pattern: '*'
-          };
-        }
-        if (!basicConditionTypeSet[rule.condition.conditionType]) {
-          $scope.hasConditionTypes = 1;
-          $scope.showConditionTypes = 1;
-          break;
-        } else {
-          results.push(void 0);
-        }
-      }
-      return results;
+      $scope.hasConditionTypes = 1;
+      return $scope.showConditionTypes = 1;
     };
     $scope.$watch('options["-showConditionTypes"]', function(show) {
       show || (show = 0);

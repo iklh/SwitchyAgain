@@ -1,6 +1,100 @@
 namespace OmegaSwitchProfileRules {
+  var basicConditionGroups = [
+    {
+      group: 'default',
+      types: ['HostWildcardCondition', 'UrlWildcardCondition', 'UrlRegexCondition', 'FalseCondition']
+    }
+  ];
+  var advancedConditionGroups = [
+    {
+      group: 'host',
+      types: ['HostWildcardCondition', 'HostRegexCondition', 'HostLevelsCondition', 'IpCondition']
+    }, {
+      group: 'url',
+      types: ['UrlWildcardCondition', 'UrlRegexCondition', 'KeywordCondition']
+    }, {
+      group: 'special',
+      types: ['WeekdayCondition', 'TimeCondition', 'FalseCondition']
+    }
+  ];
+
   function cloneValue(value) {
     return angular.fromJson(angular.toJson(value));
+  }
+
+  export function getBasicConditionGroups() {
+    return cloneValue(basicConditionGroups);
+  }
+
+  export function getAdvancedConditionGroups() {
+    return cloneValue(advancedConditionGroups);
+  }
+
+  export function expandConditionGroups(groups) {
+    var group, j, k, len, len1, ref, result, type;
+    result = [];
+    for (j = 0, len = groups.length; j < len; j++) {
+      group = groups[j];
+      ref = group.types;
+      for (k = 0, len1 = ref.length; k < len1; k++) {
+        type = ref[k];
+        result.push({
+          type: type,
+          group: 'condition_group_' + group.group
+        });
+      }
+    }
+    return result;
+  }
+
+  export function createConditionTypeSet(conditionTypes) {
+    var j, len, result, type;
+    result = {};
+    for (j = 0, len = conditionTypes.length; j < len; j++) {
+      type = conditionTypes[j];
+      result[type.type] = type.type;
+    }
+    return result;
+  }
+
+  export function getUrlConditionTypeMap() {
+    return {
+      'UrlWildcardCondition': true,
+      'UrlRegexCondition': true
+    };
+  }
+
+  export function inspectRules(rules, isUrlConditionType, basicConditionTypeSet, updateAdvancedState) {
+    var hasConditionTypes, hasUrlConditions, j, len, rule;
+    hasConditionTypes = false;
+    hasUrlConditions = false;
+    if (!rules) {
+      return {
+        hasConditionTypes: hasConditionTypes,
+        hasUrlConditions: hasUrlConditions
+      };
+    }
+    for (j = 0, len = rules.length; j < len; j++) {
+      rule = rules[j];
+      if (isUrlConditionType[rule.condition.conditionType]) {
+        hasUrlConditions = true;
+      }
+      if (updateAdvancedState) {
+        if (rule.condition.conditionType === 'TrueCondition') {
+          rule.condition = {
+            conditionType: 'HostWildcardCondition',
+            pattern: '*'
+          };
+        }
+        if (!basicConditionTypeSet[rule.condition.conditionType]) {
+          hasConditionTypes = true;
+        }
+      }
+    }
+    return {
+      hasConditionTypes: hasConditionTypes,
+      hasUrlConditions: hasUrlConditions
+    };
   }
 
   export function createRule(rules, defaultProfileName) {
