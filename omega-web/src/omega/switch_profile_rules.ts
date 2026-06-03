@@ -97,6 +97,44 @@ namespace OmegaSwitchProfileRules {
     };
   }
 
+  export function composeOmegaRuleList(rules, defaultProfileName, usageUrl, dateText) {
+    var eol, info, text;
+    text = OmegaPac.RuleList.Switchy.compose({
+      rules: rules,
+      defaultProfileName: defaultProfileName
+    });
+    eol = '\r\n';
+    info = '\n';
+    info += '; Require: SwitchyOmega >= 2.3.2' + eol;
+    info += ("; Date: " + dateText) + eol;
+    info += ("; Usage: " + usageUrl) + eol;
+    return text.replace('\n', info);
+  }
+
+  export function composeLegacyRuleList(rules, defaultProfileName, usageUrl, dateText) {
+    var i, j, len, regexpRules, rule, wildcardRules;
+    wildcardRules = '';
+    regexpRules = '';
+    for (j = 0, len = rules.length; j < len; j++) {
+      rule = rules[j];
+      i = '';
+      if (rule.profileName === defaultProfileName) {
+        i = '!';
+      }
+      switch (rule.condition.conditionType) {
+        case 'HostWildcardCondition':
+          wildcardRules += i + '@*://' + rule.condition.pattern + '/*' + '\r\n';
+          break;
+        case 'UrlWildcardCondition':
+          wildcardRules += i + '@' + rule.condition.pattern + '\r\n';
+          break;
+        case 'UrlRegexCondition':
+          regexpRules += i + rule.condition.pattern + '\r\n';
+      }
+    }
+    return "; Summary: Proxy Switchy! Exported Rule List\n; Date: " + dateText + "\n; Website: " + usageUrl + "\n\n#BEGIN\n\n[wildcard]\n" + wildcardRules + "\n[regexp]\n" + regexpRules + "\n#END";
+  }
+
   export function createRule(rules, defaultProfileName) {
     var rule;
     if (rules.length > 0) {

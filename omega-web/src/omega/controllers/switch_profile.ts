@@ -5,17 +5,8 @@
     var advancedConditionTypesExpanded, attachedReady, attachedReadyDefer, basicConditionTypeSet, basicConditionTypesExpanded, cancelRuleBatchSchedule, exportLegacyRuleList, exportRuleList, initialRuleBatchSize, oldLastUpdate, oldRuleList, oldSourceUrl, onAttachedChange, parseOmegaRules, parseSource, renderRuleBatch, renderRuleBatchSize, renderRuleBatchTimer, resetVisibleRules, rulesReady, rulesReadyDefer, scheduleRuleBatch, stateEditorKey, stopWatchingForRules, unwatchRules, unwatchRulesShowNote, updateHasConditionTypes;
     $scope.ruleListFormats = OmegaPac.Profiles.ruleListFormats;
     exportRuleList = function() {
-      var blob, eol, fileName, info, text;
-      text = OmegaPac.RuleList.Switchy.compose({
-        rules: $scope.profile.rules,
-        defaultProfileName: $scope.attachedOptions.defaultProfileName
-      });
-      eol = '\r\n';
-      info = '\n';
-      info += '; Require: SwitchyOmega >= 2.3.2' + eol;
-      info += ("; Date: " + (new Date().toLocaleDateString())) + eol;
-      info += ("; Usage: " + (trFilter('ruleList_usageUrl'))) + eol;
-      text = text.replace('\n', info);
+      var blob, fileName, text;
+      text = OmegaSwitchProfileRules.composeOmegaRuleList($scope.profile.rules, $scope.attachedOptions.defaultProfileName, trFilter('ruleList_usageUrl'), new Date().toLocaleDateString());
       blob = new Blob([text], {
         type: "text/plain;charset=utf-8"
       });
@@ -23,28 +14,8 @@
       return downloadFile(blob, "OmegaRules_" + fileName + ".sorl");
     };
     exportLegacyRuleList = function() {
-      var blob, fileName, i, j, len, ref, regexpRules, rule, text, wildcardRules;
-      wildcardRules = '';
-      regexpRules = '';
-      ref = $scope.profile.rules;
-      for (j = 0, len = ref.length; j < len; j++) {
-        rule = ref[j];
-        i = '';
-        if (rule.profileName === $scope.attachedOptions.defaultProfileName) {
-          i = '!';
-        }
-        switch (rule.condition.conditionType) {
-          case 'HostWildcardCondition':
-            wildcardRules += i + '@*://' + rule.condition.pattern + '/*' + '\r\n';
-            break;
-          case 'UrlWildcardCondition':
-            wildcardRules += i + '@' + rule.condition.pattern + '\r\n';
-            break;
-          case 'UrlRegexCondition':
-            regexpRules += i + rule.condition.pattern + '\r\n';
-        }
-      }
-      text = "; Summary: Proxy Switchy! Exported Rule List\n; Date: " + (new Date().toLocaleDateString()) + "\n; Website: " + (trFilter('ruleList_usageUrl')) + "\n\n#BEGIN\n\n[wildcard]\n" + wildcardRules + "\n[regexp]\n" + regexpRules + "\n#END";
+      var blob, fileName, text;
+      text = OmegaSwitchProfileRules.composeLegacyRuleList($scope.profile.rules, $scope.attachedOptions.defaultProfileName, trFilter('ruleList_usageUrl'), new Date().toLocaleDateString());
       blob = new Blob([text], {
         type: "text/plain;charset=utf-8"
       });
