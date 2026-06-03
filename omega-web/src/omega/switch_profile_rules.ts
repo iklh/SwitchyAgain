@@ -1,4 +1,5 @@
 namespace OmegaSwitchProfileRules {
+  var hasProp = {}.hasOwnProperty;
   var basicConditionGroups = [
     {
       group: 'default',
@@ -133,6 +134,59 @@ namespace OmegaSwitchProfileRules {
       }
     }
     return "; Summary: Proxy Switchy! Exported Rule List\n; Date: " + dateText + "\n; Website: " + usageUrl + "\n\n#BEGIN\n\n[wildcard]\n" + wildcardRules + "\n[regexp]\n" + regexpRules + "\n#END";
+  }
+
+  export function parseOmegaRules(code, profilesByKey, arg, translateError) {
+    var detect, err, key, name, ref, refs, requireResult, setError;
+    ref = arg != null ? arg : {}, detect = ref.detect, requireResult = ref.requireResult;
+    setError = function(error) {
+      var message;
+      if (error.reason) {
+        message = translateError(error);
+        if (message) {
+          error.message = message;
+        }
+      }
+      return {
+        error: error
+      };
+    };
+    if (detect && !OmegaPac.RuleList.Switchy.detect(code)) {
+      return {
+        error: {
+          reason: 'notSwitchy'
+        }
+      };
+    }
+    refs = OmegaPac.RuleList.Switchy.directReferenceSet({
+      ruleList: code
+    });
+    if (requireResult && !refs) {
+      return setError({
+        reason: 'resultNotEnabled'
+      });
+    }
+    for (key in refs) {
+      if (!hasProp.call(refs, key)) continue;
+      name = refs[key];
+      if (!OmegaPac.Profiles.byKey(key, profilesByKey)) {
+        return setError({
+          reason: 'unknownProfile',
+          args: [name]
+        });
+      }
+    }
+    try {
+      return {
+        rules: OmegaPac.RuleList.Switchy.parseOmega(code, null, null, {
+          strict: true,
+          source: false
+        })
+      };
+    } catch (error1) {
+      err = error1;
+      return setError(err);
+    }
   }
 
   export function createRule(rules, defaultProfileName) {

@@ -1,6 +1,4 @@
 (function() {
-  var hasProp = {}.hasOwnProperty;
-
   angular.module('omega').controller('SwitchProfileCtrl', function($scope, $rootScope, $location, $timeout, $q, $modal, profileIcons, getAttachedName, omegaTarget, trFilter, downloadFile, $window) {
     var advancedConditionTypesExpanded, attachedReady, attachedReadyDefer, basicConditionTypeSet, basicConditionTypesExpanded, cancelRuleBatchSchedule, exportLegacyRuleList, exportRuleList, initialRuleBatchSize, oldLastUpdate, oldRuleList, oldSourceUrl, onAttachedChange, parseOmegaRules, parseSource, renderRuleBatch, renderRuleBatchSize, renderRuleBatchTimer, resetVisibleRules, rulesReady, rulesReadyDefer, scheduleRuleBatch, stateEditorKey, stopWatchingForRules, unwatchRules, unwatchRulesShowNote, updateHasConditionTypes;
     $scope.ruleListFormats = OmegaPac.Profiles.ruleListFormats;
@@ -342,57 +340,12 @@
     });
     $scope.editSource = false;
     parseOmegaRules = function(code, arg) {
-      var detect, err, key, name, ref, refs, requireResult, setError;
-      ref = arg != null ? arg : {}, detect = ref.detect, requireResult = ref.requireResult;
-      setError = function(error) {
+      return OmegaSwitchProfileRules.parseOmegaRules(code, $scope.options, arg, function(error) {
         var args, message, ref1;
-        if (error.reason) {
-          args = (ref1 = error.args) != null ? ref1 : [error.sourceLineNo, error.source];
-          message = trFilter('ruleList_error_' + error.reason, args);
-          if (message) {
-            error.message = message;
-          }
-        }
-        return {
-          error: error
-        };
-      };
-      if (detect && !OmegaPac.RuleList.Switchy.detect(code)) {
-        return {
-          error: {
-            reason: 'notSwitchy'
-          }
-        };
-      }
-      refs = OmegaPac.RuleList.Switchy.directReferenceSet({
-        ruleList: code
+        args = (ref1 = error.args) != null ? ref1 : [error.sourceLineNo, error.source];
+        message = trFilter('ruleList_error_' + error.reason, args);
+        return message;
       });
-      if (requireResult && !refs) {
-        return setError({
-          reason: 'resultNotEnabled'
-        });
-      }
-      for (key in refs) {
-        if (!hasProp.call(refs, key)) continue;
-        name = refs[key];
-        if (!OmegaPac.Profiles.byKey(key, $scope.options)) {
-          return setError({
-            reason: 'unknownProfile',
-            args: [name]
-          });
-        }
-      }
-      try {
-        return {
-          rules: OmegaPac.RuleList.Switchy.parseOmega(code, null, null, {
-            strict: true,
-            source: false
-          })
-        };
-      } catch (error1) {
-        err = error1;
-        return setError(err);
-      }
     };
     parseSource = function() {
       var diff, error, oldRules, patch, ref, rules;
