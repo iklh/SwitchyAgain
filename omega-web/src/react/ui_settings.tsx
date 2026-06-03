@@ -290,55 +290,6 @@ function UiSettings({embedded = false, options, onOptionsChange, onOpenShortcutC
       )}
 
       <section className="settings-group">
-        <h3>{message('options_group_switchOptions', 'Switch Options')}</h3>
-        <div className="form-group">
-          <label htmlFor="react-startup-profile">{message('options_startupProfile', 'Startup Profile')}</label>{' '}
-          <ProfileSelect
-            defaultText={message('options_startupProfile_none', '(Current Profile)')}
-            dispName={displayProfileName}
-            name={draftOptions['-startupProfileName'] || ''}
-            onChange={(name) => updateOption('-startupProfileName', name)}
-            profiles={allProfiles}
-          />
-        </div>
-        <div className="checkbox">
-          <label>
-            <input
-              type="checkbox"
-              checked={Boolean(draftOptions['-showConditionTypes'])}
-              onChange={(event) => updateOption('-showConditionTypes', event.currentTarget.checked ? 1 : 0)}
-            />
-            <span> {message('options_showConditionTypesAdvanced', 'Show advanced condition types')}</span>
-          </label>
-          <p className="help-block">{message('options_showConditionTypesAdvancedHelp', 'Unlock advanced condition types.')}</p>
-        </div>
-        <div className="checkbox">
-          <label>
-            <input
-              type="checkbox"
-              checked={Boolean(draftOptions['-enableQuickSwitch'])}
-              onChange={(event) => updateOption('-enableQuickSwitch', event.currentTarget.checked)}
-            />
-            <span> {message('options_quickSwitch', 'Quick Switch')}</span>
-          </label>
-        </div>
-        {Boolean(draftOptions['-enableQuickSwitch']) && (
-          <div id="quick-switch-settings" className="settings-group">
-            <h4>{message('options_cycledProfiles', 'Cycled Profiles')}</h4>
-            <p className="help-block">{message('options_cycledProfilesHelp', 'Cycle through these profiles when using Quick Switch.')}</p>
-            {quickSwitchProfiles.length < 2 && (
-              <div className="has-error">
-                <p className="help-block">{message('options_cycledProfilesTooFew', 'At least 2 profiles are required for cycling.')}</p>
-              </div>
-            )}
-            <QuickSwitchList enabled names={quickSwitchProfiles} />
-            <h4>{message('options_notCycledProfiles', 'Not Cycled Profiles')}</h4>
-            <QuickSwitchList enabled={false} names={notCycledProfiles} />
-          </div>
-        )}
-      </section>
-
-      <section className="settings-group">
         <h3>{message('options_group_miscOptions', 'Misc Options')}</h3>
         <div className="checkbox">
           <label>
@@ -392,6 +343,56 @@ function UiSettings({embedded = false, options, onOptionsChange, onOpenShortcutC
           {message('options_menuShortcutHelp', 'Configure keyboard shortcuts in the extension settings.')}
         </p>
         <p className="help-block">{message('options_menuShortcutMore', 'More shortcut settings are available in the browser extension settings.')}</p>
+      </section>
+
+      <section className="settings-group">
+        <h3>{message('options_group_switchOptions', 'Switch Options')}</h3>
+        <div className="form-group">
+          <label htmlFor="react-startup-profile">{message('options_startupProfile', 'Startup Profile')}</label>{' '}
+          <ProfileSelect
+            defaultText={message('options_startupProfile_none', '(Current Profile)')}
+            dispName={displayProfileName}
+            inline
+            name={draftOptions['-startupProfileName'] || ''}
+            onChange={(name) => updateOption('-startupProfileName', name)}
+            profiles={allProfiles}
+          />
+        </div>
+        <div className="checkbox">
+          <label>
+            <input
+              type="checkbox"
+              checked={Boolean(draftOptions['-showConditionTypes'])}
+              onChange={(event) => updateOption('-showConditionTypes', event.currentTarget.checked ? 1 : 0)}
+            />
+            <span> {message('options_showConditionTypesAdvanced', 'Show advanced condition types')}</span>
+          </label>
+          <p className="help-block">{message('options_showConditionTypesAdvancedHelp', 'Unlock advanced condition types.')}</p>
+        </div>
+        <div className="checkbox">
+          <label>
+            <input
+              type="checkbox"
+              checked={Boolean(draftOptions['-enableQuickSwitch'])}
+              onChange={(event) => updateOption('-enableQuickSwitch', event.currentTarget.checked)}
+            />
+            <span> {message('options_quickSwitch', 'Quick Switch')}</span>
+          </label>
+        </div>
+        {Boolean(draftOptions['-enableQuickSwitch']) && (
+          <div id="quick-switch-settings" className="settings-group">
+            <h4>{message('options_cycledProfiles', 'Cycled Profiles')}</h4>
+            <p className="help-block">{message('options_cycledProfilesHelp', 'Cycle through these profiles when using Quick Switch.')}</p>
+            {quickSwitchProfiles.length < 2 && (
+              <div className="has-error">
+                <p className="help-block">{message('options_cycledProfilesTooFew', 'At least 2 profiles are required for cycling.')}</p>
+              </div>
+            )}
+            <QuickSwitchList enabled names={quickSwitchProfiles} />
+            <h4>{message('options_notCycledProfiles', 'Not Cycled Profiles')}</h4>
+            <QuickSwitchList enabled={false} names={notCycledProfiles} />
+          </div>
+        )}
       </section>
 
       {!embedded && (

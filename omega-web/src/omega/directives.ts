@@ -61,6 +61,15 @@
                 return result;
               });
             },
+            onImportSuccess: function() {
+              return invoke(function() {
+                return scope.$root.showAlert({
+                  type: 'success',
+                  i18n: 'options_importSuccess',
+                  message: 'Options imported.'
+                });
+              });
+            },
             onOptionsReplace: function(nextOptions, options) {
               return scope.$evalAsync(function() {
                 var dirty;
@@ -68,7 +77,9 @@
                 dirty = options.dirty;
                 scope.$root.options = nextOptions;
                 scope.$root.optionsOld = angular.copy(nextOptions);
-                return scope.$root.optionsDirty = dirty != null ? dirty : false;
+                return $timeout(function() {
+                  return scope.$root.optionsDirty = dirty != null ? dirty : false;
+                });
               });
             }
           };

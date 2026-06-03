@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Options} from './options_client';
 
 export type Profile = {
@@ -6,14 +6,6 @@ export type Profile = {
   color?: string;
   name?: string;
   profileType?: string;
-};
-
-const PROFILE_TYPE_ORDER: Record<string, number> = {
-  FixedProfile: -2000,
-  PacProfile: -1000,
-  VirtualProfile: 1000,
-  SwitchProfile: 2000,
-  RuleListProfile: 3000
 };
 
 const BUILTIN_PROFILES: Profile[] = [
@@ -74,19 +66,11 @@ export function profilesFromOptions(options?: Options | null) {
   }) as Profile[];
 }
 
-function profileOrder(a: Profile, b: Profile) {
-  const diff = (PROFILE_TYPE_ORDER[a.profileType || ''] || 0) - (PROFILE_TYPE_ORDER[b.profileType || ''] || 0);
-  if (diff !== 0) {
-    return diff;
-  }
-  return (a.name || '').localeCompare(b.name || '');
-}
-
 export function allProfilesFromOptions(options?: Options | null) {
   return profilesFromOptions(options).filter((profile) => {
     const name = profile.name || '';
     return name.charAt(0) !== '_';
-  }).concat(BUILTIN_PROFILES).sort(profileOrder);
+  }).concat(BUILTIN_PROFILES);
 }
 
 export function profileByName(options: Options | null | undefined, name: string) {
@@ -94,26 +78,51 @@ export function profileByName(options: Options | null | undefined, name: string)
 }
 
 export function ProfileSelect({
+  defaultIcon = 'glyphicon-time',
   defaultText,
   dispName,
+  inline = false,
   name,
   onChange,
   options,
   profiles
 }: {
+  defaultIcon?: string;
   defaultText?: string;
   dispName?: (profile: Profile) => string;
+  inline?: boolean;
   name: string;
   onChange: (name: string) => void;
   options?: Options | null;
   profiles?: Profile[];
 }) {
   const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
   const profileList = useMemo(() => profiles || profilesFromOptions(options), [options, profiles]);
   const selectedProfile = profileList.find((profile) => profile.name === name) || null;
   const buttonLabel = selectedProfile ? profileName(selectedProfile, dispName) : defaultText || '';
+  const selectStyle: React.CSSProperties = inline ? {display: 'inline-block', width: 'auto'} : {display: 'inline-block'};
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    function closeOnOutsidePointer(event: MouseEvent | TouchEvent) {
+      if (rootRef.current?.contains(event.target as Node)) {
+        return;
+      }
+      setOpen(false);
+    }
+    document.addEventListener('mousedown', closeOnOutsidePointer);
+    document.addEventListener('touchstart', closeOnOutsidePointer);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutsidePointer);
+      document.removeEventListener('touchstart', closeOnOutsidePointer);
+    };
+  }, [open]);
+
   return (
-    <div className={`btn-group omega-profile-select ${open ? 'open' : ''}`} style={{display: 'inline-block'}}>
+    <div ref={rootRef} className={`btn-group omega-profile-select ${open ? 'open' : ''}`} style={selectStyle}>
       <button
         type="button"
         className="btn btn-default dropdown-toggle"
@@ -122,7 +131,7 @@ export function ProfileSelect({
         role="listbox"
         onClick={() => setOpen(!open)}
       >
-        <ProfileIcon profile={selectedProfile} />{' '}
+        {selectedProfile ? <ProfileIcon profile={selectedProfile} /> : <span className={`glyphicon ${defaultIcon}`} />}{' '}
         <span>{buttonLabel}</span>{' '}
         <span className="caret" />
       </button>
@@ -134,7 +143,7 @@ export function ProfileSelect({
                 onChange('');
                 setOpen(false);
               }}>
-                {defaultText}
+                <span className={`glyphicon ${defaultIcon}`} /> {defaultText}
               </a>
             </li>
           )}

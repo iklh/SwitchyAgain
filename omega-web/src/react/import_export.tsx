@@ -21,6 +21,7 @@ const RESTORE_URL_STATE = 'web.restoreOnlineUrl';
 type ImportExportProps = {
   embedded?: boolean;
   onApplyOptions?: () => Promise<any> | any;
+  onImportSuccess?: () => Promise<any> | any;
   onOptionsReplace?: (nextOptions: Options, options?: {dirty?: boolean}) => void;
   options?: Options | null;
   optionsDirty?: boolean;
@@ -50,6 +51,7 @@ function storedRestoreUrl() {
 function ImportExport({
   embedded = false,
   onApplyOptions,
+  onImportSuccess,
   onOptionsReplace,
   options: initialOptions,
   optionsDirty = false,
@@ -87,6 +89,16 @@ function ImportExport({
     setStatus('success');
   }
 
+  function showImportSuccess() {
+    if (onImportSuccess) {
+      setError('');
+      setStatus('ready');
+      Promise.resolve(onImportSuccess()).catch(() => {});
+      return;
+    }
+    showSuccess();
+  }
+
   function showError(err: any, fallbackKey: string, fallback: string) {
     const messageText = errorMessage(err) || message(fallbackKey, fallback);
     setError(messageText);
@@ -116,7 +128,7 @@ function ImportExport({
       setOptions(loadedOptions);
       return Promise.resolve(onOptionsReplace?.(loadedOptions, {dirty: false}));
     }).then(() => {
-      showSuccess();
+      showImportSuccess();
     }).catch((err) => {
       showError(err, 'options_importFormatError', 'Invalid backup file!');
     });
