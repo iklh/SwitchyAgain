@@ -246,7 +246,6 @@ async function main() {
     'build-ts/omega/controllers/master.js',
     'build-ts/omega/controllers/pac_profile.js',
     'build-ts/omega/controllers/profile.js',
-    'build-ts/omega/controllers/quick_switch.js',
     'build-ts/omega/controllers/rule_list_profile.js',
     'build-ts/omega/controllers/switch_profile.js'
   ], 'build/js/omega.js');
