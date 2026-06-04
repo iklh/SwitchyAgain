@@ -17,6 +17,63 @@
     };
   });
 
+  module.directive('omegaReactPopupProfileLabel', function($timeout) {
+    return {
+      restrict: 'A',
+      scope: {
+        profile: '=profile',
+        icon: '&?icon',
+        options: '=options',
+        dispName: '=?dispName'
+      },
+      link: function(scope, element) {
+        var bridge, mount, mounted, props, render, unwatchers;
+        unwatchers = [];
+        props = function() {
+          return {
+            dispName: scope.dispName,
+            icon: scope.icon ? scope.icon() : void 0,
+            options: scope.options,
+            profile: scope.profile
+          };
+        };
+        render = function() {
+          if (mounted && mounted.render) {
+            return mounted.render(props());
+          }
+        };
+        mount = function() {
+          bridge = window.OmegaReactPopupMenu;
+          if (bridge && bridge.mountPopupProfileLabel) {
+            mounted = bridge.mountPopupProfileLabel(element[0], props());
+            unwatchers.push(scope.$watch('profile', render, true));
+            unwatchers.push(scope.$watch(function() {
+              return scope.icon ? scope.icon() : void 0;
+            }, render));
+            unwatchers.push(scope.$watch('options', render, true));
+            unwatchers.push(scope.$watch('dispName', render));
+          }
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
+        return scope.$on('$destroy', function() {
+          var k, len, unwatch;
+          for (k = 0, len = unwatchers.length; k < len; k++) {
+            unwatch = unwatchers[k];
+            if (unwatch) {
+              unwatch();
+            }
+          }
+          if (mounted && mounted.unmount) {
+            return mounted.unmount();
+          }
+        });
+      }
+    };
+  });
+
   moveUp = function(activeIndex, items) {
     var i, ref;
     i = activeIndex - 1;
