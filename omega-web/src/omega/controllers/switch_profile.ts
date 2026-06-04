@@ -1,33 +1,12 @@
 (function() {
   angular.module('omega').controller('SwitchProfileCtrl', function($scope, $rootScope, $location, $timeout, $q, $modal, profileIcons, getAttachedName, omegaTarget, trFilter, downloadFile, reactModalTemplates) {
-    var attachedReady, attachedReadyDefer, attachedSourceCache, conditionModeState, exportLegacyRuleList, exportRuleList, rulesReady, rulesReadyDefer, stateEditorKey, stopWatchingForRules, unwatchRules, unwatchRulesShowNote;
+    var attachedReady, attachedReadyDefer, attachedSourceCache, exportLegacyRuleList, exportRuleList, rulesReady, rulesReadyDefer, stateEditorKey, stopWatchingForRules, unwatchRules, unwatchRulesShowNote;
     exportRuleList = OmegaSwitchProfileExport.createExportRuleListAction($scope, trFilter, downloadFile);
     exportLegacyRuleList = OmegaSwitchProfileExport.createExportLegacyRuleListAction($scope, trFilter, downloadFile);
     $scope.conditionHelp = {
       show: $location.search().help === 'condition'
     };
-    conditionModeState = OmegaSwitchProfileOptions.createConditionModeState();
-    $scope.showConditionTypes = conditionModeState.showConditionTypes;
-    $scope.$watch('options["-showConditionTypes"]', function(show) {
-      var exportOptions;
-      $scope.showConditionTypes = OmegaSwitchProfileOptions.updateConditionMode($scope.profile, $scope.options, conditionModeState, show);
-      exportOptions = OmegaSwitchProfileOptions.exportHandlerOptions($scope.options, $scope.showConditionTypes);
-      if (exportOptions.legacy) {
-        return $scope.setExportRuleListHandler(exportLegacyRuleList);
-      }
-      $scope.setExportRuleListHandler(exportRuleList, exportOptions.warning ? {
-        warning: true
-      } : void 0);
-      if ($scope.showConditionTypes !== 0) {
-        return typeof unwatchRules === "function" ? unwatchRules() : void 0;
-      }
-    });
-    unwatchRules = $scope.$watch('profile.rules', function() {
-      if (OmegaSwitchProfileOptions.detectAdvancedConditionTypes($scope.profile, conditionModeState)) {
-        $scope.showConditionTypes = conditionModeState.showConditionTypes;
-        return typeof unwatchRules === "function" ? unwatchRules() : void 0;
-      }
-    }, true);
+    unwatchRules = OmegaSwitchProfileOptions.watchConditionMode($scope, exportRuleList, exportLegacyRuleList);
     rulesReadyDefer = $q.defer();
     rulesReady = rulesReadyDefer.promise;
     stopWatchingForRules = $scope.$watch('profile.rules', function(rules) {

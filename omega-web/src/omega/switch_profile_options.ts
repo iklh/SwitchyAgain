@@ -58,4 +58,31 @@ namespace OmegaSwitchProfileOptions {
       legacy: true
     };
   }
+
+  export function watchConditionMode(scope: any, exportRuleList: () => void, exportLegacyRuleList: () => void) {
+    var state, unwatchRules;
+    state = createConditionModeState();
+    scope.showConditionTypes = state.showConditionTypes;
+    scope.$watch('options["-showConditionTypes"]', function(show) {
+      var exportOptions;
+      scope.showConditionTypes = updateConditionMode(scope.profile, scope.options, state, show);
+      exportOptions = exportHandlerOptions(scope.options, scope.showConditionTypes);
+      if (exportOptions.legacy) {
+        return scope.setExportRuleListHandler(exportLegacyRuleList);
+      }
+      scope.setExportRuleListHandler(exportRuleList, exportOptions.warning ? {
+        warning: true
+      } : void 0);
+      if (scope.showConditionTypes !== 0) {
+        return typeof unwatchRules === "function" ? unwatchRules() : void 0;
+      }
+    });
+    unwatchRules = scope.$watch('profile.rules', function() {
+      if (detectAdvancedConditionTypes(scope.profile, state)) {
+        scope.showConditionTypes = state.showConditionTypes;
+        return typeof unwatchRules === "function" ? unwatchRules() : void 0;
+      }
+    }, true);
+    return unwatchRules;
+  }
 }
