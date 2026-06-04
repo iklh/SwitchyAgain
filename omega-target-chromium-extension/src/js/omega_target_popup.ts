@@ -25,6 +25,15 @@ function callBackground(method, args, cb) {
 var requestInfoCallback = null;
 var isManifestV3 = chrome.runtime.getManifest &&
   chrome.runtime.getManifest().manifest_version >= 3;
+var localStatePrefix = 'omega.local.';
+
+function cacheActivePageInfo(info) {
+  if (!info || !info.url || typeof localStorage === 'undefined') return;
+  try {
+    localStorage[localStatePrefix + 'web.last_page_info'] = JSON.stringify(info);
+  } catch (_) {
+  }
+}
 
 (globalThis as any).OmegaTargetPopup = {
   getState: function (keys, cb) {
@@ -73,7 +82,10 @@ var isManifestV3 = chrome.runtime.getManifest &&
     chrome.tabs.query({active: true, lastFocusedWindow: true}, function (tabs) {
       if (tabs.length === 0 || !tabs[0].url) return cb();
       var args = {tabId: tabs[0].id, url: tabs[0].url};
-      callBackground('getPageInfo', [args], cb)
+      callBackground('getPageInfo', [args], function(err, info) {
+        if (!err) cacheActivePageInfo(info);
+        cb(err, info);
+      })
     });
   },
   setDefaultProfile: function(profileName, defaultProfileName, cb) {

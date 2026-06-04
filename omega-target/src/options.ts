@@ -458,7 +458,9 @@ Options = (function() {
    */
 
   Options.prototype.reset = function(options) {
+    var preserveProfileName;
     this.log.method('Options#reset', this, arguments);
+    preserveProfileName = options != null ? this._currentProfileName : null;
     if (options == null) {
       options = this.getDefaultOptions();
     }
@@ -473,6 +475,12 @@ Options = (function() {
         return _this._storage.remove().then(function() {
           return _this._storage.set(opt);
         }).then(function() {
+          if (preserveProfileName && !opt['-startupProfileName'] && OmegaPac.Profiles.byName(preserveProfileName, opt)) {
+            _this._state.set({
+              'currentProfileName': preserveProfileName,
+              'isSystemProfile': preserveProfileName === 'system'
+            });
+          }
           return _this.init();
         });
       };

@@ -450,6 +450,9 @@
       if (request.method === 'getState') {
         target = state;
         method = state.get;
+      } else if (request.method === 'setState') {
+        target = state;
+        method = state.set;
       } else {
         target = options;
         method = target[request.method];

@@ -3,7 +3,7 @@
     hasProp = {}.hasOwnProperty;
 
   angular.module('omegaTarget', []).factory('omegaTarget', function($q) {
-    var callBackground, callBackgroundNoReply, connectBackground, decodeError, isChromeUrl, omegaTarget, optionsChangeCallback, prefix, requestInfoCallback, urlParser;
+    var callBackground, callBackgroundNoReply, connectBackground, decodeError, isChromeUrl, isManifestV3, omegaTarget, optionsChangeCallback, prefix, requestInfoCallback, urlParser;
     decodeError = function(obj) {
       var err;
       if (obj._error === 'error') {
@@ -66,12 +66,25 @@
     optionsChangeCallback = [];
     requestInfoCallback = null;
     prefix = 'omega.local.';
+    isManifestV3 = chrome.runtime.getManifest &&
+      chrome.runtime.getManifest().manifest_version >= 3;
     urlParser = document.createElement('a');
     omegaTarget = {
       options: null,
       state: function(name, value) {
         var getValue;
         if (arguments.length === 1) {
+          if (isManifestV3) {
+            return callBackground('getState', name).then(function(result) {
+              if (Array.isArray(name)) {
+                return name.map(function(key) {
+                  return result != null ? result[key] : void 0;
+                });
+              } else {
+                return result != null ? result[name] : void 0;
+              }
+            });
+          }
           getValue = function(key) {
             try {
               return JSON.parse(localStorage[prefix + key]);
@@ -82,6 +95,12 @@
           } else {
             value = getValue(name);
           }
+        } else if (isManifestV3) {
+          getValue = {};
+          getValue[name] = value;
+          return callBackground('setState', getValue).then(function() {
+            return value;
+          });
         } else {
           localStorage[prefix + name] = JSON.stringify(value);
         }
@@ -98,6 +117,20 @@
             return JSON.parse(localStorage[prefix + name]);
           } catch (error) {}
         }
+      },
+      lastPageInfo: function(info) {
+        var name;
+        name = 'web.last_page_info';
+        if (info && info.url) {
+          try {
+            localStorage[prefix + name] = JSON.stringify(info);
+          } catch (error) {}
+          return $q.when(info);
+        }
+        try {
+          return $q.when(JSON.parse(localStorage[prefix + name]));
+        } catch (error1) {}
+        return $q.when(null);
       },
       addOptionsChangeCallback: function(callback) {
         return optionsChangeCallback.push(callback);
@@ -182,26 +215,33 @@
         return callBackground('setDefaultProfile', profileName, defaultProfileName);
       },
       getActivePageInfo: function() {
-        var clearBadge, d;
+        var clearBadge, d, extensionBaseUrl;
         clearBadge = true;
         d = $q['defer']();
+        extensionBaseUrl = chrome.runtime.getURL('');
         chrome.tabs.query({
           active: true,
           lastFocusedWindow: true
         }, function(tabs) {
-          var args, ref;
-          if (!((ref = tabs[0]) != null ? ref.url : void 0)) {
-            d.resolve(null);
+          var args, ref, url;
+          url = (ref = tabs[0]) != null ? ref.url : void 0;
+          if (!url || url.indexOf(extensionBaseUrl) === 0) {
+            d.resolve(omegaTarget.lastPageInfo());
             return;
           }
           args = {
             tabId: tabs[0].id,
-            url: tabs[0].url
+            url: url
           };
           if (tabs[0].id && requestInfoCallback) {
             connectBackground('tabRequestInfo', args, requestInfoCallback);
           }
-          return d.resolve(callBackground('getPageInfo', args));
+          return d.resolve(callBackground('getPageInfo', args).then(function(info) {
+            if (info && info.url) {
+              omegaTarget.lastPageInfo(info);
+            }
+            return info;
+          }));
         });
         return d.promise.then(function(info) {
           if (info != null ? info.url : void 0) {
