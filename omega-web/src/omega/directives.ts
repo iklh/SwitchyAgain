@@ -785,7 +785,6 @@
             },
             options: scope.options,
             profile: scope.profile,
-            ruleListFormats: OmegaPac.Profiles.ruleListFormats,
             updating: !!(scope.updatingProfile && scope.updatingProfile[name])
           };
         };
@@ -849,7 +848,6 @@
             onDownload: function(profileName) {
               return scope.updateProfile(profileName);
             },
-            ruleListFormats: scope.ruleListFormats,
             updating: !!(scope.updatingProfile && scope.updatingProfile[name])
           };
         };
@@ -1261,7 +1259,6 @@
             },
             options: scope.options,
             profile: scope.profile,
-            ruleListIcon: scope.profileIcons['RuleListProfile'],
             showNotes: scope.showNotes
           };
         };

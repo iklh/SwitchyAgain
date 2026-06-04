@@ -7,6 +7,7 @@ import {
   Profile,
   ProfileInline,
   ProfileSelect,
+  PROFILE_ICONS,
   profileByName,
   resultProfilesFor
 } from './profile_widgets';
@@ -19,14 +20,15 @@ type UnsupportedProfileProps = {
   } | null;
 };
 
+type VirtualProfileModel = Profile & {
+  defaultProfileName?: string;
+};
+
 type VirtualProfileProps = {
   onReplaceProfile?: (fromName: string, toName: string) => void;
   onTargetChange?: (name: string) => void;
   options?: Options | null;
-  profile?: {
-    defaultProfileName?: string;
-    name?: string;
-  } | null;
+  profile?: VirtualProfileModel | null;
 };
 
 type RuleListProfileModel = Profile & {
@@ -43,7 +45,6 @@ type RuleListProfileProps = {
   onProfileChange?: (field: keyof RuleListProfileModel, value: string) => void;
   options?: Options | null;
   profile?: RuleListProfileModel | null;
-  ruleListFormats?: string[];
   updating?: boolean;
 };
 
@@ -95,7 +96,6 @@ type SwitchAttachedProfileProps = {
   onAttachNew?: () => void;
   onAttachedChange?: (field: keyof RuleListProfileModel, value: string) => void;
   onDownload?: (name: string) => void;
-  ruleListFormats?: string[];
   updating?: boolean;
 };
 
@@ -198,7 +198,6 @@ type SwitchRuleFooterProps = {
   onResetRules?: () => void;
   options?: Options | null;
   profile?: Profile | null;
-  ruleListIcon?: string;
   showNotes?: boolean;
 };
 
@@ -737,6 +736,10 @@ function formatMediumDate(value?: string | number | null) {
   }).format(date);
 }
 
+function getRuleListFormats(): string[] {
+  return OmegaPac.Profiles.ruleListFormats || [];
+}
+
 function PacProfile({
   onDownload,
   onEditProxyAuth,
@@ -1031,10 +1034,10 @@ function SwitchAttachedProfile({
   onAttachNew,
   onAttachedChange,
   onDownload,
-  ruleListFormats = [],
   updating = false
 }: SwitchAttachedProfileProps) {
   const formattedLastUpdate = formatMediumDate(attached?.lastUpdate);
+  const ruleListFormats = getRuleListFormats();
   const [draft, setDraft] = useState({
     format: attached?.format || '',
     ruleList: attached?.ruleList || '',
@@ -1311,10 +1314,10 @@ function SwitchRuleFooter({
   onResetRules,
   options,
   profile,
-  ruleListIcon = 'glyphicon-list',
   showNotes = false
 }: SwitchRuleFooterProps) {
   const resultProfiles = resultProfilesFor(options, profile);
+  const ruleListIcon = PROFILE_ICONS.RuleListProfile || 'glyphicon-list';
 
   return (
     <>
@@ -1395,10 +1398,10 @@ function RuleListProfile({
   onProfileChange,
   options,
   profile,
-  ruleListFormats = [],
   updating = false
 }: RuleListProfileProps) {
   const resultProfiles = resultProfilesFor(options, profile);
+  const ruleListFormats = getRuleListFormats();
   const [draft, setDraft] = useState({
     defaultProfileName: profile?.defaultProfileName || '',
     format: profile?.format || '',
@@ -1510,7 +1513,7 @@ function VirtualProfile({onReplaceProfile, onTargetChange, options, profile}: Vi
     setTargetName(profile?.defaultProfileName || '');
   }, [profile?.defaultProfileName]);
   const targetProfile = profileByName(options, targetName);
-  const targetProfiles = resultProfilesFor(options, profile as Profile | null);
+  const targetProfiles = resultProfilesFor(options, profile);
 
   function changeTarget(name: string) {
     setTargetName(name);
