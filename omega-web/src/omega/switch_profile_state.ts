@@ -223,6 +223,14 @@ namespace OmegaSwitchProfileState {
     return true;
   }
 
+  export function updateRuleWeekday(rule: any, dayIndex: number, selected: boolean) {
+    if (!rule) {
+      return false;
+    }
+    OmegaSwitchProfileRules.updateDay(rule.condition, dayIndex, selected);
+    return true;
+  }
+
   export function composeSource(profile: SwitchProfile, defaultProfileName: string) {
     return OmegaPac.RuleList.Switchy.compose({
       rules: profile.rules,

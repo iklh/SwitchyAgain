@@ -820,181 +820,18 @@
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mount, mounted, props, render, unwatchers;
+        var bridge, mount, mounted, render, unwatchers;
         unwatchers = [];
-        props = function() {
-          var name, ref, rules, visibleRuleCount;
-          rules = scope.profile && scope.profile.rules || [];
-          visibleRuleCount = Math.min(scope.visibleRuleCount || 0, rules.length);
-          name = ((ref = scope.attached) != null ? ref.name : void 0) || '';
-          return {
-            attached: scope.attached,
-            attachedRuleListError: scope.attachedRuleListError,
-            attachedOptions: scope.attachedOptions,
-            editSource: scope.editSource,
-            loadRules: scope.loadRules,
-            onAddNote: function(index) {
-              return scope.addNote(index);
-            },
-            onAddRule: function() {
-              return scope.addRule();
-            },
-            onAttachNew: function() {
-              return scope.attachNew();
-            },
-            onAttachedChange: function(field, value) {
-              return scope.$evalAsync(function() {
-                if (scope.attached) {
-                  return scope.attached[field] = value;
-                }
-              });
-            },
-            onAttachedEnabledChange: function(enabled) {
-              return scope.$evalAsync(function() {
-                return scope.attachedOptions.enabled = enabled;
-              });
-            },
-            onAttachedMatchProfileChange: function(name) {
-              return scope.$evalAsync(function() {
-                if (scope.attached) {
-                  return scope.attached.matchProfileName = name;
-                }
-              });
-            },
-            onCloneRule: function(index) {
-              return scope.$evalAsync(function() {
-                return scope.cloneRule(index);
-              });
-            },
-            onClose: function() {
-              return scope.$evalAsync(function() {
-                return scope.conditionHelp.show = false;
-              });
-            },
-            onConditionFieldChange: function(index, field, value) {
-              return scope.$evalAsync(function() {
-                if (OmegaSwitchProfileState.updateConditionField(scope.profile.rules[index], field, value)) {
-                  return scope.$root.optionsDirty = true;
-                }
-              });
-            },
-            onConditionTypeChange: function(index, type) {
-              return scope.$evalAsync(function() {
-                if (OmegaSwitchProfileState.updateConditionType(scope.profile.rules[index], type)) {
-                  return scope.$root.optionsDirty = true;
-                }
-              });
-            },
-            onDefaultProfileChange: function(name) {
-              return scope.$evalAsync(function() {
-                return scope.attachedOptions.defaultProfileName = name;
-              });
-            },
-            onDownload: function(profileName) {
-              return scope.updateProfile(profileName);
-            },
-            onIpConditionInputChange: function(index, value) {
-              return scope.$evalAsync(function() {
-                if (OmegaSwitchProfileState.updateIpCondition(scope.profile.rules[index], value)) {
-                  return scope.$root.optionsDirty = true;
-                }
-              });
-            },
-            onMoveRule: function(fromIndex, toIndex) {
-              return scope.$evalAsync(function() {
-                if (OmegaSwitchProfileState.moveRule(scope.profile.rules, fromIndex, toIndex)) {
-                  return scope.$root.optionsDirty = true;
-                }
-              });
-            },
-            onNoteChange: function(index, note) {
-              return scope.$evalAsync(function() {
-                if (OmegaSwitchProfileState.updateRuleNote(scope.profile.rules[index], note)) {
-                  return scope.$root.optionsDirty = true;
-                }
-              });
-            },
-            onProfileChange: function(index, name) {
-              return scope.$evalAsync(function() {
-                if (OmegaSwitchProfileState.updateRuleProfile(scope.profile.rules[index], name)) {
-                  return scope.$root.optionsDirty = true;
-                }
-              });
-            },
-            onRemoveAttached: function() {
-              return scope.removeAttached();
-            },
-            onRemoveRule: function(index) {
-              return scope.removeRule(index);
-            },
-            onResetRules: function() {
-              return scope.resetRules();
-            },
-            onSourceChange: function(code) {
-              return scope.$evalAsync(function() {
-                if (scope.source) {
-                  scope.source.code = code;
-                  scope.source.touched = true;
-                  return scope.$root.optionsDirty = true;
-                }
-              });
-            },
-            onToggleConditionHelp: function() {
-              return scope.$evalAsync(function() {
-                return scope.conditionHelp.show = !scope.conditionHelp.show;
-              });
-            },
-            onToggleSource: function() {
-              return scope.toggleSource();
-            },
-            onWeekdayChange: function(index, dayIndex, selected) {
-              return scope.$evalAsync(function() {
-                var rule;
-                rule = scope.profile.rules[index];
-                if (!rule) {
-                  return;
-                }
-                scope.updateDay(rule.condition, dayIndex, selected);
-                return scope.$root.optionsDirty = true;
-              });
-            },
-            options: scope.options,
-            profile: scope.profile,
-            rules: rules,
-            show: scope.conditionHelp && scope.conditionHelp.show,
-            showConditionTypes: scope.showConditionTypes,
-            showNotes: scope.showNotes,
-            source: scope.source,
-            updating: !!(scope.updatingProfile && scope.updatingProfile[name]),
-            visibleRuleCount: visibleRuleCount
-          };
-        };
         render = function() {
           if (mounted != null ? mounted.render : void 0) {
-            return mounted.render(props());
+            return mounted.render(OmegaSwitchProfileBridge.buildProps(scope));
           }
         };
         mount = function() {
           bridge = window.OmegaReactProfileContent;
           if (bridge != null ? bridge.mountSwitchProfile : void 0) {
-            mounted = bridge.mountSwitchProfile(element[0], props());
-            unwatchers.push(scope.$watch('attached', render, true));
-            unwatchers.push(scope.$watch('attachedRuleListError', render));
-            unwatchers.push(scope.$watch('attachedOptions', render, true));
-            unwatchers.push(scope.$watch('conditionHelp.show', render));
-            unwatchers.push(scope.$watch('editSource', render));
-            unwatchers.push(scope.$watch('loadRules', render));
-            unwatchers.push(scope.$watch('options', render, true));
-            unwatchers.push(scope.$watch('profile.rules', render, true));
-            unwatchers.push(scope.$watch('showConditionTypes', render));
-            unwatchers.push(scope.$watch('showNotes', render));
-            unwatchers.push(scope.$watch('source', render, true));
-            unwatchers.push(scope.$watch('visibleRuleCount', render));
-            unwatchers.push(scope.$watch(function() {
-              var name, ref;
-              name = ((ref = scope.attached) != null ? ref.name : void 0) || '';
-              return scope.updatingProfile && scope.updatingProfile[name];
-            }, render));
+            mounted = bridge.mountSwitchProfile(element[0], OmegaSwitchProfileBridge.buildProps(scope));
+            unwatchers = OmegaSwitchProfileBridge.watchProps(scope, render);
           }
         };
         mount();

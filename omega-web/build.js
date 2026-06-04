@@ -212,6 +212,7 @@ async function main() {
     'build-ts/omega/app.js',
     'build-ts/omega/switch_profile_rules.js',
     'build-ts/omega/switch_profile_state.js',
+    'build-ts/omega/switch_profile_bridge.js',
     'build-ts/omega/filters.js',
     'build-ts/omega/directives.js',
     'build-ts/omega/controllers/fixed_profile.js',
