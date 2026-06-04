@@ -249,6 +249,105 @@
     };
   });
 
+  module.directive('omegaReactPopupRequestInfoForm', function($timeout, trFilter) {
+    return {
+      restrict: 'A',
+      link: function(scope, element) {
+        var bridge, messages, mount, mounted, props, render, unwatchers;
+        unwatchers = [];
+        messages = {
+          addCondition: trFilter('popup_addCondition'),
+          addConditionTo: trFilter('popup_addConditionTo'),
+          cancel: trFilter('dialog_cancel'),
+          configureMonitorWebRequests: trFilter('popup_configureMonitorWebRequests'),
+          requestErrorAddCondition: trFilter('popup_requestErrorAddCondition'),
+          requestErrorCannotAddCondition: trFilter('popup_requestErrorCannotAddCondition'),
+          requestErrorHeading: trFilter('popup_requestErrorHeading'),
+          requestErrorWarning: trFilter('popup_requestErrorWarning'),
+          requestErrorWarningHelp: trFilter('popup_requestErrorWarningHelp'),
+          resultProfileForSelectedDomains: trFilter('options_resultProfileForSelectedDomains')
+        };
+        props = function() {
+          return {
+            availableProfiles: scope.availableProfiles,
+            canAddRule: !!scope.currentProfileCanAddRule,
+            currentProfile: scope.currentProfile,
+            dispName: scope.dispNameFilter,
+            domainsForCondition: scope.domainsForCondition,
+            messages: messages,
+            onCancel: function() {
+              return scope.$evalAsync(function() {
+                return scope.returnToMenu();
+              });
+            },
+            onConfigure: function() {
+              return scope.$evalAsync(function() {
+                return scope.openOptions("#/general");
+              });
+            },
+            onDomainToggle: function(domain, enabled) {
+              return scope.$evalAsync(function() {
+                if (!scope.domainsForCondition) {
+                  scope.domainsForCondition = {};
+                }
+                return scope.domainsForCondition[domain] = enabled;
+              });
+            },
+            onProfileNameChange: function(name) {
+              return scope.$evalAsync(function() {
+                return scope.profileForDomains = name;
+              });
+            },
+            onSubmit: function() {
+              return scope.$evalAsync(function() {
+                return scope.addConditionForDomains(scope.domainsForCondition, scope.profileForDomains);
+              });
+            },
+            profileName: scope.profileForDomains,
+            requestInfo: scope.requestInfo,
+            resultProfiles: scope.validResultProfiles,
+            shown: !!scope.showRequestInfo
+          };
+        };
+        render = function() {
+          if (mounted && mounted.render) {
+            return mounted.render(props());
+          }
+        };
+        mount = function() {
+          bridge = window.OmegaReactPopupMenu;
+          if (bridge && bridge.mountPopupRequestInfoForm) {
+            mounted = bridge.mountPopupRequestInfoForm(element[0], props());
+            unwatchers.push(scope.$watch('showRequestInfo', render));
+            unwatchers.push(scope.$watch('currentProfileCanAddRule', render));
+            unwatchers.push(scope.$watch('currentProfile', render, true));
+            unwatchers.push(scope.$watch('availableProfiles', render, true));
+            unwatchers.push(scope.$watch('validResultProfiles', render, true));
+            unwatchers.push(scope.$watch('domainsForCondition', render, true));
+            unwatchers.push(scope.$watch('profileForDomains', render));
+            unwatchers.push(scope.$watch('requestInfo', render, true));
+          }
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
+        return scope.$on('$destroy', function() {
+          var k, len, unwatch;
+          for (k = 0, len = unwatchers.length; k < len; k++) {
+            unwatch = unwatchers[k];
+            if (unwatch) {
+              unwatch();
+            }
+          }
+          if (mounted && mounted.unmount) {
+            return mounted.unmount();
+          }
+        });
+      }
+    };
+  });
+
   moveUp = function(activeIndex, items) {
     var i, ref;
     i = activeIndex - 1;

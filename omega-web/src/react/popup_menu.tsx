@@ -55,6 +55,31 @@ type PopupConditionFormProps = {
   shown?: boolean;
 };
 
+type RequestInfoDomain = {
+  domain: string;
+  errorCount?: number;
+};
+
+type PopupRequestInfoFormProps = {
+  availableProfiles?: ProfileMap | null;
+  canAddRule?: boolean;
+  currentProfile?: Profile | null;
+  dispName?: (profile: Profile) => string;
+  domainsForCondition?: Record<string, boolean>;
+  messages?: Record<string, string>;
+  onCancel?: () => void;
+  onConfigure?: () => void;
+  onDomainToggle?: (domain: string, enabled: boolean) => void;
+  onProfileNameChange?: (value: string) => void;
+  onSubmit?: () => void;
+  profileName?: string;
+  requestInfo?: {
+    domains?: RequestInfoDomain[];
+  } | null;
+  resultProfiles?: Profile[];
+  shown?: boolean;
+};
+
 const PROFILE_ICONS: Record<string, string> = {
   AutoDetectProfile: 'glyphicon-file',
   DirectProfile: 'glyphicon-transfer',
@@ -211,6 +236,99 @@ function PopupConditionForm({
   );
 }
 
+function PopupRequestInfoForm({
+  availableProfiles,
+  canAddRule = false,
+  currentProfile,
+  dispName,
+  domainsForCondition = {},
+  messages = {},
+  onCancel,
+  onConfigure,
+  onDomainToggle,
+  onProfileNameChange,
+  onSubmit,
+  profileName = '',
+  requestInfo,
+  resultProfiles = [],
+  shown = false
+}: PopupRequestInfoFormProps) {
+  if (!shown) {
+    return null;
+  }
+  const domains = requestInfo?.domains || [];
+
+  return (
+    <form
+      className="request-info-details"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (canAddRule) {
+          onSubmit?.();
+        }
+      }}
+    >
+      <fieldset>
+        {canAddRule ? (
+          <legend>
+            {messages.addConditionTo}{' '}
+            <span className="profile-inline">
+              <PopupProfileLabel profile={currentProfile} options={availableProfiles} dispName={dispName} />
+            </span>
+          </legend>
+        ) : (
+          <legend>{messages.requestErrorHeading}</legend>
+        )}
+        <div className="text-warning">{messages.requestErrorWarning}</div>
+        <p className="help-block">{messages.requestErrorWarningHelp}</p>
+        {canAddRule && <p className="help-block">{messages.requestErrorAddCondition}</p>}
+        {domains.map((domain, index) => (
+          <div className="checkbox" key={domain.domain}>
+            <label>
+              <input
+                autoFocus={index === 0}
+                checked={!!domainsForCondition[domain.domain]}
+                onChange={(event) => onDomainToggle?.(domain.domain, event.currentTarget.checked)}
+                type="checkbox"
+              />{' '}
+              <span className="label label-warning">{domain.errorCount}</span>
+              {' '}{domain.domain}
+            </label>
+          </div>
+        ))}
+        {canAddRule && (
+          <div className="form-group">
+            <label>{messages.resultProfileForSelectedDomains}</label>
+            <ProfileSelect
+              dispName={dispName}
+              name={profileName}
+              onChange={(name) => onProfileNameChange?.(name)}
+              options={availableProfiles as any}
+              profiles={resultProfiles}
+            />
+          </div>
+        )}
+        {!canAddRule && <p className="help-block">{messages.requestErrorCannotAddCondition}</p>}
+        <div className="condition-controls">
+          <button type="button" className="btn btn-default" onClick={onCancel}>
+            {messages.cancel}
+          </button>
+          {canAddRule && (
+            <button type="submit" className="btn btn-primary">
+              {messages.addCondition}
+            </button>
+          )}
+          {!canAddRule && (
+            <button type="button" className="btn btn-default pull-right" onClick={onConfigure}>
+              {messages.configureMonitorWebRequests}
+            </button>
+          )}
+        </div>
+      </fieldset>
+    </form>
+  );
+}
+
 function mountPopupProfileLabel(element: Element, props: PopupProfileLabelProps = {}) {
   const root = createRoot(element);
   root.render(<PopupProfileLabel {...props} />);
@@ -250,9 +368,23 @@ function mountPopupConditionForm(element: Element, props: PopupConditionFormProp
   };
 }
 
+function mountPopupRequestInfoForm(element: Element, props: PopupRequestInfoFormProps = {}) {
+  const root = createRoot(element);
+  root.render(<PopupRequestInfoForm {...props} />);
+  return {
+    render(nextProps: PopupRequestInfoFormProps = {}) {
+      root.render(<PopupRequestInfoForm {...nextProps} />);
+    },
+    unmount() {
+      root.unmount();
+    }
+  };
+}
+
 const globalWindow = window as any;
 globalWindow.OmegaReactPopupMenu = {
   mountPopupActionLabel,
   mountPopupConditionForm,
+  mountPopupRequestInfoForm,
   mountPopupProfileLabel
 };

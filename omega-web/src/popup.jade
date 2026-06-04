@@ -81,39 +81,7 @@ html(lang='en' ng-app='omegaPopup' ng-controller='PopupCtrl' ng-csp)
       p.proxy-not-controllable-controls
         button.btn.btn-default(ng-click='closePopup()') {{'dialog_cancel' | tr}}
         button.btn.btn-primary(ng-click='openManage()') {{'popup_proxyNotControllableManage' | tr}}
-    div.request-info-details(ng-show='showRequestInfo')
-    form.request-info-details(style='display: none;'
-      ng-style='{display: showRequestInfo ? "block" : "none"}'
-      ng-submit='addConditionForDomains(domainsForCondition, profileForDomains)')
-      fieldset
-        legend(ng-show='!!currentProfileCanAddRule')
-          | {{'popup_addConditionTo' | tr}}
-          = ' '
-          span.profile-inline
-            span(omega-react-popup-profile-label profile='currentProfile' options='availableProfiles' disp-name='dispNameFilter')
-        legend(ng-show='!currentProfileCanAddRule')
-          | {{'popup_requestErrorHeading' | tr}} 
-        .text-warning {{'popup_requestErrorWarning' | tr}}
-        p.help-block {{'popup_requestErrorWarningHelp' | tr}}
-        p.help-block(ng-show='!!currentProfileCanAddRule') {{'popup_requestErrorAddCondition' | tr}} 
-        .checkbox(ng-repeat='domain in requestInfo.domains track by domain.domain')
-          label
-            input(type='checkbox' ng-model='domainsForCondition[domain.domain]' autofocus ng-if='$index === 0')
-            input(type='checkbox' ng-model='domainsForCondition[domain.domain]' ng-if='$index > 0')
-            span.label.label-warning {{domain.errorCount}}
-            =' {{domain.domain}}'
-        div.form-group(ng-show='!!currentProfileCanAddRule')
-          label {{'options_resultProfileForSelectedDomains' | tr}}
-          div(omega-profile-select='validResultProfiles' ng-model='profileForDomains'
-            disp-name='dispNameFilter' options='availableProfiles')
-        p.help-block(ng-show='!currentProfileCanAddRule')
-          | {{'popup_requestErrorCannotAddCondition' | tr}}
-        div.condition-controls
-          button.btn.btn-default(type='button' ng-click='returnToMenu()')
-            | {{'dialog_cancel' | tr}}
-          button.btn.btn-primary(type='submit' ng-show='!!currentProfileCanAddRule') {{'popup_addCondition' | tr}}
-          button.btn.btn-default.pull-right(type='button' ng-show='!currentProfileCanAddRule'
-            ng-click='openOptions("#/general")') {{'popup_configureMonitorWebRequests' | tr}}
+    div(omega-react-popup-request-info-form)
 
     script(src='js/log_error.js')
     script(src='lib/jquery/jquery.min.js')
