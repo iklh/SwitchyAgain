@@ -1,6 +1,6 @@
 (function() {
   angular.module('omega').controller('SwitchProfileCtrl', function($scope, $rootScope, $location, $timeout, $q, $modal, profileIcons, getAttachedName, omegaTarget, trFilter, downloadFile, $window, reactModalTemplates) {
-    var attachedReady, attachedReadyDefer, attachedSourceCache, basicConditionTypeSet, basicConditionTypesExpanded, cancelRuleBatchSchedule, exportLegacyRuleList, exportRuleList, initialRuleBatchSize, isUrlConditionType, onAttachedChange, parseOmegaRules, parseSource, renderRuleBatch, renderRuleBatchSize, renderRuleBatchTimer, resetVisibleRules, rulesReady, rulesReadyDefer, scheduleRuleBatch, stateEditorKey, stopWatchingForRules, unwatchRules, unwatchRulesShowNote, updateHasConditionTypes;
+    var attachedReady, attachedReadyDefer, attachedSourceCache, basicConditionTypeSet, basicConditionTypesExpanded, cancelRuleBatchSchedule, exportLegacyRuleList, exportRuleList, initialRuleBatchSize, isUrlConditionType, onAttachedChange, parseSource, renderRuleBatch, renderRuleBatchSize, renderRuleBatchTimer, resetVisibleRules, rulesReady, rulesReadyDefer, scheduleRuleBatch, stateEditorKey, stopWatchingForRules, unwatchRules, unwatchRulesShowNote, updateHasConditionTypes;
     $scope.ruleListFormats = OmegaPac.Profiles.ruleListFormats;
     exportRuleList = function() {
       var blob, fileName, text;
@@ -274,41 +274,20 @@
       return cancelRuleBatchSchedule();
     });
     $scope.editSource = false;
-    parseOmegaRules = function(code, arg) {
-      return OmegaSwitchProfileRules.parseOmegaRules(code, $scope.options, arg, function(error) {
-        var args, message, ref1;
-        args = (ref1 = error.args) != null ? ref1 : [error.sourceLineNo, error.source];
-        message = trFilter('ruleList_error_' + error.reason, args);
-        return message;
-      });
-    };
     parseSource = function() {
-      var error, ref, rules;
-      if (!$scope.source) {
-        return true;
-      }
-      ref = parseOmegaRules($scope.source.code.trim(), {
-        requireResult: true
-      }), rules = ref.rules, error = ref.error;
-      if (error) {
-        $scope.source.error = error;
+      var valid;
+      valid = OmegaSwitchProfileSource.parseSource($scope.profile, $scope.attachedOptions, $scope.source, $scope.options, trFilter);
+      if (!valid) {
         $scope.editSource = true;
         return false;
-      } else {
-        $scope.source.error = void 0;
       }
-      OmegaSwitchProfileState.applyParsedSource($scope.profile, $scope.attachedOptions, rules);
       return true;
     };
     $scope.toggleSource = function() {
       return $q.all([attachedReady, rulesReady]).then(function() {
-        var code;
         $scope.editSource = !$scope.editSource;
         if ($scope.editSource) {
-          code = OmegaSwitchProfileState.composeSource($scope.profile, $scope.attachedOptions.defaultProfileName);
-          $scope.source = {
-            code: code
-          };
+          $scope.source = OmegaSwitchProfileSource.createSource($scope.profile, $scope.attachedOptions);
         } else {
           if (!parseSource()) {
             return;
@@ -332,23 +311,16 @@
       }
     });
     $scope.$on('omegaApplyOptions', function(event) {
-      var error, ref;
-      if (((ref = $scope.attached) != null ? ref.ruleList : void 0) && !$scope.attached.sourceUrl) {
-        $scope.attachedRuleListError = void 0;
-        error = parseOmegaRules($scope.attached.ruleList.trim(), {
-          detect: true
-        }).error;
-        if (error) {
-          if (error.reason !== 'resultNotEnabled' && error.reason !== 'notSwitchy') {
-            $scope.attachedRuleListError = error;
-            event.preventDefault();
-            angular.element('#attached-rulelist')[0].focus();
-          }
-        } else {
-          $scope.attached.format = 'Switchy';
-        }
+      var attachedValidation;
+      attachedValidation = OmegaSwitchProfileSource.validateAttachedRuleList($scope.attached, $scope.options, trFilter);
+      $scope.attachedRuleListError = attachedValidation.error;
+      if (!attachedValidation.valid) {
+        event.preventDefault();
+        angular.element('#attached-rulelist')[0].focus();
+      } else if (attachedValidation.format) {
+        $scope.attached.format = attachedValidation.format;
       }
-      if ($scope.editSource && $scope.source.touched) {
+      if (OmegaSwitchProfileSource.shouldApplyTouchedSource($scope.editSource, $scope.source)) {
         event.preventDefault();
         if (parseSource()) {
           $scope.source.touched = false;
