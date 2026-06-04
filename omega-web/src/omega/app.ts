@@ -84,7 +84,7 @@
       template: '<div class="react-settings-host-import-export" omega-react-import-export></div>'
     }).state('profile', {
       url: '/profile/*name',
-      templateUrl: 'partials/profile.html',
+      template: '<div omega-react-profile-shell></div><div omega-profile-content-host></div>',
       controller: 'ProfileCtrl'
     }).state('about', {
       url: '/about',

@@ -203,13 +203,6 @@ async function main() {
   await writeReactHtml('build/react/import_export.html', 'SwitchyAgain Import / Export', 'import_export.js');
   await bundleReact('src/react/import_export.tsx', 'build/react/import_export.js');
 
-  const partials = [
-    'profile',
-  ];
-  for (const name of partials) {
-    await renderJade(`src/partials/${name}.jade`, `build/partials/${name}.html`);
-  }
-
   await renderLess('src/less/options.less', 'tmp/css/options.css', 'build/css/options.css');
   await renderLess('src/less/popup.less', 'tmp/css/popup.css', 'build/css/popup.css');
 
