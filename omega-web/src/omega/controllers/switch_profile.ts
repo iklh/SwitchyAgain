@@ -1,6 +1,6 @@
 (function() {
   angular.module('omega').controller('SwitchProfileCtrl', function($scope, $rootScope, $location, $timeout, $q, $modal, profileIcons, getAttachedName, omegaTarget, trFilter, downloadFile, reactModalTemplates) {
-    var attachedReady, attachedReadyDefer, attachedSourceCache, conditionModeState, exportLegacyRuleList, exportRuleList, onAttachedChange, parseSource, rulesReady, rulesReadyDefer, stateEditorKey, stopWatchingForRules, unwatchRules, unwatchRulesShowNote;
+    var attachedReady, attachedReadyDefer, attachedSourceCache, conditionModeState, exportLegacyRuleList, exportRuleList, parseSource, rulesReady, rulesReadyDefer, stateEditorKey, stopWatchingForRules, unwatchRules, unwatchRulesShowNote;
     exportRuleList = function() {
       var blob, fileName, text;
       text = OmegaSwitchProfileRules.composeOmegaRuleList($scope.profile.rules, $scope.attachedOptions.defaultProfileName, trFilter('ruleList_usageUrl'), new Date().toLocaleDateString());
@@ -101,54 +101,27 @@
     };
     attachedReadyDefer = $q.defer();
     attachedReady = attachedReadyDefer.promise;
-    $scope.$watch('profile.name', function(name) {
-      var identity;
-      identity = OmegaSwitchProfileState.createAttachedIdentity(name, getAttachedName);
-      $scope.attachedName = identity.attachedName;
-      return $scope.attachedKey = identity.attachedKey;
-    });
-    $scope.$watch('options[attachedKey]', function(attached) {
-      return $scope.attached = attached;
-    });
+    OmegaSwitchProfileAttached.watchAttachedIdentity($scope, getAttachedName);
+    OmegaSwitchProfileAttached.watchAttachedProfile($scope);
     $scope.watchAndUpdateRevision('options[attachedKey]');
     attachedSourceCache = {};
-    onAttachedChange = function(attached, oldAttached) {
-      return attachedSourceCache = OmegaSwitchProfileState.preserveAttachedUpdateOnSourceChange(attached, oldAttached, attachedSourceCache);
-    };
-    $scope.$watch('options[attachedKey]', onAttachedChange, true);
-    $scope.attachedOptions = {
-      enabled: false
-    };
-    $scope.$watch('profile.defaultProfileName', function(name) {
-      return OmegaSwitchProfileState.syncOptionsFromProfileDefault(name, $scope.attachedName, $scope.attached, $scope.attachedOptions);
-    });
-    $scope.$watch('attachedOptions.enabled', function(enabled, oldValue) {
-      return OmegaSwitchProfileState.setAttachedEnabled($scope.profile, $scope.attached, $scope.attachedName, $scope.attachedOptions, enabled, oldValue);
-    });
-    $scope.$watch('attached.defaultProfileName', function(name) {
-      return OmegaSwitchProfileState.syncDefaultFromAttached($scope.attachedOptions, $scope.attachedOptions.enabled, name);
-    });
-    $scope.$watch('attachedOptions.defaultProfileName', function(name) {
-      attachedReadyDefer.resolve();
-      return OmegaSwitchProfileState.setDefaultProfile($scope.profile, $scope.attached, $scope.attachedOptions, name);
-    });
+    OmegaSwitchProfileAttached.watchAttachedSourceChanges($scope, attachedSourceCache);
+    $scope.attachedOptions = OmegaSwitchProfileAttached.createAttachedOptions();
+    OmegaSwitchProfileAttached.watchAttachedOptionSync($scope, attachedReadyDefer);
     $scope.attachNew = function() {
-      return $scope.attached = OmegaSwitchProfileState.attachNew($scope.options, $scope.attachedKey, $scope.profile, $scope.attachedName, $scope.attachedOptions);
+      return OmegaSwitchProfileAttached.attachNew($scope);
     };
     $scope.removeAttached = function() {
       var scope;
       if (!$scope.attached) {
         return;
       }
-      scope = $scope.$new('isolate');
-      scope.attached = $scope.attached;
-      scope.dispNameFilter = $scope.dispNameFilter;
-      scope.options = $scope.options;
+      scope = OmegaSwitchProfileAttached.createDeleteAttachedScope($scope);
       return $modal.open({
         template: reactModalTemplates.deleteAttached,
         scope: scope
       }).result.then(function() {
-        return OmegaSwitchProfileState.removeAttached($scope.options, $scope.attachedKey, $scope.profile, $scope.attached);
+        return OmegaSwitchProfileAttached.removeAttached($scope);
       });
     };
     stateEditorKey = 'web._profileEditor.' + $scope.profile.name;
