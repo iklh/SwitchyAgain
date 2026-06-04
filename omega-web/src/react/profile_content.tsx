@@ -223,6 +223,114 @@ type SwitchRuleFooterProps = {
   showNotes?: boolean;
 };
 
+type ProfileShellProps = {
+  exportRuleListAvailable?: boolean;
+  exportRuleListWarning?: boolean;
+  onColorChange?: (color: string) => void;
+  onDelete?: () => void;
+  onExportRuleList?: () => void;
+  onExportScript?: () => void;
+  onRename?: () => void;
+  profile?: Profile & {
+    syncError?: {
+      reason?: string;
+    };
+    syncOptions?: string;
+  } | null;
+  profileColor?: string;
+  scriptable?: boolean;
+};
+
+function normalizeColor(color?: string) {
+  if (!color) {
+    return '#000000';
+  }
+  if (/^#[0-9a-f]{3}$/i.test(color)) {
+    return '#' + color.charAt(1) + color.charAt(1) + color.charAt(2) + color.charAt(2) + color.charAt(3) + color.charAt(3);
+  }
+  if (/^#[0-9a-f]{6}$/i.test(color)) {
+    return color;
+  }
+  return '#000000';
+}
+
+function ProfileShell({
+  exportRuleListAvailable = false,
+  exportRuleListWarning = false,
+  onColorChange,
+  onDelete,
+  onExportRuleList,
+  onExportScript,
+  onRename,
+  profile,
+  profileColor,
+  scriptable = false
+}: ProfileShellProps) {
+  const color = normalizeColor(profileColor || profile?.color);
+  const isVirtual = profile?.profileType === 'VirtualProfile';
+
+  return (
+    <>
+      <div className="page-header">
+        <div className="profile-actions">
+          {exportRuleListAvailable && (
+            <>
+              <button
+                type="button"
+                className={`btn ${exportRuleListWarning ? 'btn-warning' : 'btn-default'}`}
+                title={message('options_profileExportRuleListHelp', 'Export the rule list in this profile.')}
+                onClick={onExportRuleList}
+              >
+                <span className="glyphicon glyphicon-list" /> {message('options_profileExportRuleList', 'Export Rule List')}
+              </button>{' '}
+            </>
+          )}
+          {scriptable && (
+            <>
+              <button
+                type="button"
+                className="btn btn-default"
+                title={message('options_exportPacFileHelp', 'Export this profile as a PAC file.')}
+                onClick={onExportScript}
+              >
+                <span className="glyphicon glyphicon-download" /> {message('options_profileExportPac', 'Export PAC')}
+              </button>{' '}
+            </>
+          )}
+          <button type="button" className="btn btn-default" onClick={onRename}>
+            <span className="glyphicon glyphicon-edit" /> {message('options_renameProfile', 'Rename')}
+          </button>{' '}
+          <button type="button" className="btn btn-danger" onClick={onDelete}>
+            <span className="glyphicon glyphicon-trash" /> {message('options_deleteProfile', 'Delete Profile')}
+          </button>
+        </div>
+        <span className="profile-color-editor">
+          {isVirtual ? (
+            <span className="profile-color-editor-fake" style={{backgroundColor: color}} />
+          ) : (
+            <input type="color" value={color} onChange={(event) => onColorChange?.(event.currentTarget.value)} />
+          )}
+        </span>
+        <h2 className="profile-name">{message('options_profileTabPrefix', 'Profile :: ')}{profile?.name}</h2>
+      </div>
+      {profile?.syncOptions === 'disabled' && (
+        <section className="settings-group">
+          {!profile.syncError && (
+            <p className="alert alert-info width-limit">
+              <span className="glyphicon glyphicon-info-sign" /> Syncing is disabled for this profile.
+            </p>
+          )}
+          {profile.syncError && (
+            <p className="alert alert-danger width-limit">
+              <span className="glyphicon glyphicon-remove" /> {message(`options_profileSyncDisabled_${profile.syncError.reason}`, profile.syncError.reason || '')}
+            </p>
+          )}
+        </section>
+      )}
+    </>
+  );
+}
+
 function groupedConditionTypes(conditionTypes: ConditionTypeOption[] = []) {
   const groups: Record<string, ConditionTypeOption[]> = {};
   const order: string[] = [];
@@ -1459,6 +1567,19 @@ function mountUnsupportedProfile(element: Element, props: UnsupportedProfileProp
   };
 }
 
+function mountProfileShell(element: Element, props: ProfileShellProps = {}) {
+  const root = createRoot(element);
+  root.render(<ProfileShell {...props} />);
+  return {
+    render(nextProps: ProfileShellProps = {}) {
+      root.render(<ProfileShell {...nextProps} />);
+    },
+    unmount() {
+      root.unmount();
+    }
+  };
+}
+
 function mountVirtualProfile(element: Element, props: VirtualProfileProps = {}) {
   const root = createRoot(element);
   root.render(<VirtualProfile {...props} />);
@@ -1607,6 +1728,7 @@ const globalWindow = window as any;
 globalWindow.OmegaReactProfileContent = {
   mountFixedProfile,
   mountPacProfile,
+  mountProfileShell,
   mountRuleListProfile,
   mountSwitchAttachedProfile,
   mountSwitchConditionHelp,

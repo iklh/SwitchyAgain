@@ -432,6 +432,80 @@
     };
   });
 
+  angular.module('omega').directive('omegaReactProfileShell', function($timeout) {
+    return {
+      restrict: 'A',
+      link: function(scope, element) {
+        var bridge, mount, mounted, props, render, unwatchers;
+        unwatchers = [];
+        props = function() {
+          var name, ref, ref1;
+          name = ((ref = scope.profile) != null ? ref.name : void 0) || '';
+          return {
+            exportRuleListAvailable: !!scope.exportRuleList,
+            exportRuleListWarning: !!((ref1 = scope.exportRuleListOptions) != null ? ref1.warning : void 0),
+            onColorChange: function(color) {
+              return scope.$evalAsync(function() {
+                if (scope.profile) {
+                  return scope.profile.color = color;
+                }
+              });
+            },
+            onDelete: function() {
+              return scope.deleteProfile(name);
+            },
+            onExportRuleList: function() {
+              if (scope.exportRuleList) {
+                return scope.exportRuleList(name);
+              }
+            },
+            onExportScript: function() {
+              return scope.exportScript(name);
+            },
+            onRename: function() {
+              return scope.renameProfile(name);
+            },
+            profile: scope.profile,
+            profileColor: scope.getProfileColor ? scope.getProfileColor() : void 0,
+            scriptable: !!scope.scriptable
+          };
+        };
+        render = function() {
+          if (mounted != null ? mounted.render : void 0) {
+            return mounted.render(props());
+          }
+        };
+        mount = function() {
+          bridge = window.OmegaReactProfileContent;
+          if (bridge != null ? bridge.mountProfileShell : void 0) {
+            mounted = bridge.mountProfileShell(element[0], props());
+            unwatchers.push(scope.$watch('profile', render, true));
+            unwatchers.push(scope.$watch('options', render, true));
+            unwatchers.push(scope.$watch('exportRuleList', render));
+            unwatchers.push(scope.$watch('exportRuleListOptions.warning', render));
+            unwatchers.push(scope.$watch('scriptable', render));
+          }
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
+        return scope.$on('$destroy', function() {
+          var i, len, unwatch;
+          for (i = 0, len = unwatchers.length; i < len; i++) {
+            unwatch = unwatchers[i];
+            if (unwatch) {
+              unwatch();
+            }
+          }
+          if (mounted != null ? mounted.unmount : void 0) {
+            return mounted.unmount();
+          }
+        });
+      }
+    };
+  });
+
   angular.module('omega').directive('omegaReactVirtualProfile', function($timeout, $filter) {
     return {
       restrict: 'A',
