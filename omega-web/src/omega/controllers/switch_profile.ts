@@ -1,7 +1,6 @@
 (function() {
   angular.module('omega').controller('SwitchProfileCtrl', function($scope, $rootScope, $location, $timeout, $q, $modal, profileIcons, getAttachedName, omegaTarget, trFilter, downloadFile, reactModalTemplates) {
-    var attachedReady, attachedReadyDefer, attachedSourceCache, basicConditionTypeSet, basicConditionTypesExpanded, exportLegacyRuleList, exportRuleList, isUrlConditionType, onAttachedChange, parseSource, rulesReady, rulesReadyDefer, stateEditorKey, stopWatchingForRules, unwatchRules, unwatchRulesShowNote, updateHasConditionTypes;
-    $scope.ruleListFormats = OmegaPac.Profiles.ruleListFormats;
+    var attachedReady, attachedReadyDefer, attachedSourceCache, conditionModeState, exportLegacyRuleList, exportRuleList, onAttachedChange, parseSource, rulesReady, rulesReadyDefer, stateEditorKey, stopWatchingForRules, unwatchRules, unwatchRulesShowNote;
     exportRuleList = function() {
       var blob, fileName, text;
       text = OmegaSwitchProfileRules.composeOmegaRuleList($scope.profile.rules, $scope.attachedOptions.defaultProfileName, trFilter('ruleList_usageUrl'), new Date().toLocaleDateString());
@@ -23,55 +22,28 @@
     $scope.conditionHelp = {
       show: $location.search().help === 'condition'
     };
-    basicConditionTypesExpanded = OmegaSwitchProfileRules.expandConditionGroups(OmegaSwitchProfileRules.getBasicConditionGroups());
-    basicConditionTypeSet = OmegaSwitchProfileRules.createConditionTypeSet(basicConditionTypesExpanded);
-    $scope.showConditionTypes = 0;
-    $scope.hasConditionTypes = 0;
-    isUrlConditionType = OmegaSwitchProfileRules.getUrlConditionTypeMap();
-    updateHasConditionTypes = function() {
-      var flags, ref;
-      if (((ref = $scope.profile) != null ? ref.rules : void 0) == null) {
-        return;
-      }
-      flags = OmegaSwitchProfileRules.inspectRules($scope.profile.rules, isUrlConditionType, basicConditionTypeSet, $scope.hasConditionTypes === 0);
-      if ($scope.hasConditionTypes !== 0 || !flags.hasConditionTypes) {
-        return;
-      }
-      $scope.hasConditionTypes = 1;
-      return $scope.showConditionTypes = 1;
-    };
+    conditionModeState = OmegaSwitchProfileOptions.createConditionModeState();
+    $scope.showConditionTypes = conditionModeState.showConditionTypes;
     $scope.$watch('options["-showConditionTypes"]', function(show) {
-      show || (show = 0);
-      if (show > 0) {
-        $scope.showConditionTypes = show;
-      } else {
-        updateHasConditionTypes();
-        $scope.showConditionTypes = $scope.hasConditionTypes;
-      }
-      if ($scope.options['-exportLegacyRuleList']) {
-        if ($scope.showConditionTypes > 0) {
-          $scope.setExportRuleListHandler(exportRuleList, {
-            warning: true
-          });
-        } else {
-          $scope.setExportRuleListHandler(exportLegacyRuleList);
-        }
-      } else {
-        $scope.setExportRuleListHandler(exportRuleList);
-      }
-      if ($scope.showConditionTypes === 0 && $scope.options['-exportLegacyRuleList']) {
+      var exportOptions;
+      $scope.showConditionTypes = OmegaSwitchProfileOptions.updateConditionMode($scope.profile, $scope.options, conditionModeState, show);
+      exportOptions = OmegaSwitchProfileOptions.exportHandlerOptions($scope.options, $scope.showConditionTypes);
+      if (exportOptions.legacy) {
         return $scope.setExportRuleListHandler(exportLegacyRuleList);
       }
+      $scope.setExportRuleListHandler(exportRuleList, exportOptions.warning ? {
+        warning: true
+      } : void 0);
       if ($scope.showConditionTypes !== 0) {
-        if ($scope.options["-showConditionTypes"] == null) {
-          $scope.options["-showConditionTypes"] = $scope.showConditionTypes;
-        }
         return typeof unwatchRules === "function" ? unwatchRules() : void 0;
       }
     });
-    if ($scope.hasConditionTypes === 0) {
-      unwatchRules = $scope.$watch('profile.rules', updateHasConditionTypes, true);
-    }
+    unwatchRules = $scope.$watch('profile.rules', function() {
+      if (OmegaSwitchProfileOptions.detectAdvancedConditionTypes($scope.profile, conditionModeState)) {
+        $scope.showConditionTypes = conditionModeState.showConditionTypes;
+        return typeof unwatchRules === "function" ? unwatchRules() : void 0;
+      }
+    }, true);
     rulesReadyDefer = $q.defer();
     rulesReady = rulesReadyDefer.promise;
     stopWatchingForRules = $scope.$watch('profile.rules', function(rules) {
@@ -83,20 +55,6 @@
     });
     $scope.addRule = function() {
       return OmegaSwitchProfileState.addRule($scope.profile, $scope.attachedOptions.defaultProfileName);
-    };
-    $scope.validateCondition = function(condition, pattern) {
-      return OmegaSwitchProfileRules.validateCondition(condition, pattern);
-    };
-    $scope.validateIpCondition = function(condition, input) {
-      var ip;
-      if (!input) {
-        return false;
-      }
-      ip = OmegaPac.Conditions.parseIp(input);
-      return ip != null;
-    };
-    $scope.updateDay = function(condition, i, selected) {
-      return OmegaSwitchProfileRules.updateDay(condition, i, selected);
     };
     $scope.removeRule = function(index) {
       var removeForReal, scope;
@@ -151,14 +109,6 @@
       }).result.then(function() {
         return OmegaSwitchProfileRules.resetRuleProfiles($scope.profile.rules, $scope.attachedOptions.defaultProfileName);
       });
-    };
-    $scope.sortableOptions = {
-      handle: '.sort-bar',
-      tolerance: 'pointer',
-      axis: 'y',
-      forceHelperSize: true,
-      forcePlaceholderSize: true,
-      containment: 'parent'
     };
     attachedReadyDefer = $q.defer();
     attachedReady = attachedReadyDefer.promise;
