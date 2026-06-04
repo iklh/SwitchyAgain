@@ -204,7 +204,6 @@ async function main() {
   await bundleReact('src/react/import_export.tsx', 'build/react/import_export.js');
 
   const partials = [
-    'input_group_clear',
     'profile',
   ];
   for (const name of partials) {
