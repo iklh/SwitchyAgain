@@ -7,7 +7,8 @@ import {
   Profile,
   ProfileInline,
   ProfileSelect,
-  profileByName
+  profileByName,
+  resultProfilesFor
 } from './profile_widgets';
 
 declare const OmegaSwitchProfileRules: any;
@@ -45,7 +46,6 @@ type RuleListProfileProps = {
   onProfileChange?: (field: keyof RuleListProfileModel, value: string) => void;
   options?: Options | null;
   profile?: RuleListProfileModel | null;
-  resultProfiles?: Profile[];
   ruleListFormats?: string[];
   updating?: boolean;
 };
@@ -172,7 +172,6 @@ type SwitchRuleRowProps = {
 };
 
 type SwitchRuleRowsProps = {
-  conditionTypes?: ConditionTypeOption[];
   dispName?: (profile: Profile) => string;
   onAddNote?: (index: number) => void;
   onCloneRule?: (index: number) => void;
@@ -185,8 +184,9 @@ type SwitchRuleRowsProps = {
   onRemoveRule?: (index: number) => void;
   onWeekdayChange?: (index: number, dayIndex: number, selected: boolean) => void;
   options?: Options | null;
-  resultProfiles?: Profile[];
+  profile?: Profile | null;
   rules?: SwitchRuleModel[];
+  showConditionTypes?: number;
   showNotes?: boolean;
   visibleRuleCount?: number;
 };
@@ -205,7 +205,7 @@ type SwitchRuleFooterProps = {
   onRemoveAttached?: () => void;
   onResetRules?: () => void;
   options?: Options | null;
-  resultProfiles?: Profile[];
+  profile?: Profile | null;
   ruleListIcon?: string;
   showNotes?: boolean;
 };
@@ -329,6 +329,13 @@ function groupedConditionTypes(conditionTypes: ConditionTypeOption[] = []) {
     groups[conditionType.group].push(conditionType);
   }
   return order.map((group) => ({group, types: groups[group]}));
+}
+
+function conditionTypesForMode(showConditionTypes = 0): ConditionTypeOption[] {
+  const groups = showConditionTypes === 0
+    ? OmegaSwitchProfileRules.getBasicConditionGroups()
+    : OmegaSwitchProfileRules.getAdvancedConditionGroups();
+  return OmegaSwitchProfileRules.expandConditionGroups(groups);
 }
 
 const switchRuleKeys = new WeakMap<object, number>();
@@ -655,7 +662,6 @@ function SwitchRuleRow({
 }
 
 function SwitchRuleRows({
-  conditionTypes = [],
   dispName,
   onAddNote,
   onCloneRule,
@@ -668,11 +674,15 @@ function SwitchRuleRows({
   onRemoveRule,
   onWeekdayChange,
   options,
-  resultProfiles,
+  profile,
   rules = [],
+  showConditionTypes = 0,
   showNotes = false,
   visibleRuleCount = rules.length
 }: SwitchRuleRowsProps) {
+  const conditionTypes = conditionTypesForMode(showConditionTypes);
+  const resultProfiles = resultProfilesFor(options, profile);
+
   return (
     <>
       {rules.slice(0, visibleRuleCount).map((rule, index) => (
@@ -1295,10 +1305,12 @@ function SwitchRuleFooter({
   onRemoveAttached,
   onResetRules,
   options,
-  resultProfiles,
+  profile,
   ruleListIcon = 'glyphicon-list',
   showNotes = false
 }: SwitchRuleFooterProps) {
+  const resultProfiles = resultProfilesFor(options, profile);
+
   return (
     <>
       <tr>
@@ -1381,10 +1393,10 @@ function RuleListProfile({
   onProfileChange,
   options,
   profile,
-  resultProfiles,
   ruleListFormats = [],
   updating = false
 }: RuleListProfileProps) {
+  const resultProfiles = resultProfilesFor(options, profile);
   const [draft, setDraft] = useState({
     defaultProfileName: profile?.defaultProfileName || '',
     format: profile?.format || '',

@@ -1,6 +1,6 @@
 (function() {
   angular.module('omega').controller('SwitchProfileCtrl', function($scope, $rootScope, $location, $timeout, $q, $modal, profileIcons, getAttachedName, omegaTarget, trFilter, downloadFile, $window, reactModalTemplates) {
-    var advancedConditionTypesExpanded, attachedReady, attachedReadyDefer, basicConditionTypeSet, basicConditionTypesExpanded, cancelRuleBatchSchedule, exportLegacyRuleList, exportRuleList, initialRuleBatchSize, isUrlConditionType, oldLastUpdate, oldRuleList, oldSourceUrl, onAttachedChange, parseOmegaRules, parseSource, renderRuleBatch, renderRuleBatchSize, renderRuleBatchTimer, resetVisibleRules, rulesReady, rulesReadyDefer, scheduleRuleBatch, stateEditorKey, stopWatchingForRules, unwatchRules, unwatchRulesShowNote, updateHasConditionTypes;
+    var attachedReady, attachedReadyDefer, basicConditionTypeSet, basicConditionTypesExpanded, cancelRuleBatchSchedule, exportLegacyRuleList, exportRuleList, initialRuleBatchSize, isUrlConditionType, oldLastUpdate, oldRuleList, oldSourceUrl, onAttachedChange, parseOmegaRules, parseSource, renderRuleBatch, renderRuleBatchSize, renderRuleBatchTimer, resetVisibleRules, rulesReady, rulesReadyDefer, scheduleRuleBatch, stateEditorKey, stopWatchingForRules, unwatchRules, unwatchRulesShowNote, updateHasConditionTypes;
     $scope.ruleListFormats = OmegaPac.Profiles.ruleListFormats;
     exportRuleList = function() {
       var blob, fileName, text;
@@ -24,9 +24,7 @@
       show: $location.search().help === 'condition'
     };
     basicConditionTypesExpanded = OmegaSwitchProfileRules.expandConditionGroups(OmegaSwitchProfileRules.getBasicConditionGroups());
-    advancedConditionTypesExpanded = OmegaSwitchProfileRules.expandConditionGroups(OmegaSwitchProfileRules.getAdvancedConditionGroups());
     basicConditionTypeSet = OmegaSwitchProfileRules.createConditionTypeSet(basicConditionTypesExpanded);
-    $scope.conditionTypes = basicConditionTypesExpanded;
     $scope.showConditionTypes = 0;
     $scope.hasConditionTypes = 0;
     isUrlConditionType = OmegaSwitchProfileRules.getUrlConditionTypeMap();
@@ -61,13 +59,10 @@
       } else {
         $scope.setExportRuleListHandler(exportRuleList);
       }
-      if ($scope.showConditionTypes === 0) {
-        $scope.conditionTypes = basicConditionTypesExpanded;
-        if ($scope.options['-exportLegacyRuleList']) {
-          return $scope.setExportRuleListHandler(exportLegacyRuleList);
-        }
-      } else {
-        $scope.conditionTypes = advancedConditionTypesExpanded;
+      if ($scope.showConditionTypes === 0 && $scope.options['-exportLegacyRuleList']) {
+        return $scope.setExportRuleListHandler(exportLegacyRuleList);
+      }
+      if ($scope.showConditionTypes !== 0) {
         if ($scope.options["-showConditionTypes"] == null) {
           $scope.options["-showConditionTypes"] = $scope.showConditionTypes;
         }

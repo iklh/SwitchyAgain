@@ -24,6 +24,14 @@ const BUILTIN_PROFILES: Profile[] = [
   }
 ];
 
+const PROFILE_ORDER_FOR_TYPE: Record<string, number> = {
+  FixedProfile: -2000,
+  PacProfile: -1000,
+  VirtualProfile: 1000,
+  SwitchProfile: 2000,
+  RuleListProfile: 3000
+};
+
 export const PROFILE_ICONS: Record<string, string> = {
   AutoDetectProfile: 'glyphicon-file',
   DirectProfile: 'glyphicon-transfer',
@@ -67,15 +75,44 @@ export function profilesFromOptions(options?: Options | null) {
   }) as Profile[];
 }
 
+export function profileOrder(a: Profile, b: Profile) {
+  const diff = (PROFILE_ORDER_FOR_TYPE[a.profileType || ''] || 0) - (PROFILE_ORDER_FOR_TYPE[b.profileType || ''] || 0);
+  if (diff !== 0) {
+    return diff;
+  }
+  return (a.name || '').localeCompare(b.name || '');
+}
+
 export function allProfilesFromOptions(options?: Options | null) {
   return profilesFromOptions(options).filter((profile) => {
     const name = profile.name || '';
-    return name.charAt(0) !== '_';
+  return name.charAt(0) !== '_';
   }).concat(BUILTIN_PROFILES);
+}
+
+export function profilesForFilter(options: Options | null | undefined, filter?: Profile | string | null) {
+  if (!options) {
+    return [];
+  }
+  if (typeof filter === 'object' || (typeof filter === 'string' && filter.charAt(0) === '+')) {
+    return OmegaPac.Profiles.validResultProfilesFor(typeof filter === 'string' ? filter.substr(1) : filter, options) as Profile[];
+  }
+  if (filter === 'all') {
+    return allProfilesFromOptions(options);
+  }
+  const profiles = profilesFromOptions(options);
+  if (filter === 'sorted') {
+    return profiles.slice().sort(profileOrder);
+  }
+  return profiles;
 }
 
 export function profileByName(options: Options | null | undefined, name: string) {
   return profilesFromOptions(options).concat(BUILTIN_PROFILES).find((profile) => profile.name === name) || null;
+}
+
+export function resultProfilesFor(options: Options | null | undefined, filter?: Profile | string | null) {
+  return profilesForFilter(options, filter);
 }
 
 export function ProfileSelect({

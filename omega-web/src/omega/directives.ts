@@ -768,7 +768,7 @@
     };
   });
 
-  angular.module('omega').directive('omegaReactRuleListProfile', function($timeout, $filter) {
+  angular.module('omega').directive('omegaReactRuleListProfile', function($timeout) {
     return {
       restrict: 'A',
       link: function(scope, element) {
@@ -790,7 +790,6 @@
             },
             options: scope.options,
             profile: scope.profile,
-            resultProfiles: $filter('profiles')(scope.options, scope.profile),
             ruleListFormats: OmegaPac.Profiles.ruleListFormats,
             updating: !!(scope.updatingProfile && scope.updatingProfile[name])
           };
@@ -1051,14 +1050,13 @@
     };
   });
 
-  angular.module('omega').directive('omegaReactSwitchRuleRows', function($timeout, $filter) {
+  angular.module('omega').directive('omegaReactSwitchRuleRows', function($timeout) {
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mount, mounted, props, refreshSortable, render, sortStartIndex, unwatchConditionTypes, unwatchOptions, unwatchRules, unwatchShowNotes, unwatchVisibleRuleCount;
+        var bridge, mount, mounted, props, refreshSortable, render, sortStartIndex, unwatchOptions, unwatchRules, unwatchShowConditionTypes, unwatchShowNotes, unwatchVisibleRuleCount;
         props = function() {
           return {
-            conditionTypes: scope.conditionTypes,
             dispName: scope.dispNameFilter,
             onAddNote: function(index) {
               return scope.addNote(index);
@@ -1147,8 +1145,9 @@
               });
             },
             options: scope.options,
-            resultProfiles: $filter('profiles')(scope.options, scope.profile),
+            profile: scope.profile,
             rules: scope.profile.rules,
+            showConditionTypes: scope.showConditionTypes,
             showNotes: scope.showNotes,
             visibleRuleCount: scope.visibleRuleCount
           };
@@ -1195,7 +1194,7 @@
               }
             });
             unwatchRules = scope.$watch('profile.rules', render, true);
-            unwatchConditionTypes = scope.$watch('conditionTypes', render);
+            unwatchShowConditionTypes = scope.$watch('showConditionTypes', render);
             unwatchOptions = scope.$watch('options', render, true);
             unwatchShowNotes = scope.$watch('showNotes', render);
             unwatchVisibleRuleCount = scope.$watch('visibleRuleCount', render);
@@ -1209,8 +1208,8 @@
           if (unwatchRules) {
             unwatchRules();
           }
-          if (unwatchConditionTypes) {
-            unwatchConditionTypes();
+          if (unwatchShowConditionTypes) {
+            unwatchShowConditionTypes();
           }
           if (unwatchOptions) {
             unwatchOptions();
@@ -1232,7 +1231,7 @@
     };
   });
 
-  angular.module('omega').directive('omegaReactSwitchRuleFooter', function($timeout, $filter) {
+  angular.module('omega').directive('omegaReactSwitchRuleFooter', function($timeout) {
     return {
       restrict: 'A',
       link: function(scope, element) {
@@ -1269,7 +1268,7 @@
               return scope.resetRules();
             },
             options: scope.options,
-            resultProfiles: $filter('profiles')(scope.options, scope.profile),
+            profile: scope.profile,
             ruleListIcon: scope.profileIcons['RuleListProfile'],
             showNotes: scope.showNotes
           };
