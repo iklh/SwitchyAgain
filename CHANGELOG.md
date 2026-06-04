@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.1.12
+
+Chrome MV3 popup and options state fixes.
+
+- Restored the Add Condition popup flow to the legacy Angular form while
+  keeping the MV3 popup menu entry point.
+- Fixed popup state reads and writes on MV3 so the Add Condition page can load
+  the active profile, result profile list, and current page domain reliably.
+- Preserved the current profile when importing options unless imported options
+  explicitly define a startup profile.
+- Removed the Firefox for Android manifest declaration because the extension
+  does not support Firefox on Android.
+
 ## v1.1.11
 
 React options migration fixes.
