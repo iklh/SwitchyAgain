@@ -201,6 +201,11 @@ type SwitchRuleFooterProps = {
   showNotes?: boolean;
 };
 
+type SwitchRulesSectionProps = SwitchConditionHelpProps & SwitchRulesHeaderProps & SwitchRuleTableHeaderProps & SwitchRuleRowsProps & SwitchRuleFooterProps & {
+  loadRules?: boolean;
+  onMoveRule?: (fromIndex: number, toIndex: number) => void;
+};
+
 type ProfileShellProps = {
   exportRuleListAvailable?: boolean;
   exportRuleListWarning?: boolean;
@@ -666,7 +671,7 @@ function SwitchRuleRows({
   rules = [],
   showConditionTypes = 0,
   showNotes = false,
-  visibleRuleCount = rules.length
+  visibleRuleCount = 0
 }: SwitchRuleRowsProps) {
   const conditionTypes = conditionTypesForMode(showConditionTypes);
   const resultProfiles = resultProfilesFor(options, profile);
@@ -1393,6 +1398,205 @@ function SwitchRuleFooter({
   );
 }
 
+function SwitchRulesSection({
+  attached,
+  attachedOptions,
+  editSource = false,
+  loadRules = false,
+  onAddNote,
+  onAddRule,
+  onAttachedEnabledChange,
+  onAttachedMatchProfileChange,
+  onCloneRule,
+  onClose,
+  onConditionFieldChange,
+  onConditionReplace,
+  onConditionTypeChange,
+  onDefaultProfileChange,
+  onIpConditionInputChange,
+  onMoveRule,
+  onNoteChange,
+  onProfileChange,
+  onRemoveAttached,
+  onRemoveRule,
+  onResetRules,
+  onSourceChange,
+  onToggleConditionHelp,
+  onToggleSource,
+  onWeekdayChange,
+  options,
+  profile,
+  rules = [],
+  show = false,
+  showConditionTypes = 0,
+  showNotes = false,
+  source,
+  visibleRuleCount = 0
+}: SwitchRulesSectionProps) {
+  const rulesBodyRef = useRef<HTMLTableSectionElement>(null);
+  const moveRuleRef = useRef(onMoveRule);
+  const previousProfileNameRef = useRef<string | undefined>(undefined);
+  const [renderedRuleCount, setRenderedRuleCount] = useState(0);
+
+  useEffect(() => {
+    moveRuleRef.current = onMoveRule;
+  }, [onMoveRule]);
+
+  useEffect(() => {
+    if (!loadRules || editSource) {
+      previousProfileNameRef.current = profile?.name;
+      setRenderedRuleCount(0);
+      return;
+    }
+    setRenderedRuleCount((current) => {
+      const profileChanged = previousProfileNameRef.current !== profile?.name;
+      previousProfileNameRef.current = profile?.name;
+      if (profileChanged || current === 0 || current > rules.length) {
+        return Math.min(15, rules.length);
+      }
+      return current;
+    });
+  }, [editSource, loadRules, profile?.name, rules.length]);
+
+  useEffect(() => {
+    if (!loadRules || editSource || renderedRuleCount >= rules.length) {
+      return;
+    }
+    let timeout: number | undefined;
+    const frame = window.requestAnimationFrame(() => {
+      timeout = window.setTimeout(() => {
+        setRenderedRuleCount((current) => Math.min(rules.length, current + 8));
+      }, 0);
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      if (timeout != null) {
+        window.clearTimeout(timeout);
+      }
+    };
+  }, [editSource, loadRules, renderedRuleCount, rules.length]);
+
+  useEffect(() => {
+    const body = rulesBodyRef.current;
+    if (!body || editSource || !loadRules || !(jQuery as any)?.fn?.sortable) {
+      return;
+    }
+    const sortableBody = jQuery(body);
+    let sortStartIndex = 0;
+    sortableBody.sortable({
+      handle: '.sort-bar',
+      tolerance: 'pointer',
+      axis: 'y',
+      forceHelperSize: true,
+      forcePlaceholderSize: true,
+      containment: 'parent',
+      start(_event: any, ui: any) {
+        sortStartIndex = ui.item.index();
+      },
+      stop(_event: any, ui: any) {
+        const sortEndIndex = ui.item.index();
+        if (sortStartIndex !== sortEndIndex) {
+          moveRuleRef.current?.(sortStartIndex, sortEndIndex);
+        }
+      }
+    });
+    return () => {
+      if (sortableBody.data('ui-sortable')) {
+        sortableBody.sortable('destroy');
+      }
+    };
+  }, [editSource, loadRules]);
+
+  useEffect(() => {
+    const body = rulesBodyRef.current;
+    if (!body) {
+      return;
+    }
+    const sortableBody = jQuery(body);
+    if (sortableBody.data('ui-sortable')) {
+      sortableBody.sortable('refresh');
+    }
+  }, [rules, renderedRuleCount]);
+
+  const initialVisibleRuleCount = Math.min(15, rules.length);
+  const displayRuleCount = !editSource && loadRules && renderedRuleCount === 0 ? initialVisibleRuleCount : renderedRuleCount;
+  const reserveInitialRulesSpace = !editSource && rules.length > 0 && displayRuleCount < initialVisibleRuleCount;
+  const rulesWrapperMinHeight = reserveInitialRulesSpace ? 96 + initialVisibleRuleCount * 42 : undefined;
+
+  return (
+    <>
+      <SwitchConditionHelp
+        onClose={onClose}
+        show={show}
+        showConditionTypes={showConditionTypes}
+      />
+      <section className="settings-group">
+        <div className="switch-rules-header-host">
+          <SwitchRulesHeader
+            editSource={editSource}
+            onSourceChange={onSourceChange}
+            onToggleSource={onToggleSource}
+            rules={rules}
+            source={source}
+          />
+        </div>
+        {!editSource && (
+          <div
+            className={`table-responsive switch-rules-wrapper ${!loadRules || reserveInitialRulesSpace ? 'switch-rules-wrapper-loading' : ''}`}
+            style={rulesWrapperMinHeight ? {minHeight: `${rulesWrapperMinHeight}px`} : undefined}
+          >
+            {loadRules && (
+              <table className="switch-rules table table-bordered table-condensed width-limit-xl">
+                <thead>
+                  <SwitchRuleTableHeader
+                    onToggleConditionHelp={onToggleConditionHelp}
+                    showNotes={showNotes}
+                  />
+                </thead>
+                <tbody ref={rulesBodyRef}>
+                  <SwitchRuleRows
+                    onAddNote={onAddNote}
+                    onCloneRule={onCloneRule}
+                    onConditionFieldChange={onConditionFieldChange}
+                    onConditionReplace={onConditionReplace}
+                    onConditionTypeChange={onConditionTypeChange}
+                    onIpConditionInputChange={onIpConditionInputChange}
+                    onNoteChange={onNoteChange}
+                    onProfileChange={onProfileChange}
+                    onRemoveRule={onRemoveRule}
+                    onWeekdayChange={onWeekdayChange}
+                    options={options}
+                    profile={profile}
+                    rules={rules}
+                    showConditionTypes={showConditionTypes}
+                    showNotes={showNotes}
+                    visibleRuleCount={displayRuleCount}
+                  />
+                </tbody>
+                <tbody>
+                  <SwitchRuleFooter
+                    attached={attached}
+                    attachedOptions={attachedOptions}
+                    onAddRule={onAddRule}
+                    onAttachedEnabledChange={onAttachedEnabledChange}
+                    onAttachedMatchProfileChange={onAttachedMatchProfileChange}
+                    onDefaultProfileChange={onDefaultProfileChange}
+                    onRemoveAttached={onRemoveAttached}
+                    onResetRules={onResetRules}
+                    options={options}
+                    profile={profile}
+                    showNotes={showNotes}
+                  />
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
+
 function RuleListProfile({
   onDownload,
   onProfileChange,
@@ -1652,76 +1856,16 @@ function mountSwitchAttachedProfile(element: Element, props: SwitchAttachedProfi
   };
 }
 
-function mountSwitchConditionHelp(element: Element, props: SwitchConditionHelpProps = {}) {
+function mountSwitchRulesSection(element: Element, props: SwitchRulesSectionProps = {}) {
   const root = createRoot(element);
   flushSync(() => {
-    root.render(<SwitchConditionHelp {...props} />);
+    root.render(<SwitchRulesSection {...props} />);
   });
   return {
-    render(nextProps: SwitchConditionHelpProps = {}) {
-      root.render(<SwitchConditionHelp {...nextProps} />);
-    },
-    unmount() {
-      root.unmount();
-    }
-  };
-}
-
-function mountSwitchRulesHeader(element: Element, props: SwitchRulesHeaderProps = {}) {
-  const root = createRoot(element);
-  flushSync(() => {
-    root.render(<SwitchRulesHeader {...props} />);
-  });
-  return {
-    render(nextProps: SwitchRulesHeaderProps = {}) {
-      root.render(<SwitchRulesHeader {...nextProps} />);
-    },
-    unmount() {
-      root.unmount();
-    }
-  };
-}
-
-function mountSwitchRuleTableHeader(element: Element, props: SwitchRuleTableHeaderProps = {}) {
-  const root = createRoot(element);
-  flushSync(() => {
-    root.render(<SwitchRuleTableHeader {...props} />);
-  });
-  return {
-    render(nextProps: SwitchRuleTableHeaderProps = {}) {
-      root.render(<SwitchRuleTableHeader {...nextProps} />);
-    },
-    unmount() {
-      root.unmount();
-    }
-  };
-}
-
-function mountSwitchRuleRows(element: Element, props: SwitchRuleRowsProps = {}) {
-  const root = createRoot(element);
-  flushSync(() => {
-    root.render(<SwitchRuleRows {...props} />);
-  });
-  return {
-    render(nextProps: SwitchRuleRowsProps = {}) {
+    render(nextProps: SwitchRulesSectionProps = {}) {
       flushSync(() => {
-        root.render(<SwitchRuleRows {...nextProps} />);
+        root.render(<SwitchRulesSection {...nextProps} />);
       });
-    },
-    unmount() {
-      root.unmount();
-    }
-  };
-}
-
-function mountSwitchRuleFooter(element: Element, props: SwitchRuleFooterProps = {}) {
-  const root = createRoot(element);
-  flushSync(() => {
-    root.render(<SwitchRuleFooter {...props} />);
-  });
-  return {
-    render(nextProps: SwitchRuleFooterProps = {}) {
-      root.render(<SwitchRuleFooter {...nextProps} />);
     },
     unmount() {
       root.unmount();
@@ -1736,11 +1880,7 @@ globalWindow.OmegaReactProfileContent = {
   mountProfileShell,
   mountRuleListProfile,
   mountSwitchAttachedProfile,
-  mountSwitchConditionHelp,
-  mountSwitchRuleFooter,
-  mountSwitchRuleRows,
-  mountSwitchRuleTableHeader,
-  mountSwitchRulesHeader,
+  mountSwitchRulesSection,
   mountUnsupportedProfile,
   mountVirtualProfile
 };

@@ -482,17 +482,7 @@
       RuleListProfile: '<div omega-react-rule-list-profile></div>',
       SwitchProfile: [
         '<div ng-controller="SwitchProfileCtrl">',
-        '  <div omega-react-switch-condition-help></div>',
-        '  <section class="settings-group">',
-        '    <div class="switch-rules-header-host" omega-react-switch-rules-header></div>',
-        '    <div class="table-responsive switch-rules-wrapper" ng-show="!editSource" ng-class="{&quot;switch-rules-wrapper-loading&quot;: !loadRules}">',
-        '      <table class="switch-rules table table-bordered table-condensed width-limit-xl" ng-if="loadRules">',
-        '        <thead omega-react-switch-rule-table-header></thead>',
-        '        <tbody omega-react-switch-rule-rows></tbody>',
-        '        <tbody omega-react-switch-rule-footer></tbody>',
-        '      </table>',
-        '    </div>',
-        '  </section>',
+        '  <div omega-react-switch-rules-section></div>',
         '  <div omega-react-switch-attached-profile></div>',
         '</div>'
       ].join(''),
@@ -690,6 +680,9 @@
         var bridge, mount, mounted, props, render, unwatchers;
         unwatchers = [];
         props = function() {
+          var rules, visibleRuleCount;
+          rules = scope.profile && scope.profile.rules || [];
+          visibleRuleCount = Math.min(scope.visibleRuleCount || 0, rules.length);
           return {
             bypassList: scope.bypassList,
             isProxyAuthActive: function(scheme) {
@@ -891,170 +884,47 @@
     };
   });
 
-  angular.module('omega').directive('omegaReactSwitchConditionHelp', function($timeout) {
+  angular.module('omega').directive('omegaReactSwitchRulesSection', function($timeout) {
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mount, mounted, props, render, unwatchShow, unwatchTypes;
+        var bridge, mount, mounted, props, render, unwatchers;
+        unwatchers = [];
         props = function() {
+          var rules, visibleRuleCount;
+          rules = scope.profile && scope.profile.rules || [];
+          visibleRuleCount = Math.min(scope.visibleRuleCount || 0, rules.length);
           return {
-            onClose: function() {
-              return scope.$evalAsync(function() {
-                return scope.conditionHelp.show = false;
-              });
-            },
-            show: scope.conditionHelp && scope.conditionHelp.show,
-            showConditionTypes: scope.showConditionTypes
-          };
-        };
-        render = function() {
-          if (mounted != null ? mounted.render : void 0) {
-            return mounted.render(props());
-          }
-        };
-        mount = function() {
-          bridge = window.OmegaReactProfileContent;
-          if (bridge != null ? bridge.mountSwitchConditionHelp : void 0) {
-            mounted = bridge.mountSwitchConditionHelp(element[0], props());
-            unwatchShow = scope.$watch('conditionHelp.show', render);
-            unwatchTypes = scope.$watch('showConditionTypes', render);
-          }
-        };
-        mount();
-        if (!mounted) {
-          $timeout(mount);
-        }
-        return scope.$on('$destroy', function() {
-          if (unwatchShow) {
-            unwatchShow();
-          }
-          if (unwatchTypes) {
-            unwatchTypes();
-          }
-          if (mounted != null ? mounted.unmount : void 0) {
-            return mounted.unmount();
-          }
-        });
-      }
-    };
-  });
-
-  angular.module('omega').directive('omegaReactSwitchRulesHeader', function($timeout) {
-    return {
-      restrict: 'A',
-      link: function(scope, element) {
-        var bridge, mount, mounted, props, render, unwatchEditSource, unwatchRules, unwatchSource;
-        props = function() {
-          return {
+            attached: scope.attached,
+            attachedOptions: scope.attachedOptions,
             editSource: scope.editSource,
-            onSourceChange: function(code) {
-              return scope.$evalAsync(function() {
-                if (scope.source) {
-                  scope.source.code = code;
-                  scope.source.touched = true;
-                  return scope.$root.optionsDirty = true;
-                }
-              });
-            },
-            onToggleSource: function() {
-              return scope.toggleSource();
-            },
-            rules: scope.profile && scope.profile.rules,
-            source: scope.source
-          };
-        };
-        render = function() {
-          if (mounted != null ? mounted.render : void 0) {
-            return mounted.render(props());
-          }
-        };
-        mount = function() {
-          bridge = window.OmegaReactProfileContent;
-          if (bridge != null ? bridge.mountSwitchRulesHeader : void 0) {
-            mounted = bridge.mountSwitchRulesHeader(element[0], props());
-            unwatchEditSource = scope.$watch('editSource', render);
-            unwatchRules = scope.$watch('profile.rules', render, true);
-            unwatchSource = scope.$watch('source', render, true);
-          }
-        };
-        mount();
-        if (!mounted) {
-          $timeout(mount);
-        }
-        return scope.$on('$destroy', function() {
-          if (unwatchEditSource) {
-            unwatchEditSource();
-          }
-          if (unwatchSource) {
-            unwatchSource();
-          }
-          if (unwatchRules) {
-            unwatchRules();
-          }
-          if (mounted != null ? mounted.unmount : void 0) {
-            return mounted.unmount();
-          }
-        });
-      }
-    };
-  });
-
-  angular.module('omega').directive('omegaReactSwitchRuleTableHeader', function($timeout) {
-    return {
-      restrict: 'A',
-      link: function(scope, element) {
-        var bridge, mount, mounted, props, render, unwatchShowNotes;
-        props = function() {
-          return {
-            onToggleConditionHelp: function() {
-              return scope.$evalAsync(function() {
-                return scope.conditionHelp.show = !scope.conditionHelp.show;
-              });
-            },
-            showNotes: scope.showNotes
-          };
-        };
-        render = function() {
-          if (mounted != null ? mounted.render : void 0) {
-            return mounted.render(props());
-          }
-        };
-        mount = function() {
-          bridge = window.OmegaReactProfileContent;
-          if (bridge != null ? bridge.mountSwitchRuleTableHeader : void 0) {
-            mounted = bridge.mountSwitchRuleTableHeader(element[0], props());
-            unwatchShowNotes = scope.$watch('showNotes', render);
-          }
-        };
-        mount();
-        if (!mounted) {
-          $timeout(mount);
-        }
-        return scope.$on('$destroy', function() {
-          if (unwatchShowNotes) {
-            unwatchShowNotes();
-          }
-          if (mounted != null ? mounted.unmount : void 0) {
-            return mounted.unmount();
-          }
-        });
-      }
-    };
-  });
-
-  angular.module('omega').directive('omegaReactSwitchRuleRows', function($timeout) {
-    return {
-      restrict: 'A',
-      link: function(scope, element) {
-        var bridge, mount, mounted, props, refreshSortable, render, sortStartIndex, unwatchOptions, unwatchRules, unwatchShowConditionTypes, unwatchShowNotes, unwatchVisibleRuleCount;
-        props = function() {
-          return {
+            loadRules: scope.loadRules,
             onAddNote: function(index) {
               return scope.addNote(index);
+            },
+            onAddRule: function() {
+              return scope.addRule();
+            },
+            onAttachedEnabledChange: function(enabled) {
+              return scope.$evalAsync(function() {
+                return scope.attachedOptions.enabled = enabled;
+              });
+            },
+            onAttachedMatchProfileChange: function(name) {
+              return scope.$evalAsync(function() {
+                if (scope.attached) {
+                  return scope.attached.matchProfileName = name;
+                }
+              });
             },
             onCloneRule: function(index) {
               return scope.$evalAsync(function() {
                 return scope.cloneRule(index);
+              });
+            },
+            onClose: function() {
+              return scope.$evalAsync(function() {
+                return scope.conditionHelp.show = false;
               });
             },
             onConditionFieldChange: function(index, field, value) {
@@ -1084,6 +954,11 @@
                 return scope.$root.optionsDirty = true;
               });
             },
+            onDefaultProfileChange: function(name) {
+              return scope.$evalAsync(function() {
+                return scope.attachedOptions.defaultProfileName = name;
+              });
+            },
             onIpConditionInputChange: function(index, value) {
               return scope.$evalAsync(function() {
                 var rule;
@@ -1096,6 +971,17 @@
                   ip: '0.0.0.0',
                   prefixLength: 0
                 };
+                return scope.$root.optionsDirty = true;
+              });
+            },
+            onMoveRule: function(fromIndex, toIndex) {
+              return scope.$evalAsync(function() {
+                var rule;
+                if (fromIndex === toIndex) {
+                  return;
+                }
+                rule = scope.profile.rules.splice(fromIndex, 1)[0];
+                scope.profile.rules.splice(toIndex, 0, rule);
                 return scope.$root.optionsDirty = true;
               });
             },
@@ -1121,8 +1007,31 @@
                 return scope.$root.optionsDirty = true;
               });
             },
+            onRemoveAttached: function() {
+              return scope.removeAttached();
+            },
             onRemoveRule: function(index) {
               return scope.removeRule(index);
+            },
+            onResetRules: function() {
+              return scope.resetRules();
+            },
+            onSourceChange: function(code) {
+              return scope.$evalAsync(function() {
+                if (scope.source) {
+                  scope.source.code = code;
+                  scope.source.touched = true;
+                  return scope.$root.optionsDirty = true;
+                }
+              });
+            },
+            onToggleConditionHelp: function() {
+              return scope.$evalAsync(function() {
+                return scope.conditionHelp.show = !scope.conditionHelp.show;
+              });
+            },
+            onToggleSource: function() {
+              return scope.toggleSource();
             },
             onWeekdayChange: function(index, dayIndex, selected) {
               return scope.$evalAsync(function() {
@@ -1137,129 +1046,12 @@
             },
             options: scope.options,
             profile: scope.profile,
-            rules: scope.profile.rules,
+            rules: rules,
+            show: scope.conditionHelp && scope.conditionHelp.show,
             showConditionTypes: scope.showConditionTypes,
             showNotes: scope.showNotes,
-            visibleRuleCount: scope.visibleRuleCount
-          };
-        };
-        refreshSortable = function() {
-          return $timeout(function() {
-            if (element.data('ui-sortable')) {
-              return element.sortable('refresh');
-            }
-          }, 0, false);
-        };
-        render = function() {
-          if (mounted != null ? mounted.render : void 0) {
-            mounted.render(props());
-            return refreshSortable();
-          }
-        };
-        mount = function() {
-          bridge = window.OmegaReactProfileContent;
-          if ((bridge != null ? bridge.mountSwitchRuleRows : void 0) && !mounted) {
-            mounted = bridge.mountSwitchRuleRows(element[0], props());
-            element.sortable({
-              handle: '.sort-bar',
-              tolerance: 'pointer',
-              axis: 'y',
-              forceHelperSize: true,
-              forcePlaceholderSize: true,
-              containment: 'parent',
-              start: function(event, ui) {
-                return sortStartIndex = ui.item.index();
-              },
-              stop: function(event, ui) {
-                var sortEndIndex;
-                sortEndIndex = ui.item.index();
-                if (sortStartIndex === sortEndIndex) {
-                  return;
-                }
-                return scope.$evalAsync(function() {
-                  var rule;
-                  rule = scope.profile.rules.splice(sortStartIndex, 1)[0];
-                  scope.profile.rules.splice(sortEndIndex, 0, rule);
-                  return scope.$root.optionsDirty = true;
-                });
-              }
-            });
-            unwatchRules = scope.$watch('profile.rules', render, true);
-            unwatchShowConditionTypes = scope.$watch('showConditionTypes', render);
-            unwatchOptions = scope.$watch('options', render, true);
-            unwatchShowNotes = scope.$watch('showNotes', render);
-            unwatchVisibleRuleCount = scope.$watch('visibleRuleCount', render);
-          }
-        };
-        mount();
-        if (!mounted) {
-          $timeout(mount);
-        }
-        return scope.$on('$destroy', function() {
-          if (unwatchRules) {
-            unwatchRules();
-          }
-          if (unwatchShowConditionTypes) {
-            unwatchShowConditionTypes();
-          }
-          if (unwatchOptions) {
-            unwatchOptions();
-          }
-          if (unwatchShowNotes) {
-            unwatchShowNotes();
-          }
-          if (unwatchVisibleRuleCount) {
-            unwatchVisibleRuleCount();
-          }
-          if (element.data('ui-sortable')) {
-            element.sortable('destroy');
-          }
-          if (mounted != null ? mounted.unmount : void 0) {
-            return mounted.unmount();
-          }
-        });
-      }
-    };
-  });
-
-  angular.module('omega').directive('omegaReactSwitchRuleFooter', function($timeout) {
-    return {
-      restrict: 'A',
-      link: function(scope, element) {
-        var bridge, mount, mounted, props, render, unwatchAttached, unwatchAttachedOptions, unwatchShowNotes;
-        props = function() {
-          return {
-            attached: scope.attached,
-            attachedOptions: scope.attachedOptions,
-            onAddRule: function() {
-              return scope.addRule();
-            },
-            onAttachedEnabledChange: function(enabled) {
-              return scope.$evalAsync(function() {
-                return scope.attachedOptions.enabled = enabled;
-              });
-            },
-            onAttachedMatchProfileChange: function(name) {
-              return scope.$evalAsync(function() {
-                if (scope.attached) {
-                  return scope.attached.matchProfileName = name;
-                }
-              });
-            },
-            onDefaultProfileChange: function(name) {
-              return scope.$evalAsync(function() {
-                return scope.attachedOptions.defaultProfileName = name;
-              });
-            },
-            onRemoveAttached: function() {
-              return scope.removeAttached();
-            },
-            onResetRules: function() {
-              return scope.resetRules();
-            },
-            options: scope.options,
-            profile: scope.profile,
-            showNotes: scope.showNotes
+            source: scope.source,
+            visibleRuleCount: visibleRuleCount
           };
         };
         render = function() {
@@ -1269,11 +1061,19 @@
         };
         mount = function() {
           bridge = window.OmegaReactProfileContent;
-          if (bridge != null ? bridge.mountSwitchRuleFooter : void 0) {
-            mounted = bridge.mountSwitchRuleFooter(element[0], props());
-            unwatchAttached = scope.$watch('attached', render, true);
-            unwatchAttachedOptions = scope.$watch('attachedOptions', render, true);
-            unwatchShowNotes = scope.$watch('showNotes', render);
+          if (bridge != null ? bridge.mountSwitchRulesSection : void 0) {
+            mounted = bridge.mountSwitchRulesSection(element[0], props());
+            unwatchers.push(scope.$watch('attached', render, true));
+            unwatchers.push(scope.$watch('attachedOptions', render, true));
+            unwatchers.push(scope.$watch('conditionHelp.show', render));
+            unwatchers.push(scope.$watch('editSource', render));
+            unwatchers.push(scope.$watch('loadRules', render));
+            unwatchers.push(scope.$watch('options', render, true));
+            unwatchers.push(scope.$watch('profile.rules', render, true));
+            unwatchers.push(scope.$watch('showConditionTypes', render));
+            unwatchers.push(scope.$watch('showNotes', render));
+            unwatchers.push(scope.$watch('source', render, true));
+            unwatchers.push(scope.$watch('visibleRuleCount', render));
           }
         };
         mount();
@@ -1281,14 +1081,12 @@
           $timeout(mount);
         }
         return scope.$on('$destroy', function() {
-          if (unwatchAttached) {
-            unwatchAttached();
-          }
-          if (unwatchAttachedOptions) {
-            unwatchAttachedOptions();
-          }
-          if (unwatchShowNotes) {
-            unwatchShowNotes();
+          var i, len, unwatch;
+          for (i = 0, len = unwatchers.length; i < len; i++) {
+            unwatch = unwatchers[i];
+            if (unwatch) {
+              unwatch();
+            }
           }
           if (mounted != null ? mounted.unmount : void 0) {
             return mounted.unmount();
