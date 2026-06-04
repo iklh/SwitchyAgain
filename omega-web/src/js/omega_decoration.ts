@@ -105,10 +105,28 @@
         });
       }
     };
-  }).directive('omegaProfileSelect', function($timeout, profileIcons) {
+  }).directive('omegaProfileSelect', function($timeout, $compile, profileIcons) {
+    var legacyTemplate;
+    legacyTemplate = [
+      '<div class="btn-group omega-profile-select" dropdown on-toggle="toggled(open)">',
+      '  <button class="btn btn-default dropdown-toggle" dropdown-toggle type="button" aria-expanded="false" role="listbox" aria-haspopup="true">',
+      '    <span omega-profile-icon="selectedProfile" options="options" icon="selectedProfile ? undefined : &quot;glyphicon-time&quot;"></span>',
+      '    <span ng-show="!!profileName">{{getName(selectedProfile)}}</span>',
+      '    <span ng-show="!profileName">{{defaultText}}</span>',
+      '    <span class="caret"></span>',
+      '  </button>',
+      '  <ul class="dropdown-menu" role="listbox">',
+      '    <li role="option" ng-if="!!defaultText" ng-class="{active: profileName == &quot;&quot;}">',
+      '      <a ng-click="setProfileName(&quot;&quot;)"><span class="glyphicon glyphicon-time"></span> {{defaultText}}</a>',
+      '    </li>',
+      '    <li role="option" ng-repeat="profile in dispProfiles" ng-class="{active: profileName == profile.name}">',
+      '      <a ng-click="setProfileName(profile.name)"><span omega-profile-icon="profile" options="options"></span> {{getName(profile)}}</a>',
+      '    </li>',
+      '  </ul>',
+      '</div>'
+    ].join('');
     return {
       restrict: 'A',
-      templateUrl: 'partials/omega_profile_select.html',
       require: '?ngModel',
       scope: {
         'profiles': '&omegaProfileSelect',
@@ -117,7 +135,7 @@
         'options': '=options'
       },
       link: function(scope, element, attrs, ngModel) {
-        var updateView;
+        var bridge, mounted, render, unwatchers, updateView;
         scope.profileIcons = profileIcons;
         scope.currentProfiles = [];
         scope.dispProfiles = void 0;
@@ -138,6 +156,62 @@
           }
           return results;
         };
+        bridge = (window as any).OmegaReactProfileWidgets;
+        if (bridge != null ? bridge.mountProfileSelect : void 0) {
+          unwatchers = [];
+          render = function() {
+            var props;
+            props = {
+              defaultText: scope.defaultText,
+              dispName: scope.dispName,
+              name: scope.profileName || '',
+              onChange: function(name) {
+                return scope.$evalAsync(function() {
+                  if (ngModel) {
+                    ngModel.$setViewValue(name);
+                    return ngModel.$render();
+                  }
+                });
+              },
+              options: scope.options,
+              profiles: scope.currentProfiles
+            };
+            if (mounted != null ? mounted.render : void 0) {
+              return mounted.render(props);
+            } else {
+              return mounted = bridge.mountProfileSelect(element[0], props);
+            }
+          };
+          unwatchers.push(scope.$watch(scope.profiles, (function(profiles) {
+            scope.currentProfiles = profiles || [];
+            updateView();
+            return render();
+          }), true));
+          unwatchers.push(scope.$watch('defaultText', render));
+          unwatchers.push(scope.$watch('options', render, true));
+          if (ngModel) {
+            ngModel.$render = function() {
+              scope.profileName = ngModel.$viewValue;
+              updateView();
+              return render();
+            };
+          }
+          render();
+          return scope.$on('$destroy', function() {
+            var i, len, unwatch;
+            for (i = 0, len = unwatchers.length; i < len; i++) {
+              unwatch = unwatchers[i];
+              if (unwatch) {
+                unwatch();
+              }
+            }
+            if (mounted != null ? mounted.unmount : void 0) {
+              return mounted.unmount();
+            }
+          });
+        }
+        element.html(legacyTemplate);
+        $compile(element.contents())(scope);
         scope.$watch(scope.profiles, (function(profiles) {
           scope.currentProfiles = profiles || [];
           if (scope.dispProfiles != null) {

@@ -205,7 +205,6 @@ async function main() {
 
   const partials = [
     'input_group_clear',
-    'omega_profile_select',
     'profile',
   ];
   for (const name of partials) {
