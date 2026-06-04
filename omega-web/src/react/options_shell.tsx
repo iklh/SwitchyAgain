@@ -22,6 +22,30 @@ type OptionsShellProps = {
   uiHref?: string;
 };
 
+type OptionsAlertProps = {
+  alert?: {
+    i18n?: string;
+    message?: string;
+    type?: string;
+  } | null;
+  onClose?: () => void;
+  shown?: boolean;
+};
+
+const ALERT_ICONS: Record<string, string> = {
+  danger: 'glyphicon-danger',
+  error: 'glyphicon-remove',
+  success: 'glyphicon-ok',
+  warning: 'glyphicon-warning-sign'
+};
+
+function alertClassForType(type?: string) {
+  if (!type) {
+    return '';
+  }
+  return `alert-${type === 'error' ? 'danger' : type}`;
+}
+
 function navClick(event: React.MouseEvent, action?: () => void) {
   event.preventDefault();
   action?.();
@@ -149,6 +173,26 @@ function OptionsShell({
   );
 }
 
+function OptionsAlert({alert, onClose, shown = false}: OptionsAlertProps) {
+  if (!shown || !alert) {
+    return null;
+  }
+  const icon = ALERT_ICONS[alert.type || ''] || '';
+  const content = alert.i18n ? message(alert.i18n, alert.i18n) : alert.message;
+
+  return (
+    <div className="alert-top-wrapper">
+      <div className={`alert ${alertClassForType(alert.type)}`}>
+        <button type="button" className="close" onClick={onClose}>
+          <span aria-hidden="true">{'\u00d7'}</span>
+          <span className="sr-only">{message('dialog_close', 'Close')}</span>
+        </button>
+        {icon && <span className={`glyphicon ${icon}`} />} {content}
+      </div>
+    </div>
+  );
+}
+
 function mountOptionsShell(element: Element, props: OptionsShellProps = {}) {
   const root = createRoot(element);
   root.render(<OptionsShell {...props} />);
@@ -162,7 +206,21 @@ function mountOptionsShell(element: Element, props: OptionsShellProps = {}) {
   };
 }
 
+function mountOptionsAlert(element: Element, props: OptionsAlertProps = {}) {
+  const root = createRoot(element);
+  root.render(<OptionsAlert {...props} />);
+  return {
+    render(nextProps: OptionsAlertProps = {}) {
+      root.render(<OptionsAlert {...nextProps} />);
+    },
+    unmount() {
+      root.unmount();
+    }
+  };
+}
+
 const globalWindow = window as any;
 globalWindow.OmegaReactOptionsShell = {
+  mountOptionsAlert,
   mountOptionsShell
 };

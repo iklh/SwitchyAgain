@@ -382,21 +382,6 @@
       if (!hasProp.call(ref2, type)) continue;
       $scope.profileIcons[type] = $scope.profileIcons['RuleListProfile'];
     }
-    $scope.alertIcons = {
-      'success': 'glyphicon-ok',
-      'warning': 'glyphicon-warning-sign',
-      'error': 'glyphicon-remove',
-      'danger': 'glyphicon-danger'
-    };
-    $scope.alertClassForType = function(type) {
-      if (!type) {
-        return '';
-      }
-      if (type === 'error') {
-        type = 'danger';
-      }
-      return 'alert-' + type;
-    };
     $scope.downloadIntervals = [15, 60, 180, 360, 720, 1440, -1];
     $scope.downloadIntervalI18n = function(interval) {
       return "options_downloadInterval_" + (interval < 0 ? "never" : interval);

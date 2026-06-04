@@ -1402,6 +1402,54 @@
     };
   });
 
+  angular.module('omega').directive('omegaReactOptionsAlert', function($timeout) {
+    return {
+      restrict: 'A',
+      link: function(scope, element) {
+        var bridge, mount, mounted, props, render, unwatchers;
+        unwatchers = [];
+        props = function() {
+          return {
+            alert: scope.alert,
+            onClose: function() {
+              return scope.hideAlert();
+            },
+            shown: !!scope.alertShown
+          };
+        };
+        render = function() {
+          if (mounted != null ? mounted.render : void 0) {
+            return mounted.render(props());
+          }
+        };
+        mount = function() {
+          bridge = (window as any).OmegaReactOptionsShell;
+          if (bridge != null ? bridge.mountOptionsAlert : void 0) {
+            mounted = bridge.mountOptionsAlert(element[0], props());
+            unwatchers.push(scope.$watch('alert', render, true));
+            unwatchers.push(scope.$watch('alertShown', render));
+          }
+        };
+        mount();
+        if (!mounted) {
+          $timeout(mount);
+        }
+        return scope.$on('$destroy', function() {
+          var i, len, unwatch;
+          for (i = 0, len = unwatchers.length; i < len; i++) {
+            unwatch = unwatchers[i];
+            if (unwatch) {
+              unwatch();
+            }
+          }
+          if (mounted != null ? mounted.unmount : void 0) {
+            return mounted.unmount();
+          }
+        });
+      }
+    };
+  });
+
   angular.module('omega').directive('omegaIp2str', function() {
     return {
       restrict: 'A',
