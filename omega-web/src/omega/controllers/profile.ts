@@ -2,15 +2,8 @@
   var hasProp = {}.hasOwnProperty;
 
   angular.module('omega').controller('ProfileCtrl', function($scope, $stateParams, $location, $rootScope, $timeout, $state, $modal, profileColorPalette, getAttachedName, getParentName, getVirtualTarget) {
-    var name, profileTemplates, unwatch;
+    var name, unwatch;
     name = $stateParams.name;
-    profileTemplates = {
-      'FixedProfile': 'profile_fixed.html',
-      'PacProfile': 'profile_pac.html',
-      'VirtualProfile': 'profile_virtual.html',
-      'SwitchProfile': 'profile_switch.html',
-      'RuleListProfile': 'profile_rule_list.html'
-    };
     $scope.spectrumOptions = {
       localStorageKey: 'spectrum.profileColor',
       palette: profileColorPalette,
@@ -111,7 +104,7 @@
       var ref;
       return (ref = $scope.options) != null ? ref['+' + name] : void 0;
     }), function(profile) {
-      var ref, templ, type, unwatch2;
+      var unwatch2;
       if (!profile) {
         if ($scope.options) {
           unwatch();
@@ -134,9 +127,6 @@
         profile.profileType = 'RuleListProfile';
       }
       $scope.profile = profile;
-      type = $scope.profile.profileType;
-      templ = (ref = profileTemplates[type]) != null ? ref : 'profile_unsupported.html';
-      $scope.profileTemplate = 'partials/' + templ;
       $scope.scriptable = true;
       return $scope.watchAndUpdateRevision('profile');
     });

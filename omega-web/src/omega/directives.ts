@@ -506,6 +506,68 @@
     };
   });
 
+  angular.module('omega').directive('omegaProfileContentHost', function($compile) {
+    var templates;
+    templates = {
+      FixedProfile: '<div ng-controller="FixedProfileCtrl"><div omega-react-fixed-profile></div></div>',
+      PacProfile: '<div omega-react-pac-profile></div>',
+      RuleListProfile: '<div omega-react-rule-list-profile></div>',
+      SwitchProfile: [
+        '<div ng-controller="SwitchProfileCtrl">',
+        '  <div omega-react-switch-condition-help></div>',
+        '  <section class="settings-group">',
+        '    <div class="switch-rules-header-host" omega-react-switch-rules-header></div>',
+        '    <div class="table-responsive switch-rules-wrapper" ng-show="!editSource" ng-class="{&quot;switch-rules-wrapper-loading&quot;: !loadRules}">',
+        '      <table class="switch-rules table table-bordered table-condensed width-limit-xl" ng-if="loadRules">',
+        '        <thead omega-react-switch-rule-table-header></thead>',
+        '        <tbody omega-react-switch-rule-rows></tbody>',
+        '        <tbody omega-react-switch-rule-footer></tbody>',
+        '      </table>',
+        '    </div>',
+        '  </section>',
+        '  <div omega-react-switch-attached-profile></div>',
+        '</div>'
+      ].join(''),
+      UnsupportedProfile: '<div omega-react-unsupported-profile></div>',
+      VirtualProfile: '<div omega-react-virtual-profile></div>'
+    };
+    return {
+      restrict: 'A',
+      link: function(scope, element) {
+        var childScope, currentType, render, unwatch;
+        currentType = null;
+        render = function(profile) {
+          var template, type;
+          type = (profile != null ? profile.profileType : void 0) || 'UnsupportedProfile';
+          if (type === currentType) {
+            return;
+          }
+          currentType = type;
+          if (childScope) {
+            childScope.$destroy();
+          }
+          element.empty();
+          childScope = scope.$new();
+          template = templates[type] || templates.UnsupportedProfile;
+          element.html(template);
+          return $compile(element.contents())(childScope);
+        };
+        unwatch = scope.$watch('profile.profileType', function() {
+          return render(scope.profile);
+        });
+        render(scope.profile);
+        return scope.$on('$destroy', function() {
+          if (unwatch) {
+            unwatch();
+          }
+          if (childScope) {
+            childScope.$destroy();
+          }
+        });
+      }
+    };
+  });
+
   angular.module('omega').directive('omegaReactVirtualProfile', function($timeout, $filter) {
     return {
       restrict: 'A',
