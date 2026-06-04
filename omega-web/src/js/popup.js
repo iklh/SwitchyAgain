@@ -270,7 +270,7 @@
         props = function() {
           return {
             availableProfiles: scope.availableProfiles,
-            canAddRule: !!scope.currentProfileCanAddRule,
+            canAddRule: !!scope.currentProfileCanAddRule && !!(scope.validResultProfiles && scope.validResultProfiles.length),
             currentProfile: scope.currentProfile,
             dispName: scope.dispNameFilter,
             domainsForCondition: scope.domainsForCondition,
@@ -458,7 +458,7 @@
   });
 
   module.controller('PopupCtrl', function($scope, $window, $q, omegaTarget, profileIcons, profileOrder, dispNameFilter, getVirtualTarget) {
-    var preselectedProfileNameForCondition, refresh, refreshOnProfileChange;
+    var pendingConditionForm, preselectedProfileNameForCondition, refresh, refreshOnProfileChange;
     $scope.closePopup = function() {
       return $window.close();
     };
@@ -467,6 +467,7 @@
       return $window.close();
     };
     refreshOnProfileChange = false;
+    pendingConditionForm = false;
     refresh = function() {
       if (refreshOnProfileChange) {
         return omegaTarget.refreshActivePage().then(function() {
@@ -668,7 +669,11 @@
           profile.validResultProfiles = profilesByNames(profile.validResultProfiles);
         }
       }
-      return $scope.customProfiles.sort(profileOrder);
+      $scope.customProfiles.sort(profileOrder);
+      if (pendingConditionForm && $scope.validResultProfiles.length) {
+        pendingConditionForm = false;
+        return $scope.prepareConditionForm();
+      }
     });
     $scope.domainsForCondition = {};
     $scope.requestInfoProvided = null;
@@ -718,6 +723,11 @@
     });
     return $scope.prepareConditionForm = function() {
       var conditionSuggestion, currentDomain, currentDomainEscaped, domainLooksLikeIp;
+      if (!$scope.currentDomain || !($scope.validResultProfiles && $scope.validResultProfiles.length)) {
+        pendingConditionForm = true;
+        return;
+      }
+      pendingConditionForm = false;
       currentDomain = $scope.currentDomain;
       currentDomainEscaped = currentDomain.replace(/\./g, '\\.');
       domainLooksLikeIp = false;
