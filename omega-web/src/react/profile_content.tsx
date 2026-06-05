@@ -71,23 +71,28 @@ type ProxyEditor = {
   scheme?: string;
 };
 
-type ProxyOption = {
-  label: string;
-  value?: string;
+type FixedProfileProxyField = 'fallbackProxy' | 'proxyForHttp' | 'proxyForHttps';
+
+type FixedProfileScheme = '' | 'http' | 'https';
+
+type FixedProfileBypassCondition = {
+  conditionType: 'BypassCondition';
+  pattern: string;
+};
+
+type FixedProfileModel = Profile & {
+  auth?: Record<string, any>;
+  bypassList?: FixedProfileBypassCondition[];
+  fallbackProxy?: ProxyEditor;
+  proxyForHttp?: ProxyEditor;
+  proxyForHttps?: ProxyEditor;
 };
 
 type FixedProfileProps = {
-  bypassList?: string;
-  isProxyAuthActive?: (scheme: string) => boolean;
-  onBypassListChange?: (value: string) => void;
-  onEditProxyAuth?: (scheme: string) => void;
-  onProxyEditorChange?: (scheme: string, field: keyof ProxyEditor, value?: string | number) => void;
-  onShowAdvanced?: () => void;
-  optionsForScheme?: Record<string, ProxyOption[]>;
-  proxyEditors?: Record<string, ProxyEditor>;
-  schemeDisp?: Record<string, string | null>;
-  showAdvanced?: boolean;
-  urlSchemes?: string[];
+  onBypassListChange?: (value: FixedProfileBypassCondition[]) => void;
+  onEditProxyAuth?: (scheme: FixedProfileScheme) => void;
+  onProxyChange?: (field: FixedProfileProxyField, value?: ProxyEditor, options?: {clearAuth?: boolean}) => void;
+  profile?: FixedProfileModel | null;
 };
 
 type SwitchAttachedProfileProps = {
@@ -877,6 +882,41 @@ function PacProfile({
   );
 }
 
+const FIXED_PROFILE_SCHEMES: FixedProfileScheme[] = ['', 'http', 'https'];
+const FIXED_PROFILE_PROXY_FIELDS: Record<FixedProfileScheme, FixedProfileProxyField> = {
+  '': 'fallbackProxy',
+  http: 'proxyForHttp',
+  https: 'proxyForHttps'
+};
+const FIXED_PROFILE_SCHEME_DISP: Record<FixedProfileScheme, string | null> = {
+  '': null,
+  http: 'http://',
+  https: 'https://'
+};
+const FIXED_PROFILE_DEFAULT_PORT: Record<string, number> = {
+  http: 80,
+  https: 443,
+  socks4: 1080,
+  socks5: 1080
+};
+const FIXED_PROFILE_PROTOCOLS = ['http', 'https', 'socks4', 'socks5'];
+
+function fixedProfileOptionsForScheme(scheme: FixedProfileScheme) {
+  const defaultLabel = scheme
+    ? message('options_protocol_useDefault', 'Use default')
+    : message('options_protocol_direct', 'Direct');
+  return [
+    {
+      label: defaultLabel,
+      value: ''
+    },
+    ...FIXED_PROFILE_PROTOCOLS.map((protocol) => ({
+      label: protocol.toUpperCase(),
+      value: protocol
+    }))
+  ];
+}
+
 function cloneProxyEditors(proxyEditors?: Record<string, ProxyEditor>) {
   const cloned: Record<string, ProxyEditor> = {};
   for (const scheme of Object.keys(proxyEditors || {})) {
@@ -885,44 +925,139 @@ function cloneProxyEditors(proxyEditors?: Record<string, ProxyEditor>) {
   return cloned;
 }
 
+function fixedProfileEditors(profile?: FixedProfileModel | null) {
+  const editors: Record<string, ProxyEditor> = {};
+  for (const scheme of FIXED_PROFILE_SCHEMES) {
+    const field = FIXED_PROFILE_PROXY_FIELDS[scheme];
+    editors[scheme] = {...(profile?.[field] || {})};
+  }
+  return editors;
+}
+
+function fixedProfileBypassText(profile?: FixedProfileModel | null) {
+  return (profile?.bypassList || []).map((item) => item.pattern).join('\n');
+}
+
+function fixedProfileBypassList(value: string): FixedProfileBypassCondition[] {
+  return value.split(/\r?\n/).filter(Boolean).map((pattern) => ({
+    conditionType: 'BypassCondition',
+    pattern
+  }));
+}
+
+function fixedProfileHasAdvancedProxy(editors: Record<string, ProxyEditor>) {
+  return !!(editors.http?.scheme || editors.https?.scheme);
+}
+
+function fixedProfileAuthSupported(protocol?: string) {
+  if (protocol === 'http' || protocol === 'https') {
+    return true;
+  }
+  if (protocol === 'socks5') {
+    return !!((window as any).browser?.proxy?.register);
+  }
+  return false;
+}
+
+function fixedProfileAuthActive(profile: FixedProfileModel | null | undefined, scheme: FixedProfileScheme) {
+  return !!profile?.auth?.[FIXED_PROFILE_PROXY_FIELDS[scheme]];
+}
+
 function FixedProfileContent({
-  bypassList = '',
-  isProxyAuthActive,
+  profile,
   onBypassListChange,
   onEditProxyAuth,
-  onProxyEditorChange,
-  onShowAdvanced,
-  optionsForScheme = {},
-  proxyEditors = {},
-  schemeDisp = {},
-  showAdvanced = false,
-  urlSchemes = []
+  onProxyChange
 }: FixedProfileProps) {
-  const [draftEditors, setDraftEditors] = useState<Record<string, ProxyEditor>>(() => cloneProxyEditors(proxyEditors));
-  const [draftBypassList, setDraftBypassList] = useState(bypassList || '');
+  const initialEditors = fixedProfileEditors(profile);
+  const [draftEditors, setDraftEditors] = useState<Record<string, ProxyEditor>>(() => cloneProxyEditors(initialEditors));
+  const [draftBypassList, setDraftBypassList] = useState(fixedProfileBypassText(profile));
+  const [showAdvanced, setShowAdvanced] = useState(() => fixedProfileHasAdvancedProxy(initialEditors));
+  const previousProfileNameRef = useRef(profile?.name);
 
   useEffect(() => {
-    setDraftEditors(cloneProxyEditors(proxyEditors));
-  }, [proxyEditors]);
+    const editors = fixedProfileEditors(profile);
+    const hasAdvancedProxy = fixedProfileHasAdvancedProxy(editors);
+    const profileChanged = previousProfileNameRef.current !== profile?.name;
+    previousProfileNameRef.current = profile?.name;
+    setDraftEditors(cloneProxyEditors(editors));
+    if (profileChanged) {
+      setShowAdvanced(hasAdvancedProxy);
+    } else if (hasAdvancedProxy) {
+      setShowAdvanced(true);
+    }
+  }, [
+    profile?.name,
+    profile?.fallbackProxy?.scheme,
+    profile?.fallbackProxy?.host,
+    profile?.fallbackProxy?.port,
+    profile?.proxyForHttp?.scheme,
+    profile?.proxyForHttp?.host,
+    profile?.proxyForHttp?.port,
+    profile?.proxyForHttps?.scheme,
+    profile?.proxyForHttps?.host,
+    profile?.proxyForHttps?.port
+  ]);
 
   useEffect(() => {
-    setDraftBypassList(bypassList || '');
-  }, [bypassList]);
+    setDraftBypassList(fixedProfileBypassText(profile));
+  }, [profile?.name, profile?.bypassList]);
 
-  function changeProxyEditor(scheme: string, field: keyof ProxyEditor, value?: string | number) {
-    const nextValue = field === 'scheme' && value === '' ? undefined : value;
-    setDraftEditors((current) => ({
-      ...current,
-      [scheme]: {
-        ...(current[scheme] || {}),
-        [field]: nextValue
+  function commitProxyEditor(
+    scheme: FixedProfileScheme,
+    editor: ProxyEditor,
+    previousEditor: ProxyEditor,
+    editors: Record<string, ProxyEditor>
+  ) {
+    const field = FIXED_PROFILE_PROXY_FIELDS[scheme];
+    const nextEditor = {...editor};
+    const clearAuth = !fixedProfileAuthSupported(nextEditor.scheme);
+
+    if (!nextEditor.scheme) {
+      if (!scheme) {
+        editors[scheme] = {};
       }
-    }));
-    onProxyEditorChange?.(scheme, field, nextValue);
+      onProxyChange?.(field, undefined, {clearAuth});
+      return;
+    }
+
+    if (!previousEditor.scheme) {
+      const defaultEditor = editors[''] || {};
+      if (nextEditor.scheme === defaultEditor.scheme && nextEditor.port == null) {
+        nextEditor.port = defaultEditor.port;
+      }
+      if (nextEditor.port == null) {
+        nextEditor.port = FIXED_PROFILE_DEFAULT_PORT[nextEditor.scheme];
+      }
+      if (nextEditor.host == null) {
+        nextEditor.host = defaultEditor.host || 'example.com';
+      }
+    }
+
+    editors[scheme] = nextEditor;
+    onProxyChange?.(field, nextEditor, {clearAuth});
+  }
+
+  function changeProxyEditor(scheme: FixedProfileScheme, field: keyof ProxyEditor, value?: string | number) {
+    const nextValue = field === 'scheme' && value === '' ? undefined : value;
+    const previousEditor = draftEditors[scheme] || {};
+    const nextEditor = {
+      ...previousEditor,
+      [field]: nextValue
+    };
+    if (typeof nextValue === 'undefined') {
+      delete nextEditor[field];
+    }
+    const nextEditors = {
+      ...draftEditors,
+      [scheme]: nextEditor
+    };
+    commitProxyEditor(scheme, nextEditor, previousEditor, nextEditors);
+    setDraftEditors({...nextEditors});
   }
 
   const defaultEditor = draftEditors[''] || {};
-  const visibleSchemes = urlSchemes.filter((scheme) => scheme === '' || showAdvanced);
+  const visibleSchemes = FIXED_PROFILE_SCHEMES.filter((scheme) => scheme === '' || showAdvanced);
 
   return (
     <div>
@@ -945,14 +1080,14 @@ function FixedProfileContent({
                 const hasScheme = !!editor.scheme;
                 return (
                   <tr key={scheme || 'default'}>
-                    <td>{schemeDisp[scheme] || message('options_scheme_default', 'Default')}</td>
+                    <td>{FIXED_PROFILE_SCHEME_DISP[scheme] || message('options_scheme_default', 'Default')}</td>
                     <td>
                       <select
                         className="form-control"
                         value={editor.scheme || ''}
                         onChange={(event) => changeProxyEditor(scheme, 'scheme', event.currentTarget.value)}
                       >
-                        {(optionsForScheme[scheme] || []).map((option) => (
+                        {fixedProfileOptionsForScheme(scheme).map((option) => (
                           <option key={option.value || ''} value={option.value || ''}>
                             {option.label}
                           </option>
@@ -990,7 +1125,8 @@ function FixedProfileContent({
                       <button
                         type="button"
                         role="button"
-                        className={`btn btn-xs proxy-auth-toggle ${isProxyAuthActive?.(scheme) ? 'btn-success' : 'btn-default'}`}
+                        className={`btn btn-xs proxy-auth-toggle ${fixedProfileAuthActive(profile, scheme) ? 'btn-success' : 'btn-default'}`}
+                        disabled={!hasScheme}
                         title={message('options_proxy_auth', 'Proxy Authentication')}
                         onClick={() => onEditProxyAuth?.(scheme)}
                       >
@@ -1005,7 +1141,7 @@ function FixedProfileContent({
               <tbody>
                 <tr className="fixed-show-advanced">
                   <td colSpan={7}>
-                    <button type="button" className="btn btn-link" onClick={() => onShowAdvanced?.()}>
+                    <button type="button" className="btn btn-link" onClick={() => setShowAdvanced(true)}>
                       <span className="glyphicon glyphicon-chevron-down" /> {message('options_proxy_expand', 'Show Advanced')}
                     </button>
                   </td>
@@ -1028,7 +1164,7 @@ function FixedProfileContent({
           rows={10}
           value={draftBypassList}
           onChange={(event) => setDraftBypassList(event.currentTarget.value)}
-          onBlur={() => onBypassListChange?.(draftBypassList)}
+          onBlur={() => onBypassListChange?.(fixedProfileBypassList(draftBypassList))}
         />
       </section>
     </div>

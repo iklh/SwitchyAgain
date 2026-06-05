@@ -479,14 +479,10 @@
   angular.module('omega').directive('omegaProfileContentHost', function($compile) {
     var templates;
     templates = {
-      FixedProfile: '<div ng-controller="FixedProfileCtrl"><div omega-react-fixed-profile></div></div>',
+      FixedProfile: '<div omega-react-fixed-profile></div>',
       PacProfile: '<div omega-react-pac-profile></div>',
       RuleListProfile: '<div omega-react-rule-list-profile></div>',
-      SwitchProfile: [
-        '<div ng-controller="SwitchProfileCtrl">',
-        '  <div omega-react-switch-profile></div>',
-        '</div>'
-      ].join(''),
+      SwitchProfile: '<div omega-react-switch-profile></div>',
       UnsupportedProfile: '<div omega-react-unsupported-profile></div>',
       VirtualProfile: '<div omega-react-virtual-profile></div>'
     };
@@ -674,53 +670,79 @@
     };
   });
 
-  angular.module('omega').directive('omegaReactFixedProfile', function($timeout) {
+  angular.module('omega').directive('omegaReactFixedProfile', function($timeout, $modal, reactModalTemplates) {
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mount, mounted, props, render, unwatchers;
+        var authSupported, bridge, mount, mounted, props, proxyProperties, render, socks5AuthSupported, unwatchers;
         unwatchers = [];
+        proxyProperties = {
+          '': 'fallbackProxy',
+          'http': 'proxyForHttp',
+          'https': 'proxyForHttps'
+        };
+        socks5AuthSupported = ((typeof browser !== "undefined" && browser !== null ? (browser.proxy != null ? browser.proxy.register : void 0) : void 0) != null);
+        authSupported = {
+          "http": true,
+          "https": true,
+          "socks5": socks5AuthSupported
+        };
         props = function() {
-          var rules, visibleRuleCount;
-          rules = scope.profile && scope.profile.rules || [];
-          visibleRuleCount = Math.min(scope.visibleRuleCount || 0, rules.length);
           return {
-            bypassList: scope.bypassList,
-            isProxyAuthActive: function(scheme) {
-              return scope.isProxyAuthActive(scheme);
-            },
             onBypassListChange: function(value) {
               return scope.$evalAsync(function() {
-                return scope.bypassList = value;
+                if (scope.profile) {
+                  return scope.profile.bypassList = value;
+                }
               });
             },
             onEditProxyAuth: function(scheme) {
-              return scope.editProxyAuth(scheme);
-            },
-            onProxyEditorChange: function(scheme, field, value) {
-              return scope.$evalAsync(function() {
+              var auth, prop, proxy, ref, modalScope;
+              prop = proxyProperties[scheme];
+              proxy = scope.profile && scope.profile[prop];
+              if (!(proxy != null ? proxy.scheme : void 0)) {
+                return;
+              }
+              modalScope = scope.$new('isolate');
+              modalScope.proxy = proxy;
+              auth = (ref = scope.profile.auth) != null ? ref[prop] : void 0;
+              modalScope.auth = auth && angular.copy(auth);
+              modalScope.authSupported = authSupported[proxy.scheme];
+              modalScope.protocolDisp = proxy.scheme;
+              return $modal.open({
+                template: reactModalTemplates.proxyAuth,
+                scope: modalScope,
+                size: modalScope.authSupported ? 'sm' : 'lg'
+              }).result.then(function(auth) {
                 var base;
-                if (!scope.proxyEditors[scheme]) {
-                  scope.proxyEditors[scheme] = {};
-                }
-                base = scope.proxyEditors[scheme];
-                if (typeof value === 'undefined') {
-                  return delete base[field];
+                if (!(auth != null ? auth.username : void 0)) {
+                  if (scope.profile.auth) {
+                    return scope.profile.auth[prop] = void 0;
+                  }
                 } else {
-                  return base[field] = value;
+                  if ((base = scope.profile).auth == null) {
+                    base.auth = {};
+                  }
+                  return scope.profile.auth[prop] = auth;
                 }
               });
             },
-            onShowAdvanced: function() {
+            onProxyChange: function(field, value, options) {
               return scope.$evalAsync(function() {
-                return scope.showAdvanced = true;
+                if (!scope.profile) {
+                  return;
+                }
+                if ((options != null ? options.clearAuth : void 0) && scope.profile.auth) {
+                  scope.profile.auth[field] = void 0;
+                }
+                if (typeof value === 'undefined') {
+                  return delete scope.profile[field];
+                } else {
+                  return scope.profile[field] = value;
+                }
               });
             },
-            optionsForScheme: scope.optionsForScheme,
-            proxyEditors: angular.copy(scope.proxyEditors),
-            schemeDisp: scope.schemeDisp,
-            showAdvanced: scope.showAdvanced,
-            urlSchemes: scope.urlSchemes
+            profile: scope.profile
           };
         };
         render = function() {
@@ -732,10 +754,7 @@
           bridge = window.OmegaReactProfileContent;
           if (bridge != null ? bridge.mountFixedProfile : void 0) {
             mounted = bridge.mountFixedProfile(element[0], props());
-            unwatchers.push(scope.$watch('proxyEditors', render, true));
-            unwatchers.push(scope.$watch('bypassList', render));
-            unwatchers.push(scope.$watch('showAdvanced', render));
-            unwatchers.push(scope.$watch('profile.auth', render, true));
+            unwatchers.push(scope.$watch('profile', render, true));
           }
         };
         mount();
@@ -818,12 +837,24 @@
     };
   });
 
-  angular.module('omega').directive('omegaReactSwitchProfile', function($timeout) {
+  angular.module('omega').directive('omegaReactSwitchProfile', function($timeout, $rootScope, $location, $q, $modal, getAttachedName, omegaTarget, trFilter, downloadFile, reactModalTemplates) {
     return {
       restrict: 'A',
       link: function(scope, element) {
-        var bridge, mount, mounted, render, unwatchers;
+        var bridge, disposeRuntime, mount, mounted, render, unwatchers;
         unwatchers = [];
+        disposeRuntime = OmegaSwitchProfileRuntime.initialize(scope, {
+          $location: $location,
+          $modal: $modal,
+          $q: $q,
+          $rootScope: $rootScope,
+          $timeout: $timeout,
+          downloadFile: downloadFile,
+          getAttachedName: getAttachedName,
+          omegaTarget: omegaTarget,
+          reactModalTemplates: reactModalTemplates,
+          trFilter: trFilter
+        });
         render = function() {
           if (mounted != null ? mounted.render : void 0) {
             return mounted.render(OmegaSwitchProfileBridge.buildProps(scope));
@@ -849,7 +880,10 @@
             }
           }
           if (mounted != null ? mounted.unmount : void 0) {
-            return mounted.unmount();
+            mounted.unmount();
+          }
+          if (disposeRuntime) {
+            return disposeRuntime();
           }
         });
       }

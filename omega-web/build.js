@@ -218,15 +218,12 @@ async function main() {
     'build-ts/omega/switch_profile_session.js',
     'build-ts/omega/switch_profile_bindings.js',
     'build-ts/omega/switch_profile_lifecycle.js',
+    'build-ts/omega/switch_profile_runtime.js',
     'build-ts/omega/switch_profile_bridge.js',
     'build-ts/omega/filters.js',
     'build-ts/omega/directives.js',
-    'build-ts/omega/controllers/fixed_profile.js',
     'build-ts/omega/controllers/master.js',
-    'build-ts/omega/controllers/pac_profile.js',
-    'build-ts/omega/controllers/profile.js',
-    'build-ts/omega/controllers/rule_list_profile.js',
-    'build-ts/omega/controllers/switch_profile.js'
+    'build-ts/omega/controllers/profile.js'
   ], 'build/js/omega.js');
 }
 
