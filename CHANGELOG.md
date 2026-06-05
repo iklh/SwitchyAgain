@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.1.13
+
+React options migration and popup condition fixes.
+
+- Continued the Switch Profile migration by moving rule actions, lifecycle
+  handling, and session state helpers out of the Angular controller.
+- Fixed imported options state replacement so restoring options does not leave
+  Apply Changes marked dirty after the automatic apply.
+- Prevented background profile update failures after applying a profile from
+  surfacing as unhandled promise rejections.
+- Adjusted popup Add Condition writes to append new rules to the bottom of the
+  active switch profile.
+- Updated the welcome modal branding and locale strings to SwitchyAgain.
+
 ## v1.1.12
 
 Chrome MV3 popup and options state fixes.
