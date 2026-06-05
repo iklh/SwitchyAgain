@@ -17,10 +17,32 @@ import {
   PacProfile,
   ProfileShell,
   RuleListProfile,
+  SwitchProfileContent,
   UnsupportedProfile,
   VirtualProfile
 } from './profile_content';
 import {profileByName} from './profile_widgets';
+import {
+  addRule,
+  attachedIdentity,
+  cloneRule,
+  composeSource,
+  createAttachedOptions,
+  createAttachedProfile,
+  detectAdvancedConditionTypes,
+  hasNotes,
+  moveRule,
+  parseSource,
+  profileKey,
+  removeRule,
+  resetRuleProfiles,
+  updateConditionField,
+  updateConditionType,
+  updateIpCondition,
+  updateRuleNote,
+  updateRuleProfile,
+  updateRuleWeekday
+} from './switch_profile_runtime';
 import {UiSettings} from './ui_settings';
 
 type RouteName = 'about' | 'general' | 'io' | 'profile' | 'ui';
@@ -38,14 +60,6 @@ type AlertState = {
 
 function cloneOptions(options: Options) {
   return JSON.parse(JSON.stringify(options));
-}
-
-function profileKey(profileOrName: {name?: string} | string) {
-  if (typeof OmegaPac !== 'undefined' && OmegaPac?.Profiles?.nameAsKey) {
-    return OmegaPac.Profiles.nameAsKey(profileOrName);
-  }
-  const name = typeof profileOrName === 'string' ? profileOrName : profileOrName.name || '';
-  return `+${name}`;
 }
 
 function sameValue(a: any, b: any) {
@@ -125,6 +139,180 @@ function useHashRoute() {
   return route;
 }
 
+function SwitchProfilePreview({
+  options,
+  profile,
+  showPending,
+  updateOptionsDraft,
+  updateProfile
+}: {
+  options: Options;
+  profile: any;
+  showPending: () => void;
+  updateOptionsDraft: (updater: (options: Options) => void) => void;
+  updateProfile: (profileName: string, updater: (profile: any) => void) => void;
+}) {
+  const identity = attachedIdentity(profile.name || '');
+  const attached = options[identity.attachedKey] || null;
+  const attachedOptions = createAttachedOptions(profile, attached);
+  const [conditionHelpShown, setConditionHelpShown] = useState(false);
+  const [editSource, setEditSource] = useState(false);
+  const [showNotes, setShowNotes] = useState(() => hasNotes(profile.rules));
+  const [source, setSource] = useState<{code?: string; error?: {message?: string}; touched?: boolean}>({});
+  const showConditionTypes = options['-showConditionTypes'] ?? detectAdvancedConditionTypes(profile);
+
+  useEffect(() => {
+    if (hasNotes(profile.rules)) {
+      setShowNotes(true);
+    }
+  }, [profile.rules]);
+
+  function mutateProfile(updater: (nextProfile: any) => void) {
+    updateProfile(profile.name || '', updater);
+  }
+
+  function mutateAttached(updater: (nextAttached: any) => void) {
+    updateOptionsDraft((nextOptions) => {
+      const nextAttached = {
+        ...(nextOptions[identity.attachedKey] || {})
+      };
+      updater(nextAttached);
+      if (typeof OmegaPac !== 'undefined' && OmegaPac?.Profiles?.updateRevision) {
+        OmegaPac.Profiles.updateRevision(nextAttached);
+      }
+      nextOptions[identity.attachedKey] = nextAttached;
+    });
+  }
+
+  function toggleSource() {
+    if (!editSource) {
+      setSource({
+        code: composeSource(profile, attachedOptions.defaultProfileName)
+      });
+      setEditSource(true);
+      return;
+    }
+    const result = parseSource(source.code || '', options);
+    if (result.error) {
+      setSource((current) => ({
+        ...current,
+        error: {
+          message: result.error?.message || String(result.error)
+        }
+      }));
+      return;
+    }
+    updateOptionsDraft((nextOptions) => {
+      const nextProfile = nextOptions[profileKey(profile.name || '')];
+      const nextAttached = nextOptions[identity.attachedKey];
+      const rules = (result.rules || []).slice();
+      const defaultRule = rules.pop();
+      const defaultProfileName = defaultRule?.profileName || 'direct';
+      nextProfile.rules = rules;
+      if (nextAttached && nextProfile.defaultProfileName === identity.attachedName) {
+        nextAttached.defaultProfileName = defaultProfileName;
+        OmegaPac.Profiles.updateRevision(nextAttached);
+      } else {
+        nextProfile.defaultProfileName = defaultProfileName;
+      }
+      OmegaPac.Profiles.updateRevision(nextProfile);
+    });
+    setSource({});
+    setEditSource(false);
+  }
+
+  return (
+    <SwitchProfileContent
+      attached={attached}
+      attachedOptions={attachedOptions}
+      editSource={editSource}
+      loadRules
+      onAddNote={() => setShowNotes(true)}
+      onAddRule={() => mutateProfile((nextProfile) => addRule(nextProfile, attachedOptions.defaultProfileName))}
+      onAttachNew={() => updateOptionsDraft((nextOptions) => {
+        const nextProfile = nextOptions[profileKey(profile.name || '')];
+        const nextAttached = createAttachedProfile(nextProfile, identity.attachedName);
+        nextOptions[identity.attachedKey] = nextAttached;
+        nextProfile.defaultProfileName = identity.attachedName;
+        OmegaPac.Profiles.updateRevision(nextProfile);
+      })}
+      onAttachedChange={(field, value) => mutateAttached((nextAttached) => {
+        nextAttached[field] = value;
+      })}
+      onAttachedEnabledChange={(enabled) => mutateProfile((nextProfile) => {
+        if (enabled) {
+          nextProfile.defaultProfileName = identity.attachedName;
+          return;
+        }
+        if (nextProfile.defaultProfileName === identity.attachedName) {
+          nextProfile.defaultProfileName = attached?.defaultProfileName || attachedOptions.defaultProfileName || 'direct';
+        }
+      })}
+      onAttachedMatchProfileChange={(name) => mutateAttached((nextAttached) => {
+        nextAttached.matchProfileName = name;
+      })}
+      onCloneRule={(index) => mutateProfile((nextProfile) => cloneRule(nextProfile, index))}
+      onClose={() => setConditionHelpShown(false)}
+      onConditionFieldChange={(index, field, value) => mutateProfile((nextProfile) => {
+        updateConditionField(nextProfile.rules?.[index], field, value);
+      })}
+      onConditionTypeChange={(index, type) => mutateProfile((nextProfile) => {
+        updateConditionType(nextProfile.rules?.[index], type);
+      })}
+      onDefaultProfileChange={(name) => updateOptionsDraft((nextOptions) => {
+        const nextProfile = nextOptions[profileKey(profile.name || '')];
+        if (nextProfile.defaultProfileName === identity.attachedName && nextOptions[identity.attachedKey]) {
+          nextOptions[identity.attachedKey].defaultProfileName = name;
+          OmegaPac.Profiles.updateRevision(nextOptions[identity.attachedKey]);
+          return;
+        }
+        nextProfile.defaultProfileName = name;
+        OmegaPac.Profiles.updateRevision(nextProfile);
+      })}
+      onDownload={showPending}
+      onIpConditionInputChange={(index, value) => mutateProfile((nextProfile) => {
+        updateIpCondition(nextProfile.rules?.[index], value);
+      })}
+      onMoveRule={(fromIndex, toIndex) => mutateProfile((nextProfile) => {
+        moveRule(nextProfile.rules || [], fromIndex, toIndex);
+      })}
+      onNoteChange={(index, note) => mutateProfile((nextProfile) => {
+        updateRuleNote(nextProfile.rules?.[index], note);
+      })}
+      onProfileChange={(index, name) => mutateProfile((nextProfile) => {
+        updateRuleProfile(nextProfile.rules?.[index], name);
+      })}
+      onRemoveAttached={() => updateOptionsDraft((nextOptions) => {
+        const nextProfile = nextOptions[profileKey(profile.name || '')];
+        const nextAttached = nextOptions[identity.attachedKey];
+        if (nextAttached && nextProfile.defaultProfileName === identity.attachedName) {
+          nextProfile.defaultProfileName = nextAttached.defaultProfileName || 'direct';
+          OmegaPac.Profiles.updateRevision(nextProfile);
+        }
+        delete nextOptions[identity.attachedKey];
+      })}
+      onRemoveRule={(index) => mutateProfile((nextProfile) => removeRule(nextProfile, index))}
+      onResetRules={() => mutateProfile((nextProfile) => resetRuleProfiles(nextProfile, attachedOptions.defaultProfileName))}
+      onSourceChange={(code) => setSource({
+        code,
+        touched: true
+      })}
+      onToggleConditionHelp={() => setConditionHelpShown((shown) => !shown)}
+      onToggleSource={toggleSource}
+      onWeekdayChange={(index, dayIndex, selected) => mutateProfile((nextProfile) => {
+        updateRuleWeekday(nextProfile.rules?.[index], dayIndex, selected);
+      })}
+      options={options}
+      profile={profile}
+      rules={profile.rules || []}
+      show={conditionHelpShown}
+      showConditionTypes={showConditionTypes}
+      showNotes={showNotes}
+      source={source}
+    />
+  );
+}
+
 function OptionsExperiment() {
   const route = useHashRoute();
   const [savedOptions, setSavedOptions] = useState<Options | null>(null);
@@ -174,6 +362,17 @@ function OptionsExperiment() {
 
   function updateOptions(nextOptions: Options) {
     setOptions(cloneOptions(nextOptions));
+  }
+
+  function updateOptionsDraft(updater: (nextOptions: Options) => void) {
+    setOptions((current) => {
+      if (!current) {
+        return current;
+      }
+      const nextOptions = cloneOptions(current);
+      updater(nextOptions);
+      return nextOptions;
+    });
   }
 
   function updateProfile(profileName: string, updater: (profile: any) => void) {
@@ -354,11 +553,13 @@ function OptionsExperiment() {
             );
           case 'SwitchProfile':
             return (
-              <div className="react-options">
-                <p className="text-muted">
-                  {message('options_profileEditorReactPending', 'Switch profile editing still depends on the legacy runtime in this preview.')}
-                </p>
-              </div>
+              <SwitchProfilePreview
+                options={options}
+                profile={profile}
+                showPending={showPending}
+                updateOptionsDraft={updateOptionsDraft}
+                updateProfile={updateProfile}
+              />
             );
           default:
             return <UnsupportedProfile profile={profile} />;

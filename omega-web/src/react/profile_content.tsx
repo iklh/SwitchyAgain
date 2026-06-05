@@ -11,8 +11,13 @@ import {
   profileByName,
   resultProfilesFor
 } from './profile_widgets';
-
-declare const OmegaSwitchProfileRules: any;
+import {
+  conditionHasWarning,
+  conditionTypesForMode as switchConditionTypesForMode,
+  getAdvancedConditionGroups,
+  getBasicConditionGroups,
+  getUrlConditionTypeMap
+} from './switch_profile_runtime';
 
 export type UnsupportedProfileProps = {
   profile?: {
@@ -335,10 +340,7 @@ function groupedConditionTypes(conditionTypes: ConditionTypeOption[] = []) {
 }
 
 function conditionTypesForMode(showConditionTypes = 0): ConditionTypeOption[] {
-  const groups = showConditionTypes === 0
-    ? OmegaSwitchProfileRules.getBasicConditionGroups()
-    : OmegaSwitchProfileRules.getAdvancedConditionGroups();
-  return OmegaSwitchProfileRules.expandConditionGroups(groups);
+  return switchConditionTypesForMode(showConditionTypes);
 }
 
 const switchRuleKeys = new WeakMap<object, number>();
@@ -492,9 +494,9 @@ function SwitchRuleRow({
   const condition = rule.condition || {};
   const conditionType = condition.conditionType || '';
   const conditionGroups = groupedConditionTypes(conditionTypes);
-  const isUrlConditionType = OmegaSwitchProfileRules.getUrlConditionTypeMap();
+  const isUrlConditionType = getUrlConditionTypeMap();
   const hasUrlIcon = !!isUrlConditionType[conditionType];
-  const hasWarning = OmegaSwitchProfileRules.conditionHasWarning(condition);
+  const hasWarning = conditionHasWarning(condition);
 
   function formatIpCondition(condition: SwitchRuleCondition) {
     if (condition?.ip) {
@@ -1300,9 +1302,9 @@ export function SwitchConditionHelp({
 }: SwitchConditionHelpProps) {
   const [expandedId, setExpandedId] = useState(0);
   const groups = showConditionTypes === 0
-    ? OmegaSwitchProfileRules.getBasicConditionGroups()
-    : OmegaSwitchProfileRules.getAdvancedConditionGroups();
-  const isUrlConditionType = OmegaSwitchProfileRules.getUrlConditionTypeMap();
+    ? getBasicConditionGroups()
+    : getAdvancedConditionGroups();
+  const isUrlConditionType = getUrlConditionTypeMap();
 
   if (!show) {
     return null;
@@ -1361,7 +1363,7 @@ export function SwitchRulesHeader({
   source
 }: SwitchRulesHeaderProps) {
   const [sourceCode, setSourceCode] = useState(source?.code || '');
-  const isUrlConditionType = OmegaSwitchProfileRules.getUrlConditionTypeMap();
+  const isUrlConditionType = getUrlConditionTypeMap();
   const hasUrlConditions = rules.some((rule) => {
     const conditionType = rule?.condition?.conditionType;
     return !!(conditionType && isUrlConditionType[conditionType]);
