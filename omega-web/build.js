@@ -134,7 +134,6 @@ async function main() {
     ['build-ts/js/omega_decoration.js', 'build/js/omega_decoration.js'],
     ['build-ts/js/options.js', 'build/js/options.js'],
     ['build-ts/js/options_guide.js', 'build/js/options_guide.js'],
-    ['src/js/popup.js', 'build/js/popup.js'],
     ['build-ts/js/switch_profile_guide.js', 'build/js/switch_profile_guide.js'],
     ['node_modules/angular/angular.min.js', 'build/lib/angular/angular.min.js'],
     ['node_modules/angular-animate/angular-animate.min.js', 'build/lib/angular-animate/angular-animate.min.js'],
@@ -186,7 +185,6 @@ async function main() {
   await bundleGlobal('node_modules/shepherd.js/dist/js/shepherd.mjs', 'build/lib/shepherd.js/shepherd.min.js', 'Shepherd');
 
   await renderJade('src/options.jade', 'build/options.html');
-  await renderJade('src/popup.jade', 'build/popup.html');
   await writeReactHtml('build/react/options_experiment.html', 'SwitchyAgain', 'options_experiment.js');
   await bundleReact('src/react/options_experiment.tsx', 'build/react/options_experiment.js');
   await writeReactHtml('build/react/general.html', 'SwitchyAgain General', 'general.js');
@@ -201,13 +199,11 @@ async function main() {
   await bundleReact('src/react/profile_widgets.tsx', 'build/react/profile_widgets.js');
   await bundleReact('src/react/options_modals.tsx', 'build/react/options_modals.js');
   await bundleReact('src/react/options_shell.tsx', 'build/react/options_shell.js');
-  await bundleReact('src/react/popup_menu.tsx', 'build/react/popup_menu.js');
-  await bundleReact('src/react/popup_flow.tsx', 'build/react/popup_flow.js');
+  await bundleReact('src/react/popup_app.tsx', 'build/react/popup_app.js');
   await writeReactHtml('build/react/import_export.html', 'SwitchyAgain Import / Export', 'import_export.js');
   await bundleReact('src/react/import_export.tsx', 'build/react/import_export.js');
 
   await renderLess('src/less/options.less', 'tmp/css/options.css', 'build/css/options.css');
-  await renderLess('src/less/popup.less', 'tmp/css/popup.css', 'build/css/popup.css');
 
   await concat([
     'build-ts/omega/app.js',
