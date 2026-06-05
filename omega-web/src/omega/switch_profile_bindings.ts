@@ -19,15 +19,7 @@ namespace OmegaSwitchProfileBindings {
       return removeForReal();
     };
     scope.cloneRule = function(index) {
-      OmegaSwitchProfileActions.cloneRule(scope.profile, index);
-      return deps.$timeout(function() {
-        var input, ref, ref1;
-        input = angular.element(OmegaSwitchProfileActions.cloneRuleInputSelector(index));
-        if ((ref = input[0]) != null) {
-          ref.focus();
-        }
-        return (ref1 = input[0]) != null ? ref1.select() : void 0;
-      });
+      return OmegaSwitchProfileActions.cloneRule(scope.profile, index);
     };
     scope.showNotes = false;
     scope.addNote = function(index) {

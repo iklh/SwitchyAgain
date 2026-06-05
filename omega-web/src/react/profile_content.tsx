@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {flushSync} from 'react-dom';
 import {createRoot} from 'react-dom/client';
 import {Options} from './options_client';
@@ -171,6 +171,8 @@ export type SwitchRuleRowProps = {
   options?: Options | null;
   resultProfiles?: Profile[];
   rule: SwitchRuleModel;
+  selectConditionDetailsIndex?: number;
+  selectConditionDetailsKey?: number;
   showNotes?: boolean;
   weekdayList?: boolean[];
 };
@@ -189,6 +191,8 @@ export type SwitchRuleRowsProps = {
   options?: Options | null;
   profile?: Profile | null;
   rules?: SwitchRuleModel[];
+  selectConditionDetailsIndex?: number;
+  selectConditionDetailsKey?: number;
   showConditionTypes?: number;
   showNotes?: boolean;
   visibleRuleCount?: number;
@@ -421,6 +425,7 @@ function ClearableInput({
 }
 
 function DraftInput({
+  autoSelectKey,
   disabled = false,
   max,
   min,
@@ -431,6 +436,7 @@ function DraftInput({
   type = 'text',
   value
 }: {
+  autoSelectKey?: number;
   disabled?: boolean;
   max?: number;
   min?: number;
@@ -442,7 +448,67 @@ function DraftInput({
   value: string;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const cancelledAutoSelectKeyRef = useRef<number | null>(null);
   const [draft, setDraft] = useState(value);
+
+  useLayoutEffect(() => {
+    if (autoSelectKey == null || disabled || cancelledAutoSelectKeyRef.current === autoSelectKey) {
+      return;
+    }
+    let cancelled = false;
+    let frame: number | undefined;
+    const startedAt = window.performance.now();
+    const selectInput = (force = false) => {
+      const input = inputRef.current;
+      if (cancelled || cancelledAutoSelectKeyRef.current === autoSelectKey || !input) {
+        return;
+      }
+      let selected = document.activeElement === input;
+      try {
+        selected = selected && input.selectionStart === 0 && input.selectionEnd === input.value.length;
+      } catch (_error) {
+        selected = selected && !force;
+      }
+      if (!force && selected) {
+        return;
+      }
+      if (document.activeElement !== input) {
+        input.focus({
+          preventScroll: true
+        });
+      }
+      try {
+        if (typeof input.select === 'function') {
+          input.select();
+        }
+      } catch (_error) {
+        // Some input types do not expose text selection APIs.
+      }
+    };
+    const cancelAutoSelect = () => {
+      cancelledAutoSelectKeyRef.current = autoSelectKey;
+    };
+    const maintainSelection = () => {
+      selectInput();
+      if (!cancelled && cancelledAutoSelectKeyRef.current !== autoSelectKey && window.performance.now() - startedAt < 900) {
+        frame = window.requestAnimationFrame(maintainSelection);
+      }
+    };
+    document.addEventListener('keydown', cancelAutoSelect, true);
+    document.addEventListener('mousedown', cancelAutoSelect, true);
+    document.addEventListener('touchstart', cancelAutoSelect, true);
+    selectInput(true);
+    frame = window.requestAnimationFrame(maintainSelection);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('keydown', cancelAutoSelect, true);
+      document.removeEventListener('mousedown', cancelAutoSelect, true);
+      document.removeEventListener('touchstart', cancelAutoSelect, true);
+      if (frame != null) {
+        window.cancelAnimationFrame(frame);
+      }
+    };
+  });
 
   useEffect(() => {
     if (document.activeElement !== inputRef.current) {
@@ -451,6 +517,9 @@ function DraftInput({
   }, [value]);
 
   function change(nextValue: string) {
+    if (autoSelectKey != null) {
+      cancelledAutoSelectKeyRef.current = autoSelectKey;
+    }
     setDraft(nextValue);
     onChange?.(nextValue);
   }
@@ -488,6 +557,8 @@ function SwitchRuleRow({
   options,
   resultProfiles,
   rule,
+  selectConditionDetailsIndex,
+  selectConditionDetailsKey,
   showNotes = false,
   weekdayList = []
 }: SwitchRuleRowProps) {
@@ -509,12 +580,18 @@ function SwitchRuleRow({
     onConditionFieldChange?.(index, field, value);
   }
 
+  function autoSelectKeyForConditionDetails() {
+    return selectConditionDetailsIndex === index ? selectConditionDetailsKey : undefined;
+  }
+
   function renderConditionDetails() {
+    const autoSelectKey = autoSelectKeyForConditionDetails();
     switch (conditionType) {
       case 'FalseCondition':
         return condition.pattern ? (
           <span>
             <DraftInput
+              autoSelectKey={autoSelectKey}
               value={condition.pattern || ''}
               disabled
               title={message('condition_details_FalseCondition', 'Never')}
@@ -527,6 +604,7 @@ function SwitchRuleRow({
         return (
           <span className="host-levels-details">
             <DraftInput
+              autoSelectKey={autoSelectKey}
               type="number"
               min={1}
               max={99}
@@ -549,6 +627,7 @@ function SwitchRuleRow({
         return (
           <span>
             <DraftInput
+              autoSelectKey={autoSelectKey}
               type="text"
               required
               placeholder="127.0.0.1/8"
@@ -561,6 +640,7 @@ function SwitchRuleRow({
         return (
           <span className="host-levels-details">
             <DraftInput
+              autoSelectKey={autoSelectKey}
               type="number"
               min={0}
               max={23}
@@ -597,6 +677,7 @@ function SwitchRuleRow({
       default:
         return (
           <DraftInput
+            autoSelectKey={autoSelectKey}
             value={condition.pattern || ''}
             required
             onChange={(value) => changeField('pattern', value)}
@@ -606,7 +687,7 @@ function SwitchRuleRow({
   }
 
   return (
-    <tr className="switch-rule-row">
+    <tr className="switch-rule-row" data-rule-index={index}>
       <td className="sort-bar">
         <span className="glyphicon glyphicon-sort" />
       </td>
@@ -682,6 +763,8 @@ function SwitchRuleRows({
   options,
   profile,
   rules = [],
+  selectConditionDetailsIndex,
+  selectConditionDetailsKey,
   showConditionTypes = 0,
   showNotes = false,
   visibleRuleCount = 0
@@ -709,6 +792,8 @@ function SwitchRuleRows({
           options={options}
           resultProfiles={resultProfiles}
           rule={rule}
+          selectConditionDetailsIndex={selectConditionDetailsIndex}
+          selectConditionDetailsKey={selectConditionDetailsKey}
           showNotes={showNotes}
           weekdayList={OmegaPac.Conditions.getWeekdayList(rule.condition) || []}
         />
@@ -1580,11 +1665,24 @@ export function SwitchRulesSection({
   const rulesBodyRef = useRef<HTMLTableSectionElement>(null);
   const moveRuleRef = useRef(onMoveRule);
   const previousProfileNameRef = useRef<string | undefined>(undefined);
+  const nextCloneSelectKeyRef = useRef(1);
+  const [cloneSelectTarget, setCloneSelectTarget] = useState<{expectedLength: number; index: number; key: number} | null>(null);
   const [renderedRuleCount, setRenderedRuleCount] = useState(0);
 
   useEffect(() => {
     moveRuleRef.current = onMoveRule;
   }, [onMoveRule]);
+
+  function cloneRule(index: number) {
+    const targetIndex = index + 1;
+    setCloneSelectTarget({
+      expectedLength: rules.length + 1,
+      key: nextCloneSelectKeyRef.current++,
+      index: targetIndex
+    });
+    setRenderedRuleCount((current) => Math.max(current, targetIndex + 1));
+    onCloneRule?.(index);
+  }
 
   useEffect(() => {
     if (!loadRules || editSource) {
@@ -1664,10 +1762,26 @@ export function SwitchRulesSection({
     }
   }, [rules, renderedRuleCount]);
 
+  useEffect(() => {
+    if (!cloneSelectTarget || rules.length < cloneSelectTarget.expectedLength) {
+      return;
+    }
+    const timeout = window.setTimeout(() => {
+      setCloneSelectTarget((current) => current?.key === cloneSelectTarget.key ? null : current);
+    }, 1200);
+    return () => window.clearTimeout(timeout);
+  }, [cloneSelectTarget, rules.length]);
+
   const initialVisibleRuleCount = Math.min(15, rules.length);
   const displayRuleCount = !editSource && loadRules && renderedRuleCount === 0 ? initialVisibleRuleCount : renderedRuleCount;
   const reserveInitialRulesSpace = !editSource && rules.length > 0 && displayRuleCount < initialVisibleRuleCount;
   const rulesWrapperMinHeight = reserveInitialRulesSpace ? 96 + initialVisibleRuleCount * 42 : undefined;
+  const activeCloneSelectTarget = cloneSelectTarget &&
+    rules.length >= cloneSelectTarget.expectedLength &&
+    cloneSelectTarget.index < displayRuleCount &&
+    cloneSelectTarget.index < rules.length
+    ? cloneSelectTarget
+    : null;
 
   return (
     <>
@@ -1702,7 +1816,7 @@ export function SwitchRulesSection({
                 <tbody ref={rulesBodyRef}>
                   <SwitchRuleRows
                     onAddNote={onAddNote}
-                    onCloneRule={onCloneRule}
+                    onCloneRule={cloneRule}
                     onConditionFieldChange={onConditionFieldChange}
                     onConditionReplace={onConditionReplace}
                     onConditionTypeChange={onConditionTypeChange}
@@ -1714,6 +1828,8 @@ export function SwitchRulesSection({
                     options={options}
                     profile={profile}
                     rules={rules}
+                    selectConditionDetailsIndex={activeCloneSelectTarget?.index}
+                    selectConditionDetailsKey={activeCloneSelectTarget?.key}
                     showConditionTypes={showConditionTypes}
                     showNotes={showNotes}
                     visibleRuleCount={displayRuleCount}
