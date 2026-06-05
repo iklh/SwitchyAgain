@@ -70,4 +70,10 @@ interface Window {
       unmount: () => void;
     };
   };
+  OmegaReactOptionsApp?: {
+    mountOptionsApp: (element: Element) => {
+      render: () => void;
+      unmount: () => void;
+    };
+  };
 }
