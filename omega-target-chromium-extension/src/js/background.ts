@@ -474,14 +474,20 @@
       promise = Promise.resolve().then(function() {
         return method.apply(target, request.args);
       });
-      if (request.refreshActivePage) {
-        promise.then(refreshActivePageIfEnabled);
-      }
       if (request.noReply) {
-        return;
+        return promise.then(function() {
+          if (request.refreshActivePage) {
+            return refreshActivePageIfEnabled();
+          }
+        }, function(error) {
+          return Log.error(request.method + ' ==>', error);
+        });
       }
-      promise.then(function(result) {
+      return promise.then(function(result) {
         var key, value;
+        if (request.refreshActivePage) {
+          refreshActivePageIfEnabled();
+        }
         if (request.method === 'updateProfile') {
           for (key in result) {
             if (!hasProp.call(result, key)) continue;
@@ -492,8 +498,7 @@
         return respond({
           result: result
         });
-      });
-      return promise["catch"](function(error) {
+      }, function(error) {
         Log.error(request.method + ' ==>', error);
         return respond({
           error: encodeError(error)

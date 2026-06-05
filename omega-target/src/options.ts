@@ -333,11 +333,11 @@ Options = (function() {
     })(this));
     this.ready.then((function(_this) {
       return function() {
-        var ref;
+        var firstRunTask, ref;
         if ((ref = _this.sync) != null ? ref.enabled : void 0) {
           _this.sync.requestPush(_this._options);
         }
-        _this._state.get({
+        firstRunTask = _this._state.get({
           'firstRun': ''
         }).then(function(arg) {
           var firstRun;
@@ -347,8 +347,13 @@ Options = (function() {
           }
         });
         if (_this._options['-downloadInterval'] > 0) {
-          return _this.updateProfile();
+          return Promise.all([firstRunTask, _this.updateProfile()]);
         }
+        return firstRunTask;
+      };
+    })(this))["catch"]((function(_this) {
+      return function(err) {
+        return _this.log.error('Post-initialization task failed:', err);
       };
     })(this));
     return this.ready;
