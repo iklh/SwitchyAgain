@@ -420,11 +420,14 @@ ChromeOptions = (function(superClass) {
   };
 
   ChromeOptions.prototype.getPageInfo = function(arg) {
-    var errorCount, getBadge, getInspectUrl, ref, ref1, result, tabId, url;
+    var errorCount, getBadge, getInspectUrl, ref, ref1, result, summary, tabId, tabInfo, url;
     tabId = arg.tabId, url = arg.url;
-    errorCount = (ref = this._requestMonitor) != null ? (ref1 = ref.tabInfo[tabId]) != null ? ref1.errorCount : void 0 : void 0;
+    tabInfo = (ref = this._requestMonitor) != null ? ref.tabInfo[tabId] : void 0;
+    errorCount = (ref1 = tabInfo) != null ? ref1.errorCount : void 0;
+    summary = tabInfo != null ? tabInfo.summary : void 0;
     result = errorCount ? {
-      errorCount: errorCount
+      errorCount: errorCount,
+      summary: summary
     } : null;
     getBadge = new Promise(function(resolve, reject) {
       if (actionApi().getBadgeText == null) {
@@ -474,7 +477,8 @@ ChromeOptions = (function(superClass) {
           url: url,
           domain: domain,
           tempRuleProfileName: _this.queryTempRule(domain),
-          errorCount: errorCount
+          errorCount: errorCount,
+          summary: summary
         };
       };
     })(this));
