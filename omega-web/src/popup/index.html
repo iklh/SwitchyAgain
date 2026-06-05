@@ -21,7 +21,7 @@
       </a>
     </li>
     <li class="om-nav-item om-reqinfo om-hidden">
-      <a href="../popup.html#!requestInfo" id="js-reqinfo" role="button">
+      <a href="#!requestInfo" id="js-reqinfo" role="button">
         <span class="glyphicon glyphicon-warning-sign"></span>
         <span class="om-reqinfo-text"></span>
       </a>
@@ -29,7 +29,7 @@
     <li class="om-divider"></li>
     <li class="om-divider" id="js-profiles-end"></li>
     <li class="om-nav-item om-nav-addrule">
-      <a href="../popup.html#!addRule" id="js-addrule" role="button">
+      <a href="#!addRule" id="js-addrule" role="button">
         <span class="glyphicon glyphicon-plus"></span>
         <span id="js-addrule-label"></span>
       </a>
@@ -51,7 +51,11 @@
       </a>
     </li>
   </ul>
+  <div id="js-popup-flow" class="om-hidden">
+    <div id="react-popup-flow-root"></div>
+  </div>
   <script src="../../lib/script.js/script.min.js"></script>
+  <script src="../react/popup_flow.js"></script>
   <script src="js/loader.js"></script>
 </body>
 </html>

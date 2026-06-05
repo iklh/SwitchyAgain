@@ -84,7 +84,11 @@
     var link = profileDisp.querySelector('a');
     link.id = 'js-external';
     link.addEventListener('click', function() {
-      location.href = '../popup.html#!external';
+      if (OmegaPopup.showFlow) {
+        OmegaPopup.showFlow('external');
+      } else {
+        location.hash = '#!external';
+      }
     });
 
     if (state.currentProfileName === '') {

@@ -218,3 +218,296 @@ body {
 .glyphicon-chevron-down:before {
     content: "\e114";
 }
+.glyphicon-new-window:before {
+  content: "\e164";
+}
+
+/* React popup forms: keep the legacy popup form visual language. */
+
+.om-alert {
+  background: #f2dede;
+  border: 1px solid #ebccd1;
+  border-radius: 4px;
+  color: #a94442;
+  margin: 0 0 10px;
+  padding: 6px 8px;
+}
+
+.om-popup-form {
+  margin: 10px;
+}
+
+.condition-form,
+.request-info-details {
+  min-width: 360px;
+}
+
+.om-popup-form fieldset {
+  border: 0;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.om-popup-form legend {
+  border: 0;
+  border-bottom: 1px solid #e5e5e5;
+  color: #333;
+  display: block;
+  font-size: 21px;
+  line-height: inherit;
+  margin: 0 0 10px;
+  padding: 0 0 4px;
+  width: 100%;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.om-popup-form label {
+  display: inline-block;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.form-control {
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+  box-sizing: border-box;
+  color: #555;
+  display: block;
+  font: inherit;
+  font-size: 14px;
+  height: 34px;
+  line-height: 1.42857143;
+  margin-bottom: 0 !important;
+  padding: 6px 12px;
+  width: 100%;
+}
+
+.form-control:focus {
+  border-color: #66afe9;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102,175,233,.6);
+  outline: 0;
+}
+
+.help-block {
+  color: #737373;
+  display: block;
+  margin: 5px 0 10px;
+}
+
+.text-warning {
+  color: #8a6d3b;
+}
+
+.checkbox {
+  display: block;
+  margin-bottom: 10px;
+  margin-top: 10px;
+  min-height: 20px;
+  position: relative;
+}
+
+.checkbox label {
+  cursor: pointer;
+  font-weight: 400;
+  margin-bottom: 0;
+  min-height: 20px;
+}
+
+.checkbox input[type="checkbox"] {
+  margin: 4px 6px 0 0;
+}
+
+.label {
+  border-radius: .25em;
+  color: #fff;
+  display: inline;
+  font-size: 75%;
+  font-weight: 700;
+  line-height: 1;
+  padding: .2em .6em .3em;
+  text-align: center;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+
+.label-warning {
+  background-color: #f0ad4e;
+}
+
+.om-domain-list {
+  max-height: 220px;
+  overflow: auto;
+  margin-bottom: 10px;
+}
+
+.btn {
+  background-image: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-block;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.42857143;
+  margin-bottom: 0;
+  padding: 6px 12px;
+  text-align: center;
+  touch-action: manipulation;
+  user-select: none;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: .65;
+}
+
+.btn-default {
+  background-color: #fff;
+  border-color: #ccc;
+  color: #333;
+}
+
+.btn-default:hover {
+  background-color: #e6e6e6;
+  border-color: #adadad;
+}
+
+.btn-primary {
+  background-color: #337ab7;
+  border-color: #2e6da4;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background-color: #286090;
+  border-color: #204d74;
+}
+
+.btn-link {
+  border-radius: 0;
+  border: 0;
+  color: #337ab7;
+  font-weight: 400;
+}
+
+.btn-link,
+.btn-link:hover {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.btn-sm {
+  border-radius: 3px;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 5px 10px;
+}
+
+.clear-padding {
+  padding: 0;
+}
+
+.pull-right,
+.condition-controls .btn-primary {
+  float: right;
+}
+
+.btn-group {
+  display: inline-block;
+  position: relative;
+  vertical-align: middle;
+}
+
+.omega-profile-select-host {
+  display: block;
+}
+
+.omega-profile-select {
+  display: block;
+  width: 100%;
+}
+
+.omega-profile-select .dropdown-toggle {
+  box-sizing: border-box;
+  text-align: left;
+  width: 100%;
+}
+
+.omega-profile-select .dropdown-toggle .glyphicon {
+  margin-right: 6px;
+}
+
+.omega-profile-select .dropdown-toggle .caret {
+  float: right;
+  margin-left: 6px;
+  margin-top: 8px;
+}
+
+.caret {
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px dashed;
+  display: inline-block;
+  height: 0;
+  margin-left: 2px;
+  vertical-align: middle;
+  width: 0;
+}
+
+.dropdown-menu {
+  background-clip: padding-box;
+  background-color: #fff;
+  border: 1px solid rgba(0,0,0,.15);
+  border-radius: 4px;
+  box-shadow: 0 6px 12px rgba(0,0,0,.175);
+  display: block;
+  float: none;
+  font-size: 14px;
+  left: 0;
+  list-style: none;
+  margin: 2px 0 0;
+  min-width: 160px;
+  padding: 5px 0;
+  position: absolute;
+  text-align: left;
+  top: 100%;
+  z-index: 1000;
+}
+
+.omega-profile-select .dropdown-menu {
+  max-height: 240px;
+  overflow: auto;
+  width: 100%;
+}
+
+.omega-profile-select .dropdown-menu .glyphicon {
+  margin-right: 6px;
+}
+
+.dropdown-menu > li > a {
+  clear: both;
+  color: #333;
+  display: block;
+  font-weight: 400;
+  line-height: 1.42857143;
+  padding: 3px 20px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.dropdown-menu > li > a:hover,
+.dropdown-menu > .active > a {
+  background-color: #337ab7;
+  color: #fff;
+}

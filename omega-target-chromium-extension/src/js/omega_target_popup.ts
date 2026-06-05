@@ -22,6 +22,19 @@ function callBackground(method, args, cb) {
   });
 }
 
+function callBackgroundWithRefresh(method, args, cb) {
+  chrome.runtime.sendMessage({
+    method: method,
+    args: args,
+    refreshActivePage: true,
+  }, function(response) {
+    if (chrome.runtime.lastError != null)
+      return cb && cb(chrome.runtime.lastError)
+    if (response.error) return cb && cb(response.error)
+    return cb && cb(null, response.result)
+  });
+}
+
 var requestInfoCallback = null;
 var isManifestV3 = chrome.runtime.getManifest &&
   chrome.runtime.getManifest().manifest_version >= 3;
@@ -61,18 +74,27 @@ function cacheActivePageInfo(info) {
     chrome.tabs.query({
       url: options_url
     }, function(tabs) {
+      var target_url = options_url;
+      if (hash) {
+        try {
+          var url = new URL((tabs && tabs[0] && tabs[0].url) || options_url);
+          url.hash = hash;
+          target_url = url.href;
+        } catch (_) {
+          target_url = options_url + hash;
+        }
+      }
       if (!chrome.runtime.lastError && tabs && tabs.length > 0) {
         var props: any = {
           active: true
         };
         if (hash) {
-          var url = options_url + hash;
-          props.url = url;
+          props.url = target_url;
         }
         chrome.tabs.update(tabs[0].id, props);
       } else {
         chrome.tabs.create({
-          url: options_url
+          url: target_url
         });
       }
       if (cb) return cb();
@@ -94,6 +116,16 @@ function cacheActivePageInfo(info) {
   },
   addTempRule: function(domain, profileName, cb) {
     callBackgroundNoReply('addTempRule', [domain, profileName], cb);
+  },
+  addCondition: function(condition, profileName, addToBottom, cb) {
+    callBackgroundWithRefresh('addCondition',
+      [condition, profileName, addToBottom], cb);
+  },
+  addProfile: function(profile, cb) {
+    callBackgroundWithRefresh('addProfile', [profile], cb);
+  },
+  setState: function(name, value, cb) {
+    callBackground('setState', [name, value], cb);
   },
   openManage: function(domain, profileName, cb) {
     chrome.tabs.create({

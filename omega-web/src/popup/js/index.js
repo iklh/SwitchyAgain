@@ -3,9 +3,15 @@
   handleClick('js-temprule', showTempRuleDropdown);
   handleClick('js-direct', applyProfile.bind(this, 'direct'));
   handleClick('js-system', applyProfile.bind(this, 'system'));
+  handleClick('js-addrule', showFlow.bind(this, 'addRule'));
+  handleClick('js-reqinfo', showFlow.bind(this, 'requestInfo'));
   OmegaPopup.addTempRule = addTempRule;
   OmegaPopup.setDefaultProfile = setDefaultProfile;
   OmegaPopup.applyProfile = applyProfile;
+  OmegaPopup.showFlow = showFlow;
+  if (location.hash.indexOf('!') >= 0) {
+    showFlow(location.hash.substr(2));
+  }
   return;
 
   function handleClick(id, handler) {
@@ -48,6 +54,13 @@
       OmegaTargetPopup.addTempRule(domain, profileName);
     });
     closePopup();
+  }
+
+  function showFlow(mode, e) {
+    if (e) e.preventDefault();
+    location.hash = '#!' + mode;
+    document.querySelector('.om-nav').classList.add('om-hidden');
+    document.getElementById('js-popup-flow').classList.remove('om-hidden');
   }
 
   function showTempRuleDropdown() {
