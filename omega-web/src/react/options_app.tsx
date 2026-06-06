@@ -6,17 +6,22 @@ import {ImportExport} from './import_export';
 import {
   Options,
   downloadBlob,
+  getState,
   lastUrl,
   loadOptions,
   message,
   openShortcutConfig,
   patchOptions,
+  renameProfile as renameProfileFromBackground,
   replaceRef as replaceRefFromBackground,
+  resetOptions,
+  setState,
   updateProfile as updateProfileFromBackground
 } from './options_client';
 import {OptionsAlert, OptionsShell} from './options_shell';
 import {ConfirmModal} from './confirm_modals';
-import {NewProfileModal, ProxyAuthModal} from './profile_modals';
+import {WelcomeModal} from './options_modals';
+import {NewProfileModal, ProxyAuthModal, RenameProfileModal} from './profile_modals';
 import {
   FixedProfileContent,
   PacProfile,
@@ -68,6 +73,9 @@ type AlertState = {
 
 type ModalState =
   | {
+    kind: 'applyOptions';
+  }
+  | {
     kind: 'cannotDeleteProfile';
     profile: any;
     refs: any[];
@@ -78,6 +86,13 @@ type ModalState =
   }
   | {
     kind: 'newProfile';
+  }
+  | {
+    fromName: string;
+    kind: 'renameProfile';
+  }
+  | {
+    kind: 'resetOptions';
   }
   | {
     auth: any;
@@ -92,6 +107,11 @@ type ModalState =
     kind: 'replaceProfile';
     toName: string;
   }
+  | {
+    kind: 'welcome';
+    profileName: string;
+    upgrade: boolean;
+  }
   | null;
 
 const PROFILE_COLORS = ['#9ce', '#9d9', '#fa8', '#fe9', '#d497ee', '#47b', '#5b5', '#d63', '#ca0'];
@@ -101,6 +121,7 @@ const FIXED_PROXY_AUTH_KEYS: Record<string, string> = {
   http: 'proxyForHttp',
   https: 'proxyForHttps'
 };
+const RULE_LIST_USAGE_URL = 'https://github.com/FelisCatus/SwitchyOmega/wiki/RuleListUsage';
 
 function cloneOptions(options: Options) {
   return JSON.parse(JSON.stringify(options));
@@ -228,6 +249,91 @@ function cloneAuth(auth: any) {
   return auth ? cloneOptions(auth) : undefined;
 }
 
+function hasProxyScriptApi() {
+  const proxy = (window as any).browser?.proxy;
+  return Boolean(proxy?.register || proxy?.registerProxyScript);
+}
+
+function firstFixedProfileName(options: Options) {
+  let profileName = '';
+  OmegaPac.Profiles.each(options, (_key: string, profile: any) => {
+    if (!profileName && profile.profileType === 'FixedProfile') {
+      profileName = profile.name;
+    }
+  });
+  return profileName;
+}
+
+function safeProfileFileName(profileName: string) {
+  return profileName.replace(/\W+/g, '_');
+}
+
+function composeOmegaRuleList(rules: any[], defaultProfileName: string) {
+  const text = OmegaPac.RuleList.Switchy.compose({
+    defaultProfileName,
+    rules
+  });
+  const eol = '\r\n';
+  const info = [
+    '',
+    '; Require: SwitchyOmega >= 2.3.2',
+    `; Date: ${new Date().toLocaleDateString()}`,
+    `; Usage: ${message('ruleList_usageUrl', RULE_LIST_USAGE_URL)}`
+  ].join(eol) + eol;
+  return text.replace('\n', info);
+}
+
+function composeLegacyRuleList(rules: any[], defaultProfileName: string) {
+  let wildcardRules = '';
+  let regexpRules = '';
+  for (const rule of rules || []) {
+    const inverse = rule.profileName === defaultProfileName ? '!' : '';
+    switch (rule.condition?.conditionType) {
+      case 'HostWildcardCondition':
+        wildcardRules += `${inverse}@*://${rule.condition.pattern}/*\r\n`;
+        break;
+      case 'UrlWildcardCondition':
+        wildcardRules += `${inverse}@${rule.condition.pattern}\r\n`;
+        break;
+      case 'UrlRegexCondition':
+        regexpRules += `${inverse}${rule.condition.pattern}\r\n`;
+        break;
+    }
+  }
+  return [
+    '; Summary: Proxy Switchy! Exported Rule List',
+    `; Date: ${new Date().toLocaleDateString()}`,
+    `; Website: ${message('ruleList_usageUrl', RULE_LIST_USAGE_URL)}`,
+    '',
+    '#BEGIN',
+    '',
+    '[wildcard]',
+    wildcardRules,
+    '[regexp]',
+    regexpRules,
+    '#END'
+  ].join('\n');
+}
+
+function exportRuleListOptions(options: Options, showConditionTypes: number) {
+  if (!options['-exportLegacyRuleList']) {
+    return {
+      legacy: false,
+      warning: false
+    };
+  }
+  if (showConditionTypes > 0) {
+    return {
+      legacy: false,
+      warning: true
+    };
+  }
+  return {
+    legacy: true,
+    warning: false
+  };
+}
+
 function ModalFrame({
   children,
   onDismiss
@@ -265,7 +371,7 @@ function routeHref(route: RouteName, params?: Record<string, string>) {
 }
 
 function parseRoute(hash = window.location.hash): Route {
-  const value = hash.replace(/^#\/?/, '');
+  const value = hash.replace(/^#!?\/?/, '');
   const parts = value.split('/');
   switch (parts[0]) {
     case 'ui':
@@ -308,7 +414,6 @@ function SwitchProfilePreview({
   onDownload,
   options,
   profile,
-  showPending,
   updatingProfiles,
   updateOptionsDraft,
   updateProfile
@@ -316,7 +421,6 @@ function SwitchProfilePreview({
   onDownload: (name: string) => void;
   options: Options;
   profile: any;
-  showPending: () => void;
   updatingProfiles: Record<string, boolean>;
   updateOptionsDraft: (updater: (options: Options) => void) => void;
   updateProfile: (profileName: string, updater: (profile: any) => void) => void;
@@ -452,8 +556,11 @@ export function OptionsApp() {
   const [status, setStatus] = useState<'loading' | 'ready' | 'saving' | 'error'>('loading');
   const [updatingProfiles, setUpdatingProfiles] = useState<Record<string, boolean>>({});
   const [modal, setModal] = useState<ModalState>(null);
+  const [pendingApplyAction, setPendingApplyAction] = useState<(() => void | Promise<void>) | null>(null);
   const [alert, setAlert] = useState<AlertState>(null);
   const [alertShown, setAlertShown] = useState(false);
+  const isExperimental = useMemo(hasProxyScriptApi, []);
+  const pacProfilesUnsupported = isExperimental;
 
   useEffect(() => {
     loadOptions().then((loadedOptions) => {
@@ -461,6 +568,7 @@ export function OptionsApp() {
       setSavedOptions(cloned);
       setOptions(cloneOptions(cloned));
       setStatus('ready');
+      showFirstRun(cloned);
     }).catch((err) => {
       setAlert({
         type: 'error',
@@ -477,6 +585,35 @@ export function OptionsApp() {
     }
     return !sameValue(savedOptions, options);
   }, [options, savedOptions]);
+
+  useEffect(() => {
+    if (!dirty) {
+      window.onbeforeunload = null;
+      return;
+    }
+    window.onbeforeunload = () => message('options_optionsNotSaved', 'Options are not saved.');
+    return () => {
+      window.onbeforeunload = null;
+    };
+  }, [dirty]);
+
+  function showFirstRun(loadedOptions: Options) {
+    getState<string>('firstRun').then((firstRun) => {
+      if (!firstRun) {
+        return;
+      }
+      setState('firstRun', '');
+      const profileName = firstFixedProfileName(loadedOptions);
+      if (!profileName) {
+        return;
+      }
+      setModal({
+        kind: 'welcome',
+        profileName,
+        upgrade: firstRun === 'upgrade'
+      });
+    }).catch(() => {});
+  }
 
   function showAlert(nextAlert: AlertState) {
     setAlert(nextAlert);
@@ -538,7 +675,7 @@ export function OptionsApp() {
       if (!opts?.silent) {
         showAlert({type: 'success', i18n: 'options_saveSuccess'});
       }
-      return Promise.resolve();
+      return Promise.resolve(options);
     }
     setStatus('saving');
     return patchOptions(patch).then((loadedOptions) => {
@@ -547,6 +684,7 @@ export function OptionsApp() {
       if (!opts?.silent) {
         showAlert({type: 'success', i18n: 'options_saveSuccess'});
       }
+      return loadedOptions;
     }).catch((err) => {
       setStatus('ready');
       showAlert({
@@ -565,6 +703,24 @@ export function OptionsApp() {
     showAlert(null);
   }
 
+  function requireAppliedOptions(action: () => void | Promise<void>) {
+    if (!dirty) {
+      return Promise.resolve(action());
+    }
+    setPendingApplyAction(() => action);
+    setModal({
+      kind: 'applyOptions'
+    });
+    return Promise.resolve();
+  }
+
+  function confirmApplyOptions() {
+    const action = pendingApplyAction;
+    setModal(null);
+    setPendingApplyAction(null);
+    return applyOptions({silent: true}).then(() => Promise.resolve(action?.()));
+  }
+
   function setProfileUpdating(profileName: string, updating: boolean) {
     const key = profileKey(profileName);
     setUpdatingProfiles((current) => {
@@ -579,12 +735,15 @@ export function OptionsApp() {
   }
 
   function downloadProfile(profileName: string) {
+    return requireAppliedOptions(() => downloadProfileNow(profileName));
+  }
+
+  function downloadProfileNow(profileName: string) {
     if (!profileName) {
       return Promise.resolve();
     }
     setProfileUpdating(profileName, true);
     return Promise.resolve()
-      .then(() => dirty ? applyOptions({silent: true}) : undefined)
       .then(() => updateProfileFromBackground(profileName, 'bypass_cache'))
       .then(({options: loadedOptions, results}) => {
         replaceOptions(loadedOptions);
@@ -617,6 +776,81 @@ export function OptionsApp() {
     navigate('profile', {
       name: profileSpec.name
     });
+  }
+
+  function requestRenameProfile(profile: any) {
+    const fromName = profile?.name || '';
+    if (!fromName) {
+      return;
+    }
+    return requireAppliedOptions(() => setModal({
+      fromName,
+      kind: 'renameProfile'
+    }));
+  }
+
+  function renameProfile(fromName: string, toName: string) {
+    setModal(null);
+    if (!fromName || !toName || fromName === toName) {
+      return Promise.resolve();
+    }
+    const sourceOptions = options ? cloneOptions(options) : {};
+    const attachedName = createAttachedName(fromName);
+    const toAttachedName = createAttachedName(toName);
+    const hadAttached = Boolean(profileByName(sourceOptions, attachedName));
+    const targetAttachedExists = Boolean(profileByName(sourceOptions, toAttachedName));
+    const originalDefaultProfileName = targetAttachedExists
+      ? (profileByName(sourceOptions, fromName) as any)?.defaultProfileName
+      : undefined;
+
+    return Promise.resolve()
+      .then(loadOptions)
+      .then(() => renameProfileFromBackground(fromName, toName))
+      .then((loadedOptions) => {
+        if (!hadAttached) {
+          return loadedOptions;
+        }
+        let chain = Promise.resolve(loadedOptions);
+        if (targetAttachedExists) {
+          chain = chain.then((currentOptions) => {
+            const nextOptions = cloneOptions(currentOptions);
+            const nextProfile = nextOptions[profileKey(toName)];
+            if (nextProfile) {
+              nextProfile.defaultProfileName = 'direct';
+              OmegaPac.Profiles.updateRevision(nextProfile);
+            }
+            delete nextOptions[profileKey(toAttachedName)];
+            const patch = optionsPatch(currentOptions, nextOptions);
+            return isPatchEmpty(patch) ? currentOptions : patchOptions(patch);
+          });
+        }
+        chain = chain.then(() => renameProfileFromBackground(attachedName, toAttachedName));
+        if (originalDefaultProfileName) {
+          chain = chain.then((currentOptions) => {
+            const nextOptions = cloneOptions(currentOptions);
+            const nextProfile = nextOptions[profileKey(toName)];
+            if (nextProfile) {
+              nextProfile.defaultProfileName = originalDefaultProfileName;
+              OmegaPac.Profiles.updateRevision(nextProfile);
+            }
+            const patch = optionsPatch(currentOptions, nextOptions);
+            return isPatchEmpty(patch) ? currentOptions : patchOptions(patch);
+          });
+        }
+        return chain;
+      })
+      .then((loadedOptions) => {
+        replaceOptions(loadedOptions);
+        navigate('profile', {
+          name: toName
+        });
+      })
+      .catch((err) => {
+        showAlert({
+          type: 'error',
+          message: err?.message || String(err)
+        });
+      });
   }
 
   function requestDeleteProfile(profile: any) {
@@ -660,6 +894,18 @@ export function OptionsApp() {
     });
     setModal(null);
     navigate('ui');
+  }
+
+  function exportRuleList(profile: any, attachedOptions: {defaultProfileName?: string}, legacy: boolean) {
+    if (!profile?.name) {
+      return;
+    }
+    const defaultProfileName = attachedOptions.defaultProfileName || 'direct';
+    const text = legacy
+      ? composeLegacyRuleList(profile.rules || [], defaultProfileName)
+      : composeOmegaRuleList(profile.rules || [], defaultProfileName);
+    const fileName = safeProfileFileName(profile.name);
+    downloadBlob(new Blob([text], {type: 'text/plain;charset=utf-8'}), legacy ? `SwitchyRules_${fileName}.ssrl` : `OmegaRules_${fileName}.sorl`);
   }
 
   function exportScript(profileName: string) {
@@ -732,17 +978,16 @@ export function OptionsApp() {
     if (!fromName || !toName) {
       return;
     }
-    setModal({
+    return requireAppliedOptions(() => setModal({
       fromName,
       kind: 'replaceProfile',
       toName
-    });
+    }));
   }
 
   function replaceProfileRefs(fromName: string, toName: string) {
     setModal(null);
     return Promise.resolve()
-      .then(() => dirty ? applyOptions({silent: true}) : undefined)
       .then(() => replaceRefFromBackground(fromName, toName))
       .then((loadedOptions) => {
         replaceOptions(loadedOptions);
@@ -757,6 +1002,39 @@ export function OptionsApp() {
           message: err?.message || String(err)
         });
       });
+  }
+
+  function resetAllOptions() {
+    setModal(null);
+    return resetOptions().then((loadedOptions) => {
+      replaceOptions(loadedOptions);
+      navigate('about');
+      showAlert({
+        type: 'success',
+        i18n: 'options_resetSuccess'
+      });
+    }).catch((err) => {
+      showAlert({
+        type: 'error',
+        message: err?.message || String(err)
+      });
+    });
+  }
+
+  function downloadLog() {
+    const blob = new Blob([window.localStorage.getItem('log') || ''], {
+      type: 'text/plain;charset=utf-8'
+    });
+    downloadBlob(blob, `OmegaLog_${Date.now()}.txt`);
+  }
+
+  function closeWelcome(result: string, profileName: string) {
+    setModal(null);
+    if (result === 'show') {
+      navigate('profile', {
+        name: profileName
+      });
+    }
   }
 
   function navigate(name: string, params?: Record<string, string>) {
@@ -817,15 +1095,11 @@ export function OptionsApp() {
           </div>
         );
       }
-      const showPending = () => showAlert({
-        type: 'warning',
-        message: message('options_profileEditorReactPending', 'This action is not wired in the React preview yet.')
-      });
       const referenced = () => {
         if (typeof OmegaPac === 'undefined' || !OmegaPac?.Profiles?.referencedBySet) {
           return false;
         }
-        return Object.keys(OmegaPac.Profiles.referencedBySet(profile, options)).length > 0;
+        return Object.keys(OmegaPac.Profiles.referencedBySet(profile.name, options)).length > 0;
       };
       const content = (() => {
         switch (profile.profileType) {
@@ -859,6 +1133,7 @@ export function OptionsApp() {
                 onProfileChange={(field, value) => updateProfile(profile.name || '', (nextProfile) => {
                   nextProfile[field] = value;
                 })}
+                pacProfilesUnsupported={pacProfilesUnsupported}
                 updating={!!updatingProfiles[profileKey(profile.name || '')]}
               />
             );
@@ -891,7 +1166,6 @@ export function OptionsApp() {
                 onDownload={downloadProfile}
                 options={options}
                 profile={profile}
-                showPending={showPending}
                 updatingProfiles={updatingProfiles}
                 updateOptionsDraft={updateOptionsDraft}
                 updateProfile={updateProfile}
@@ -901,9 +1175,20 @@ export function OptionsApp() {
             return <UnsupportedProfile profile={profile} />;
         }
       })();
+      const identity = profile.profileType === 'SwitchProfile' ? attachedIdentity(profile.name || '') : null;
+      const attached = identity ? options[identity.attachedKey] : null;
+      const attachedOptions = identity ? createAttachedOptions(profile, attached) : null;
+      const showConditionTypes = profile.profileType === 'SwitchProfile'
+        ? options['-showConditionTypes'] ?? detectAdvancedConditionTypes(profile)
+        : 0;
+      const ruleListOptions = profile.profileType === 'SwitchProfile'
+        ? exportRuleListOptions(options, showConditionTypes)
+        : {legacy: false, warning: false};
       return (
         <div>
           <ProfileShell
+            exportRuleListAvailable={profile.profileType === 'SwitchProfile'}
+            exportRuleListWarning={ruleListOptions.warning}
             profile={profile}
             profileColor={profile.color}
             scriptable={profile.profileType !== 'DirectProfile' && profile.profileType !== 'SystemProfile'}
@@ -911,8 +1196,9 @@ export function OptionsApp() {
               nextProfile.color = color;
             })}
             onDelete={() => requestDeleteProfile(profile)}
+            onExportRuleList={() => attachedOptions && exportRuleList(profile, attachedOptions, ruleListOptions.legacy)}
             onExportScript={() => exportScript(profile.name || '')}
-            onRename={showPending}
+            onRename={() => requestRenameProfile(profile)}
           />
           {content}
         </div>
@@ -921,7 +1207,9 @@ export function OptionsApp() {
     return (
       <About
         embedded
-        onResetOptions={() => navigate('io')}
+        isExperimental={isExperimental}
+        onDownloadLog={downloadLog}
+        onResetOptions={() => setModal({kind: 'resetOptions'})}
       />
     );
   }
@@ -942,20 +1230,50 @@ export function OptionsApp() {
             options={options}
             optionsDirty={dirty || status === 'saving'}
             profileHref={(profile) => routeHref('profile', {name: profile.name || ''})}
+            isExperimental={isExperimental}
             uiHref={routeHref('ui')}
           />
         </header>
-        <main className="col-lg-10 col-sm-9 col-lg-offset-2 col-sm-offset-3 angular-animate">
+        <main className="col-lg-10 col-sm-9 col-lg-offset-2 col-sm-offset-3">
           {renderContent()}
         </main>
       </div>
       <OptionsAlert alert={alert} shown={alertShown} onClose={() => setAlertShown(false)} />
+      {modal?.kind === 'applyOptions' && options && (
+        <ModalFrame onDismiss={() => {
+          setPendingApplyAction(null);
+          setModal(null);
+        }}>
+          <ConfirmModal
+            kind="apply"
+            onClose={confirmApplyOptions}
+            onDismiss={() => {
+              setPendingApplyAction(null);
+              setModal(null);
+            }}
+            options={options}
+          />
+        </ModalFrame>
+      )}
       {modal?.kind === 'newProfile' && options && (
         <ModalFrame onDismiss={() => setModal(null)}>
           <NewProfileModal
             isProfileNameHidden={isProfileNameHidden}
             isProfileNameReserved={isProfileNameReserved}
             onClose={createProfile}
+            onDismiss={() => setModal(null)}
+            pacProfilesUnsupported={pacProfilesUnsupported}
+            profileByName={(name) => profileByName(options, name)}
+          />
+        </ModalFrame>
+      )}
+      {modal?.kind === 'renameProfile' && options && (
+        <ModalFrame onDismiss={() => setModal(null)}>
+          <RenameProfileModal
+            fromName={modal.fromName}
+            isProfileNameHidden={isProfileNameHidden}
+            isProfileNameReserved={isProfileNameReserved}
+            onClose={(toName) => renameProfile(modal.fromName, toName)}
             onDismiss={() => setModal(null)}
             profileByName={(name) => profileByName(options, name)}
           />
@@ -983,6 +1301,16 @@ export function OptionsApp() {
           />
         </ModalFrame>
       )}
+      {modal?.kind === 'resetOptions' && options && (
+        <ModalFrame onDismiss={() => setModal(null)}>
+          <ConfirmModal
+            kind="reset"
+            onClose={resetAllOptions}
+            onDismiss={() => setModal(null)}
+            options={options}
+          />
+        </ModalFrame>
+      )}
       {modal?.kind === 'proxyAuth' && (
         <ModalFrame onDismiss={() => setModal(null)}>
           <ProxyAuthModal
@@ -1006,6 +1334,15 @@ export function OptionsApp() {
           />
         </ModalFrame>
       )}
+      {modal?.kind === 'welcome' && (
+        <ModalFrame onDismiss={() => setModal(null)}>
+          <WelcomeModal
+            onClose={(result) => closeWelcome(result, modal.profileName)}
+            onDismiss={() => setModal(null)}
+            upgrade={modal.upgrade}
+          />
+        </ModalFrame>
+      )}
     </>
   );
 }
@@ -1022,8 +1359,3 @@ export function mountOptionsApp(element: Element) {
     }
   };
 }
-
-const globalWindow = window as any;
-globalWindow.OmegaReactOptionsApp = {
-  mountOptionsApp
-};

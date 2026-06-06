@@ -1,5 +1,4 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {createRoot} from 'react-dom/client';
 import {Options, message} from './options_client';
 
 export type Profile = {
@@ -210,24 +209,3 @@ export function ProfileSelect({
     </div>
   );
 }
-
-type ProfileSelectMountProps = React.ComponentProps<typeof ProfileSelect>;
-
-function mountProfileSelect(element: Element, props: ProfileSelectMountProps) {
-  const root = createRoot(element);
-  root.render(<ProfileSelect {...props} />);
-  return {
-    render(nextProps: ProfileSelectMountProps) {
-      root.render(<ProfileSelect {...nextProps} />);
-    },
-    unmount() {
-      root.unmount();
-    }
-  };
-}
-
-const globalWindow = window as any;
-globalWindow.OmegaReactProfileWidgets = {
-  ...(globalWindow.OmegaReactProfileWidgets || {}),
-  mountProfileSelect
-};

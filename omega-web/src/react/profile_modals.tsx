@@ -1,5 +1,4 @@
 import React, {useEffect, useMemo, useState} from 'react';
-import {createRoot} from 'react-dom/client';
 import {message} from './options_client';
 import {PROFILE_ICONS} from './profile_widgets';
 
@@ -459,49 +458,3 @@ export function ProxyAuthModal({
     </form>
   );
 }
-
-export function mountRenameProfile(element: Element, props: RenameProfileProps = {}) {
-  const root = createRoot(element);
-  root.render(<RenameProfileModal {...props} />);
-  return {
-    render(nextProps: RenameProfileProps = {}) {
-      root.render(<RenameProfileModal {...nextProps} />);
-    },
-    unmount() {
-      root.unmount();
-    }
-  };
-}
-
-export function mountNewProfile(element: Element, props: NewProfileProps = {}) {
-  const root = createRoot(element);
-  root.render(<NewProfileModal {...props} />);
-  return {
-    render(nextProps: NewProfileProps = {}) {
-      root.render(<NewProfileModal {...nextProps} />);
-    },
-    unmount() {
-      root.unmount();
-    }
-  };
-}
-
-export function mountProxyAuth(element: Element, props: ProxyAuthProps = {}) {
-  const root = createRoot(element);
-  root.render(<ProxyAuthModal {...props} />);
-  return {
-    render(nextProps: ProxyAuthProps = {}) {
-      root.render(<ProxyAuthModal {...nextProps} />);
-    },
-    unmount() {
-      root.unmount();
-    }
-  };
-}
-
-const globalWindow = window as any;
-globalWindow.OmegaReactProfileModals = {
-  mountNewProfile,
-  mountProxyAuth,
-  mountRenameProfile
-};

@@ -308,11 +308,6 @@ export function mount(element: Element, props: GeneralSettingsProps = {}) {
   };
 }
 
-const globalWindow = window as any;
-globalWindow.OmegaReactGeneralSettings = {
-  mount
-};
-
 const rootElement = document.getElementById('react-root');
 
 if (rootElement && shouldAutoMount('general.js')) {

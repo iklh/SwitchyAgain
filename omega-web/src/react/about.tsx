@@ -154,11 +154,6 @@ export function mount(element: Element, props: AboutProps = {}) {
   };
 }
 
-const globalWindow = window as any;
-globalWindow.OmegaReactAbout = {
-  mount
-};
-
 const rootElement = document.getElementById('react-root');
 
 if (rootElement && shouldAutoMount('about.js')) {

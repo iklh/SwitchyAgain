@@ -1,6 +1,5 @@
 const fs = require('fs/promises');
 const path = require('path');
-const jade = require('jade');
 const less = require('less');
 const esbuild = require('esbuild');
 const postcss = require('postcss');
@@ -30,12 +29,6 @@ function resolveSource(src) {
   return path.join(root, src);
 }
 
-async function renderJade(src, dest) {
-  const html = jade.renderFile(path.join(root, src), {pretty: true});
-  await ensureDir(path.join(root, dest));
-  await fs.writeFile(path.join(root, dest), html);
-}
-
 async function writeReactHtml(dest, title, script, extraScripts = []) {
   const html = [
     '<!doctype html>',
@@ -59,29 +52,36 @@ async function writeReactHtml(dest, title, script, extraScripts = []) {
   await fs.writeFile(path.join(root, dest), html);
 }
 
+async function writeRootReactHtml(dest, title, script, extraScripts = []) {
+  const html = [
+    '<!doctype html>',
+    '<html lang="en">',
+    '<head>',
+    '  <meta charset="utf-8">',
+    `  <title>${title}</title>`,
+    '  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">',
+    '  <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.min.css">',
+    '  <link rel="stylesheet" href="css/options.css">',
+    '  <link rel="stylesheet" href="react/react_options.css">',
+    '</head>',
+    '<body>',
+    '  <div id="react-root"></div>',
+    ...extraScripts.map((src) => `  <script src="${src}"></script>`),
+    `  <script src="${script}"></script>`,
+    '</body>',
+    '</html>',
+    ''
+  ].join('\n');
+  await ensureDir(path.join(root, dest));
+  await fs.writeFile(path.join(root, dest), html);
+}
+
 async function bundleReact(entry, dest) {
   await ensureDir(path.join(root, dest));
   await esbuild.build({
     bundle: true,
     entryPoints: [path.join(root, entry)],
     format: 'iife',
-    minify: true,
-    outfile: path.join(root, dest),
-    platform: 'browser',
-    target: 'es2020'
-  });
-}
-
-async function bundleGlobal(entry, dest, globalName) {
-  await ensureDir(path.join(root, dest));
-  await esbuild.build({
-    bundle: true,
-    entryPoints: [resolveSource(entry)],
-    footer: {
-      js: globalName === 'Shepherd' ? 'Shepherd = Shepherd.default || Shepherd;' : ''
-    },
-    format: 'iife',
-    globalName,
     minify: true,
     outfile: path.join(root, dest),
     platform: 'browser',
@@ -112,15 +112,6 @@ async function renderLess(src, tmpDest, buildDest) {
   await fs.writeFile(path.join(root, buildDest), prefixed.css);
 }
 
-async function concat(files, dest) {
-  const content = [];
-  for (const file of files) {
-    content.push(await fs.readFile(path.join(root, file), 'utf8'));
-  }
-  await ensureDir(path.join(root, dest));
-  await fs.writeFile(path.join(root, dest), content.join('\n'));
-}
-
 async function clean() {
   await fs.rm(path.join(root, 'build'), {recursive: true, force: true});
   await fs.rm(path.join(root, 'tmp'), {recursive: true, force: true});
@@ -132,42 +123,13 @@ async function main() {
   const staticCopies = [
     ['../omega-pac/omega_pac.min.js', 'build/js/omega_pac.min.js'],
     ['build-ts/js/log_error.js', 'build/js/log_error.js'],
-    ['build-ts/js/omega_decoration.js', 'build/js/omega_decoration.js'],
-    ['build-ts/js/options.js', 'build/js/options.js'],
-    ['build-ts/js/options_guide.js', 'build/js/options_guide.js'],
-    ['build-ts/js/switch_profile_guide.js', 'build/js/switch_profile_guide.js'],
-    ['node_modules/angular/angular.min.js', 'build/lib/angular/angular.min.js'],
-    ['node_modules/angular-animate/angular-animate.min.js', 'build/lib/angular-animate/angular-animate.min.js'],
-    ['node_modules/angular-ui-bootstrap/ui-bootstrap-tpls.min.js', 'build/lib/angular-bootstrap/ui-bootstrap-tpls.min.js'],
-    ['node_modules/angular-i18n/angular-locale_en-us.js', 'build/lib/angular-i18n/angular-locale_en-us.js'],
-    ['node_modules/angular-i18n/angular-locale_zh-cn.js', 'build/lib/angular-i18n/angular-locale_zh-cn.js'],
-    ['node_modules/angular-i18n/angular-locale_zh-hk.js', 'build/lib/angular-i18n/angular-locale_zh-hk.js'],
-    ['node_modules/angular-i18n/angular-locale_zh-tw.js', 'build/lib/angular-i18n/angular-locale_zh-tw.js'],
-    ['node_modules/angular-ladda/dist/angular-ladda.min.js', 'build/lib/angular-ladda/angular-ladda.min.js'],
-    ['node_modules/angular-loader/angular-loader.min.js', 'build/lib/angular-loader/angular-loader.min.js'],
-    ['node_modules/angular-sanitize/angular-sanitize.min.js', 'build/lib/angular-sanitize/angular-sanitize.min.js'],
-    ['node_modules/angular-spectrum-colorpicker/dist/angular-spectrum-colorpicker.min.js', 'build/lib/angular-spectrum-colorpicker/angular-spectrum-colorpicker.min.js'],
-    ['node_modules/angular-ui-router/release/angular-ui-router.min.js', 'build/lib/angular-ui-router/angular-ui-router.min.js'],
-    ['node_modules/angular-ui-sortable/dist/sortable.min.js', 'build/lib/angular-ui-sortable/sortable.min.js'],
-    ['node_modules/angular-ui-utils/modules/validate/validate.js', 'build/lib/angular-ui-utils/validate.min.js'],
-    ['node_modules/blob-polyfill/Blob.js', 'build/lib/blob/Blob.js'],
     ['node_modules/bootstrap/dist/css/bootstrap.min.css', 'build/lib/bootstrap/css/bootstrap.min.css'],
-    ['node_modules/bootstrap/js/dropdown.js', 'build/lib/bootstrap/js/dropdown.js'],
     ['node_modules/bootstrap/fonts/glyphicons-halflings-regular.woff', 'build/lib/bootstrap/fonts/glyphicons-halflings-regular.woff'],
     ['node_modules/bootstrap/fonts/glyphicons-halflings-regular.woff2', 'build/lib/bootstrap/fonts/glyphicons-halflings-regular.woff2'],
     ['node_modules/file-saver/dist/FileSaver.min.js', 'build/lib/FileSaver/FileSaver.min.js'],
     ['node_modules/jquery/dist/jquery.min.js', 'build/lib/jquery/jquery.min.js'],
     ['node_modules/jquery-ui-dist/jquery-ui.min.js', 'build/lib/jquery-ui-1.13.3.min.js'],
     ['node_modules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js', 'build/lib/jqueryui-touch-punch/jquery.ui.touch-punch.min.js'],
-    ['node_modules/jsondiffpatch/public/build/jsondiffpatch.min.js', 'build/lib/jsondiffpatch/jsondiffpatch.min.js'],
-    ['node_modules/ladda/dist/ladda-themeless.min.css', 'build/lib/ladda/ladda-themeless.min.css'],
-    ['node_modules/ladda/dist/ladda.min.js', 'build/lib/ladda/ladda.min.js'],
-    ['node_modules/ngprogress/build/ngprogress.min.js', 'build/lib/ngprogress/ngProgress.min.js'],
-    ['node_modules/scriptjs/dist/script.min.js', 'build/lib/script.js/script.min.js'],
-    ['node_modules/shepherd.js/dist/css/shepherd.css', 'build/lib/shepherd.js/shepherd-theme-arrows.css'],
-    ['node_modules/spectrum-colorpicker/spectrum.css', 'build/lib/spectrum/spectrum.css'],
-    ['node_modules/spectrum-colorpicker/spectrum.js', 'build/lib/spectrum/spectrum.js'],
-    ['node_modules/spin.js/spin.js', 'build/lib/spin.js/spin.js'],
     ['img', 'build/img'],
     ['src/popup', 'build/popup'],
     ['src/react/react_options.css', 'build/react/react_options.css']
@@ -183,50 +145,26 @@ async function main() {
     }
   }
 
-  await bundleGlobal('node_modules/shepherd.js/dist/js/shepherd.mjs', 'build/lib/shepherd.js/shepherd.min.js', 'Shepherd');
-
-  await renderJade('src/options.jade', 'build/options.html');
-  await writeReactHtml('build/react/options_experiment.html', 'SwitchyAgain', 'options_experiment.js', ['../js/omega_pac.min.js']);
-  await bundleReact('src/react/options_experiment.tsx', 'build/react/options_experiment.js');
+  await writeRootReactHtml('build/options.html', 'SwitchyAgain Options', 'react/options_app.js', [
+    'js/omega_debug.js',
+    'js/log_error.js',
+    'lib/jquery/jquery.min.js',
+    'lib/jquery-ui-1.13.3.min.js',
+    'lib/jqueryui-touch-punch/jquery.ui.touch-punch.min.js',
+    'js/omega_pac.min.js'
+  ]);
+  await bundleReact('src/react/options_entry.tsx', 'build/react/options_app.js');
   await writeReactHtml('build/react/general.html', 'SwitchyAgain General', 'general.js');
   await bundleReact('src/react/general_settings.tsx', 'build/react/general.js');
   await writeReactHtml('build/react/ui.html', 'SwitchyAgain Interface', 'ui.js');
   await bundleReact('src/react/ui_settings.tsx', 'build/react/ui.js');
   await writeReactHtml('build/react/about.html', 'SwitchyAgain About', 'about.js');
   await bundleReact('src/react/about.tsx', 'build/react/about.js');
-  await bundleReact('src/react/confirm_modals.tsx', 'build/react/confirm_modals.js');
-  await bundleReact('src/react/profile_modals.tsx', 'build/react/profile_modals.js');
-  await bundleReact('src/react/profile_content.tsx', 'build/react/profile_content.js');
-  await bundleReact('src/react/profile_widgets.tsx', 'build/react/profile_widgets.js');
-  await bundleReact('src/react/options_modals.tsx', 'build/react/options_modals.js');
-  await bundleReact('src/react/options_shell.tsx', 'build/react/options_shell.js');
   await bundleReact('src/react/popup_app.tsx', 'build/react/popup_app.js');
   await writeReactHtml('build/react/import_export.html', 'SwitchyAgain Import / Export', 'import_export.js');
   await bundleReact('src/react/import_export.tsx', 'build/react/import_export.js');
 
   await renderLess('src/less/options.less', 'tmp/css/options.css', 'build/css/options.css');
-
-  await concat([
-    'build-ts/omega/app.js',
-    'build-ts/omega/switch_profile_rules.js',
-    'build-ts/omega/switch_profile_state.js',
-    'build-ts/omega/switch_profile_source.js',
-    'build-ts/omega/switch_profile_startup.js',
-    'build-ts/omega/switch_profile_options.js',
-    'build-ts/omega/switch_profile_actions.js',
-    'build-ts/omega/switch_profile_attached.js',
-    'build-ts/omega/switch_profile_export.js',
-    'build-ts/omega/switch_profile_session.js',
-    'build-ts/omega/switch_profile_bindings.js',
-    'build-ts/omega/switch_profile_lifecycle.js',
-    'build-ts/omega/switch_profile_runtime.js',
-    'build-ts/omega/switch_profile_bridge.js',
-    'build-ts/omega/profile_runtime.js',
-    'build-ts/omega/options_runtime.js',
-    'build-ts/omega/filters.js',
-    'build-ts/omega/directives.js',
-    'build-ts/omega/controllers/master.js'
-  ], 'build/js/omega.js');
 }
 
 main().catch((error) => {

@@ -1,5 +1,4 @@
 import React from 'react';
-import {createRoot} from 'react-dom/client';
 import {message} from './options_client';
 
 export type WelcomeModalProps = {
@@ -42,21 +41,3 @@ export function WelcomeModal({onClose, onDismiss, upgrade = false}: WelcomeModal
     </>
   );
 }
-
-export function mountWelcome(element: Element, props: WelcomeModalProps = {}) {
-  const root = createRoot(element);
-  root.render(<WelcomeModal {...props} />);
-  return {
-    render(nextProps: WelcomeModalProps = {}) {
-      root.render(<WelcomeModal {...nextProps} />);
-    },
-    unmount() {
-      root.unmount();
-    }
-  };
-}
-
-const globalWindow = window as any;
-globalWindow.OmegaReactOptionsModals = {
-  mountWelcome
-};

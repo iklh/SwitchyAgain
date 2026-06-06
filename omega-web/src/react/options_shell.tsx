@@ -1,5 +1,4 @@
 import React from 'react';
-import {createRoot} from 'react-dom/client';
 import {Options, message} from './options_client';
 import {Profile, ProfileInline, profilesForFilter} from './profile_widgets';
 
@@ -151,7 +150,7 @@ export function OptionsShell({
           </a>
         </li>
         <li className="divider" />
-        <li className="nav-header">Actions</li>
+        <li className="nav-header">{message('options_navHeader_actions', 'Actions')}</li>
         <li>
           <a
             className={`btn-default btn align-initial ${optionsDirty ? 'btn-success' : ''}`}
@@ -196,35 +195,3 @@ export function OptionsAlert({alert, onClose, shown = false}: OptionsAlertProps)
     </div>
   );
 }
-
-export function mountOptionsShell(element: Element, props: OptionsShellProps = {}) {
-  const root = createRoot(element);
-  root.render(<OptionsShell {...props} />);
-  return {
-    render(nextProps: OptionsShellProps = {}) {
-      root.render(<OptionsShell {...nextProps} />);
-    },
-    unmount() {
-      root.unmount();
-    }
-  };
-}
-
-export function mountOptionsAlert(element: Element, props: OptionsAlertProps = {}) {
-  const root = createRoot(element);
-  root.render(<OptionsAlert {...props} />);
-  return {
-    render(nextProps: OptionsAlertProps = {}) {
-      root.render(<OptionsAlert {...nextProps} />);
-    },
-    unmount() {
-      root.unmount();
-    }
-  };
-}
-
-const globalWindow = window as any;
-globalWindow.OmegaReactOptionsShell = {
-  mountOptionsAlert,
-  mountOptionsShell
-};

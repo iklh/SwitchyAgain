@@ -422,11 +422,6 @@ export function mount(element: Element, props: ImportExportProps = {}) {
   };
 }
 
-const globalWindow = window as any;
-globalWindow.OmegaReactImportExport = {
-  mount
-};
-
 const rootElement = document.getElementById('react-root');
 
 if (rootElement && shouldAutoMount('import_export.js')) {

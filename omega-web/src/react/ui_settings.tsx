@@ -440,11 +440,6 @@ export function mount(element: Element, props: UiSettingsProps = {}) {
   };
 }
 
-const globalWindow = window as any;
-globalWindow.OmegaReactUiSettings = {
-  mount
-};
-
 const rootElement = document.getElementById('react-root');
 
 if (rootElement && shouldAutoMount('ui.js')) {

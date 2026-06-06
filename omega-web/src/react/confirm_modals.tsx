@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from 'react';
-import {createRoot} from 'react-dom/client';
 import {Options, message} from './options_client';
 import {
   Profile,
@@ -304,21 +303,3 @@ export function ConfirmModal(props: ConfirmModalProps) {
     </>
   );
 }
-
-export function mount(element: Element, props: ConfirmModalProps) {
-  const root = createRoot(element);
-  root.render(<ConfirmModal {...props} />);
-  return {
-    render(nextProps: ConfirmModalProps) {
-      root.render(<ConfirmModal {...nextProps} />);
-    },
-    unmount() {
-      root.unmount();
-    }
-  };
-}
-
-const globalWindow = window as any;
-globalWindow.OmegaReactConfirmModal = {
-  mount
-};

@@ -57,9 +57,6 @@ type PopupTarget = {
 
 declare global {
   interface Window {
-    OmegaReactPopupApp?: {
-      mount: (element: Element) => {unmount: () => void};
-    };
     OmegaTargetPopup?: PopupTarget;
   }
 }
@@ -1036,8 +1033,6 @@ function mount(element: Element) {
     unmount: () => root.unmount()
   };
 }
-
-window.OmegaReactPopupApp = {mount};
 
 const rootElement = document.getElementById('react-popup-root');
 if (rootElement) {

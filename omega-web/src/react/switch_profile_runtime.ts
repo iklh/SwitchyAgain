@@ -510,30 +510,3 @@ export function applySource(
   source.error = undefined;
   return applyParsedSource(profile, attached, attachedOptions, attachedName, result.rules || []);
 }
-
-const globalWindow = window as any;
-globalWindow.OmegaReactSwitchProfileRuntime = {
-  addRule,
-  applyParsedSource,
-  applySource,
-  attachNew,
-  cloneRule,
-  createAttachedOptions,
-  createAttachedProfile,
-  createSource,
-  hasNotes,
-  moveRule,
-  removeAttached,
-  removeRule,
-  resetRuleProfiles,
-  setAttachedEnabled,
-  setDefaultProfile,
-  syncAttachedOptionsFromProfile,
-  syncDefaultFromAttached,
-  updateConditionField,
-  updateConditionType,
-  updateIpCondition,
-  updateRuleNote,
-  updateRuleProfile,
-  updateRuleWeekday
-};
