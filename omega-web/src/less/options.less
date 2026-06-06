@@ -332,11 +332,21 @@ main {
   margin: -1px;
 }
 
+.profile-title {
+  align-items: center;
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .profile-actions {
-  float: right;
+  flex: none;
+  margin-left: auto;
 }
 
 .profile-name {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -344,7 +354,7 @@ main {
 
 .profile-color-editor {
   display: inline-block;
-  float: left;
+  flex: none;
   margin-right: 10px;
 
   input[type="color"] {
@@ -373,6 +383,24 @@ main {
 
   .sp-dd {
     display: none;
+  }
+}
+
+main .profile-header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  width: inherit;
+}
+
+@media (max-width: 767px) {
+  main .profile-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .profile-actions {
+    margin-left: 0;
   }
 }
 

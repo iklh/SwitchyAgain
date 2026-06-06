@@ -123,6 +123,7 @@ async function main() {
   const staticCopies = [
     ['../omega-pac/omega_pac.min.js', 'build/js/omega_pac.min.js'],
     ['build-ts/js/log_error.js', 'build/js/log_error.js'],
+    ['build-ts/js/omega_pac_preload.js', 'build/js/omega_pac_preload.js'],
     ['node_modules/bootstrap/dist/css/bootstrap.min.css', 'build/lib/bootstrap/css/bootstrap.min.css'],
     ['node_modules/bootstrap/fonts/glyphicons-halflings-regular.woff', 'build/lib/bootstrap/fonts/glyphicons-halflings-regular.woff'],
     ['node_modules/bootstrap/fonts/glyphicons-halflings-regular.woff2', 'build/lib/bootstrap/fonts/glyphicons-halflings-regular.woff2'],
@@ -151,6 +152,7 @@ async function main() {
     'lib/jquery/jquery.min.js',
     'lib/jquery-ui-1.13.3.min.js',
     'lib/jqueryui-touch-punch/jquery.ui.touch-punch.min.js',
+    'js/omega_pac_preload.js',
     'js/omega_pac.min.js'
   ]);
   await bundleReact('src/react/options_entry.tsx', 'build/react/options_app.js');

@@ -62,6 +62,7 @@ type RouteName = 'about' | 'general' | 'io' | 'profile' | 'ui';
 
 type Route = {
   name: RouteName;
+  params?: Record<string, string>;
   profileName?: string;
 };
 
@@ -372,22 +373,25 @@ function routeHref(route: RouteName, params?: Record<string, string>) {
 
 function parseRoute(hash = window.location.hash): Route {
   const value = hash.replace(/^#!?\/?/, '');
-  const parts = value.split('/');
+  const [path, query = ''] = value.split('?', 2);
+  const params = Object.fromEntries(new URLSearchParams(query));
+  const parts = path.split('/');
   switch (parts[0]) {
     case 'ui':
-      return {name: 'ui'};
+      return {name: 'ui', params};
     case 'general':
-      return {name: 'general'};
+      return {name: 'general', params};
     case 'io':
-      return {name: 'io'};
+      return {name: 'io', params};
     case 'profile':
       return {
+        params,
         name: 'profile',
         profileName: decodeURIComponent(parts.slice(1).join('/') || '')
       };
     case 'about':
     default:
-      return {name: 'about'};
+      return {name: 'about', params};
   }
 }
 
@@ -414,6 +418,7 @@ function SwitchProfilePreview({
   onDownload,
   options,
   profile,
+  showConditionHelp = false,
   updatingProfiles,
   updateOptionsDraft,
   updateProfile
@@ -421,6 +426,7 @@ function SwitchProfilePreview({
   onDownload: (name: string) => void;
   options: Options;
   profile: any;
+  showConditionHelp?: boolean;
   updatingProfiles: Record<string, boolean>;
   updateOptionsDraft: (updater: (options: Options) => void) => void;
   updateProfile: (profileName: string, updater: (profile: any) => void) => void;
@@ -543,6 +549,7 @@ function SwitchProfilePreview({
       options={options}
       profile={profile}
       rules={profile.rules || []}
+      show={showConditionHelp}
       showConditionTypes={showConditionTypes}
       updating={!!updatingProfiles[profileKey(attached?.name || '')]}
     />
@@ -1169,6 +1176,7 @@ export function OptionsApp() {
                 updatingProfiles={updatingProfiles}
                 updateOptionsDraft={updateOptionsDraft}
                 updateProfile={updateProfile}
+                showConditionHelp={route.params?.help === 'condition'}
               />
             );
           default:
@@ -1185,23 +1193,25 @@ export function OptionsApp() {
         ? exportRuleListOptions(options, showConditionTypes)
         : {legacy: false, warning: false};
       return (
-        <div>
-          <ProfileShell
-            exportRuleListAvailable={profile.profileType === 'SwitchProfile'}
-            exportRuleListWarning={ruleListOptions.warning}
-            profile={profile}
-            profileColor={profile.color}
-            scriptable={profile.profileType !== 'DirectProfile' && profile.profileType !== 'SystemProfile'}
-            onColorChange={(color) => updateProfile(profile.name || '', (nextProfile) => {
-              nextProfile.color = color;
-            })}
-            onDelete={() => requestDeleteProfile(profile)}
-            onExportRuleList={() => attachedOptions && exportRuleList(profile, attachedOptions, ruleListOptions.legacy)}
-            onExportScript={() => exportScript(profile.name || '')}
-            onRename={() => requestRenameProfile(profile)}
-          />
+        <>
+          <div className="react-profile-shell-host">
+            <ProfileShell
+              exportRuleListAvailable={profile.profileType === 'SwitchProfile'}
+              exportRuleListWarning={ruleListOptions.warning}
+              profile={profile}
+              profileColor={profile.color}
+              scriptable={profile.profileType !== 'DirectProfile' && profile.profileType !== 'SystemProfile'}
+              onColorChange={(color) => updateProfile(profile.name || '', (nextProfile) => {
+                nextProfile.color = color;
+              })}
+              onDelete={() => requestDeleteProfile(profile)}
+              onExportRuleList={() => attachedOptions && exportRuleList(profile, attachedOptions, ruleListOptions.legacy)}
+              onExportScript={() => exportScript(profile.name || '')}
+              onRename={() => requestRenameProfile(profile)}
+            />
+          </div>
           {content}
-        </div>
+        </>
       );
     }
     return (

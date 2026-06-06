@@ -20,6 +20,10 @@ import {
   hasNotes
 } from './switch_profile_runtime';
 
+const INITIAL_SWITCH_RULE_BATCH_SIZE = 15;
+const SWITCH_RULE_BATCH_SIZE = 8;
+const SWITCH_RULE_BATCH_DELAY_MS = 32;
+
 export type UnsupportedProfileProps = {
   profile?: {
     profileType?: string;
@@ -300,7 +304,17 @@ export function ProfileShell({
 
   return (
     <>
-      <div className="page-header">
+      <div className="page-header profile-header">
+        <div className="profile-title">
+          <span className="profile-color-editor">
+            {isVirtual ? (
+              <span className="profile-color-editor-fake" style={{backgroundColor: color}} />
+            ) : (
+              <input type="color" value={color} onChange={(event) => onColorChange?.(event.currentTarget.value)} />
+            )}
+          </span>
+          <h2 className="profile-name">{message('options_profileTabPrefix', 'Profile :: ')}{profile?.name}</h2>
+        </div>
         <div className="profile-actions">
           {exportRuleListAvailable && (
             <>
@@ -333,14 +347,6 @@ export function ProfileShell({
             <span className="glyphicon glyphicon-trash" /> {message('options_deleteProfile', 'Delete Profile')}
           </button>
         </div>
-        <span className="profile-color-editor">
-          {isVirtual ? (
-            <span className="profile-color-editor-fake" style={{backgroundColor: color}} />
-          ) : (
-            <input type="color" value={color} onChange={(event) => onColorChange?.(event.currentTarget.value)} />
-          )}
-        </span>
-        <h2 className="profile-name">{message('options_profileTabPrefix', 'Profile :: ')}{profile?.name}</h2>
       </div>
       {profile?.syncOptions === 'disabled' && (
         <section className="settings-group">
@@ -1724,7 +1730,7 @@ export function SwitchRulesSection({
       const profileChanged = previousProfileNameRef.current !== profile?.name;
       previousProfileNameRef.current = profile?.name;
       if (profileChanged || current === 0 || current > rules.length) {
-        return Math.min(15, rules.length);
+        return Math.min(INITIAL_SWITCH_RULE_BATCH_SIZE, rules.length);
       }
       return current;
     });
@@ -1737,8 +1743,8 @@ export function SwitchRulesSection({
     let timeout: number | undefined;
     const frame = window.requestAnimationFrame(() => {
       timeout = window.setTimeout(() => {
-        setRenderedRuleCount((current) => Math.min(rules.length, current + 8));
-      }, 0);
+        setRenderedRuleCount((current) => Math.min(rules.length, current + SWITCH_RULE_BATCH_SIZE));
+      }, SWITCH_RULE_BATCH_DELAY_MS);
     });
     return () => {
       window.cancelAnimationFrame(frame);
@@ -1802,7 +1808,7 @@ export function SwitchRulesSection({
     return () => window.clearTimeout(timeout);
   }, [cloneSelectTarget, rules.length]);
 
-  const initialVisibleRuleCount = Math.min(15, rules.length);
+  const initialVisibleRuleCount = Math.min(INITIAL_SWITCH_RULE_BATCH_SIZE, rules.length);
   const displayRuleCount = !editSource && loadRules && renderedRuleCount === 0 ? initialVisibleRuleCount : renderedRuleCount;
   const reserveInitialRulesSpace = !editSource && rules.length > 0 && displayRuleCount < initialVisibleRuleCount;
   const rulesWrapperMinHeight = reserveInitialRulesSpace ? 96 + initialVisibleRuleCount * 42 : undefined;
