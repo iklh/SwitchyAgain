@@ -1,22 +1,18 @@
-// @ts-nocheck
-var ListenerProxyImpl, SettingsProxyImpl;
+type ProxyImplConstructor = {
+  isSupported: () => boolean;
+  new(log: unknown): unknown;
+};
 
-ListenerProxyImpl = require('./proxy_impl_listener');
+const ListenerProxyImpl = require('./proxy_impl_listener') as ProxyImplConstructor;
+const SettingsProxyImpl = require('./proxy_impl_settings') as ProxyImplConstructor;
 
-SettingsProxyImpl = require('./proxy_impl_settings');
+export const proxyImpls = [ListenerProxyImpl, SettingsProxyImpl];
 
-exports.proxyImpls = [ListenerProxyImpl, SettingsProxyImpl];
-
-exports.getProxyImpl = function(log) {
-  var Impl, i, len, ref;
-  ref = exports.proxyImpls;
-  for (i = 0, len = ref.length; i < len; i++) {
-    Impl = ref[i];
+export function getProxyImpl(log: unknown) {
+  for (const Impl of proxyImpls) {
     if (Impl.isSupported()) {
       return new Impl(log);
     }
   }
   throw new Error('Your browser does not support proxy settings!');
-};
-
-export {};
+}

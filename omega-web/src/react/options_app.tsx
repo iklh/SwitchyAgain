@@ -31,7 +31,7 @@ import {
   UnsupportedProfile,
   VirtualProfile
 } from './profile_content';
-import {profileByName} from './profile_widgets';
+import {Profile, profileByName} from './profile_widgets';
 import {
   addRule,
   applyParsedSource,
@@ -78,12 +78,12 @@ type ModalState =
   }
   | {
     kind: 'cannotDeleteProfile';
-    profile: any;
-    refs: any[];
+    profile: Profile;
+    refs: Profile[];
   }
   | {
     kind: 'deleteProfile';
-    profile: any;
+    profile: Profile;
   }
   | {
     kind: 'newProfile';
@@ -785,7 +785,7 @@ export function OptionsApp() {
     });
   }
 
-  function requestRenameProfile(profile: any) {
+  function requestRenameProfile(profile: Profile | null | undefined) {
     const fromName = profile?.name || '';
     if (!fromName) {
       return;
@@ -860,7 +860,7 @@ export function OptionsApp() {
       });
   }
 
-  function requestDeleteProfile(profile: any) {
+  function requestDeleteProfile(profile: Profile | null | undefined) {
     if (!options || !profile?.name) {
       return;
     }
@@ -879,7 +879,7 @@ export function OptionsApp() {
     });
   }
 
-  function deleteProfile(profile: any) {
+  function deleteProfile(profile: Profile | null | undefined) {
     const profileName = profile?.name || '';
     if (!profileName) {
       setModal(null);
@@ -1337,7 +1337,10 @@ export function OptionsApp() {
           <ConfirmModal
             fromName={modal.fromName}
             kind="replaceProfile"
-            onClose={(value) => replaceProfileRefs(value?.fromName || modal.fromName, value?.toName || modal.toName)}
+            onClose={(value) => replaceProfileRefs(
+              typeof value === 'object' ? value.fromName : modal.fromName,
+              typeof value === 'object' ? value.toName : modal.toName
+            )}
             onDismiss={() => setModal(null)}
             options={options}
             toName={modal.toName}

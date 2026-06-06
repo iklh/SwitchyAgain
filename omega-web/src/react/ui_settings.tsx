@@ -41,7 +41,7 @@ function cloneOptions(options: Options) {
   return JSON.parse(JSON.stringify(options));
 }
 
-function sameOptionValue(a: any, b: any) {
+function sameOptionValue(a: unknown, b: unknown) {
   if (Array.isArray(a) || Array.isArray(b)) {
     return JSON.stringify(a || []) === JSON.stringify(b || []);
   }
@@ -114,7 +114,7 @@ export function UiSettings({embedded = false, options, onOptionsChange, onOpenSh
     }
   }
 
-  function updateOption(key: string, value: any) {
+  function updateOption(key: string, value: unknown) {
     updateOptions((current) => ({...current, [key]: value}));
   }
 

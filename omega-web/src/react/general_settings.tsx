@@ -93,7 +93,7 @@ export function GeneralSettings({embedded = false, options, onOptionsChange}: Ge
     return GENERAL_KEYS.some((key) => savedOptions[key] !== draftOptions[key]);
   }, [savedOptions, draftOptions]);
 
-  function updateOption(key: string, value: any) {
+  function updateOption(key: string, value: unknown) {
     setDraftOptions((current) => {
       if (!current) {
         return current;

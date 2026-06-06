@@ -183,11 +183,6 @@ ul.list-style-none, li.list-style-none {
   transition: transform cubic-bezier(0.19, 1, 0.22, 1) .5s,
               opacity cubic-bezier(0.19, 1, 0.22, 1) .5s;
 
-  &.ng-hide {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-
   pointer-events: none;
   text-align: center;
 
@@ -290,20 +285,6 @@ main {
     }
   }
 
-  .ng-enter {
-    opacity: 0;
-    transition: opacity .5s;
-  }
-
-  .ng-enter-active {
-    opacity: 1;
-  }
-}
-
-#ngProgress-container {
-  position: fixed;
-  top: 0;
-  width: 100%;
 }
 
 .divider {

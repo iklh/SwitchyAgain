@@ -202,7 +202,7 @@ async function main() {
   await copyFile(path.join(root, 'omega_target_chromium_extension.min.js'), path.join(root, 'build/js/omega_target_chromium_extension.min.js'));
   await copyFile(path.join(root, 'build-ts/js/omega_target_popup.js'), path.join(root, 'build/js/omega_target_popup.js'));
   await copyFile(path.join(root, 'build-ts/js/mv3_compat.js'), path.join(root, 'build/js/mv3_compat.js'));
-  for (const script of ['background.js', 'background_preload.js', 'omega_debug.js', 'omega_target_web.js']) {
+  for (const script of ['background.js', 'background_preload.js', 'omega_debug.js']) {
     await copyFile(path.join(root, 'build-ts/js', script), path.join(root, 'build/js', script));
   }
   await copyTree(path.join(root, 'overlay'), path.join(root, 'build'));

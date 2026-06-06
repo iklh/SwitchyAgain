@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {message} from './options_client';
-import {PROFILE_ICONS} from './profile_widgets';
+import {PROFILE_ICONS, Profile} from './profile_widgets';
 
 export type RenameProfileProps = {
   fromName?: string;
@@ -8,7 +8,7 @@ export type RenameProfileProps = {
   isProfileNameReserved?: (name: string) => boolean;
   onClose?: (name: string) => void;
   onDismiss?: () => void;
-  profileByName?: (name: string) => any;
+  profileByName?: (name: string) => Profile | null;
 };
 
 export type NewProfileProps = {
@@ -17,7 +17,7 @@ export type NewProfileProps = {
   onClose?: (profile: {name: string; profileType: string}) => void;
   onDismiss?: () => void;
   pacProfilesUnsupported?: boolean;
-  profileByName?: (name: string) => any;
+  profileByName?: (name: string) => Profile | null;
 };
 
 export type ProxyAuth = {
@@ -37,7 +37,7 @@ function profileNameErrors(
   name: string,
   fromName: string,
   isProfileNameReserved?: (name: string) => boolean,
-  profileByName?: (name: string) => any
+  profileByName?: (name: string) => Profile | null
 ) {
   return {
     conflict: Boolean(name && name !== fromName && profileByName?.(name)),
@@ -61,7 +61,7 @@ function ProfileNameField({
   label: string;
   name: string;
   onChange: (name: string) => void;
-  profileByName?: (name: string) => any;
+  profileByName?: (name: string) => Profile | null;
 }) {
   const errors = useMemo(() => profileNameErrors(name, fromName, isProfileNameReserved, profileByName), [
     fromName,

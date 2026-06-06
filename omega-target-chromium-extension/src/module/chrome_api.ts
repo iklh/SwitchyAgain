@@ -1,35 +1,31 @@
-// @ts-nocheck
-var OmegaTarget, Promise,
-  slice = [].slice;
+type ChromeApiTarget = Record<string, (...args: unknown[]) => void>;
 
-OmegaTarget = require('omega-target');
+type OmegaPromiseConstructor = new <T>(
+  executor: (
+    resolve: (value: T | PromiseLike<T>) => void,
+    reject: (reason?: unknown) => void
+  ) => void
+) => Promise<T>;
 
-Promise = OmegaTarget.Promise;
+const OmegaPromise = require('omega-target').Promise as OmegaPromiseConstructor;
 
-exports.chromeApiPromisify = function(target, method) {
-  return function() {
-    var args;
-    args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
-    return new Promise(function(resolve, reject) {
-      var callback;
-      callback = function() {
-        var callbackArgs, error;
-        callbackArgs = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+export function chromeApiPromisify(target: ChromeApiTarget, method: string) {
+  return (...args: unknown[]) => {
+    return new OmegaPromise<unknown>((resolve, reject) => {
+      const callback = (...callbackArgs: unknown[]) => {
         if (chrome.runtime.lastError != null) {
-          error = new Error(chrome.runtime.lastError.message);
-          error.original = chrome.runtime.lastError;
-          return reject(error);
+          const error = new Error(chrome.runtime.lastError.message);
+          (error as Error & {original?: unknown}).original = chrome.runtime.lastError;
+          reject(error);
+          return;
         }
         if (callbackArgs.length <= 1) {
-          return resolve(callbackArgs[0]);
+          resolve(callbackArgs[0]);
         } else {
-          return resolve(callbackArgs);
+          resolve(callbackArgs);
         }
       };
-      args.push(callback);
-      return target[method].apply(target, args);
+      target[method].apply(target, args.concat(callback));
     });
   };
-};
-
-export {};
+}

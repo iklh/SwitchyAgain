@@ -1,7 +1,4 @@
-// @ts-nocheck
-var base, name, ref, value;
-
-module.exports = {
+const chromiumTarget: Record<string, unknown> = {
   Storage: require('./storage'),
   Options: require('./options'),
   ChromeTabs: require('./tabs'),
@@ -12,12 +9,12 @@ module.exports = {
   proxy: require('./proxy')
 };
 
-ref = require('omega-target');
-for (name in ref) {
-  value = ref[name];
-  if ((base = module.exports)[name] == null) {
-    base[name] = value;
+const omegaTarget = require('omega-target') as Record<string, unknown>;
+
+for (const name of Object.keys(omegaTarget)) {
+  if (chromiumTarget[name] == null) {
+    chromiumTarget[name] = omegaTarget[name];
   }
 }
 
-export {};
+export = chromiumTarget;

@@ -25,11 +25,21 @@ type Rule = {
   };
 };
 
+type AttachedRuleList = Profile & {
+  ruleList?: string;
+  sourceUrl?: string;
+};
+
+export type ConfirmModalCloseValue = 'ok' | {
+  fromName: string;
+  toName: string;
+};
+
 export type ConfirmModalProps = {
-  attached?: any;
+  attached?: AttachedRuleList | null;
   fromName?: string;
   kind: ConfirmKind;
-  onClose?: (value?: any) => void;
+  onClose?: (value?: ConfirmModalCloseValue) => void;
   onDismiss?: () => void;
   options?: Options | null;
   profile?: Profile | null;
@@ -39,7 +49,7 @@ export type ConfirmModalProps = {
   toName?: string;
 };
 
-function attachedLabel(attached: any) {
+function attachedLabel(attached?: AttachedRuleList | null) {
   if (!attached) {
     return '';
   }

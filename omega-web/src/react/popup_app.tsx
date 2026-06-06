@@ -1,65 +1,17 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {message} from './options_client';
-
-type Profile = {
-  builtin?: boolean;
-  color?: string;
-  defaultProfileName?: string;
-  desc?: string;
-  name: string;
-  profileType?: string;
-  validResultProfiles?: string[];
-};
-
-type PageInfo = {
-  domain?: string;
-  errorCount?: number;
-  summary?: Record<string, {errorCount?: number}>;
-  tempRuleProfileName?: string;
-  url?: string;
-};
-
-type PopupState = {
-  availableProfiles?: Record<string, Profile>;
-  currentProfileCanAddRule?: boolean;
-  currentProfileName?: string;
-  externalProfile?: Profile;
-  isSystemProfile?: boolean;
-  lastProfileNameForCondition?: string;
-  proxyNotControllable?: string;
-  refreshOnProfileChange?: boolean;
-  showExternalProfile?: boolean;
-  validResultProfiles?: string[];
-};
-
-type PopupTarget = {
-  addCondition?: (
-    condition: any,
-    profileName: string,
-    addToBottom: boolean,
-    callback?: (error?: any) => void
-  ) => void;
-  addProfile?: (profile: Profile, callback?: (error?: any) => void) => void;
-  addTempRule?: (domain: string, profileName: string, callback?: (error?: any) => void) => void;
-  applyProfile?: (name: string, callback?: (error?: any) => void) => void;
-  getActivePageInfo?: (callback: (error?: any, info?: PageInfo) => void) => void;
-  getMessage?: (key: string, substitutions?: string | string[]) => string;
-  getState?: (keys: string[], callback: (error?: any, state?: PopupState) => void) => void;
-  openOptions?: (hash?: string | null, callback?: () => void) => void;
-  setDefaultProfile?: (
-    profileName: string,
-    defaultProfileName: string,
-    callback?: (error?: any) => void
-  ) => void;
-  setState?: (name: string, value: any, callback?: (error?: any) => void) => void;
-};
-
-declare global {
-  interface Window {
-    OmegaTargetPopup?: PopupTarget;
-  }
-}
+import {
+  PageInfo,
+  PopupState,
+  Profile,
+  callbackPromise,
+  closePopup,
+  getPopupPageInfo,
+  getPopupState,
+  popupMessage,
+  popupTarget,
+  waitForPopupTarget
+} from './popup_target';
 
 const conditionTypes = [
   'HostWildcardCondition',
@@ -88,75 +40,17 @@ const orderForType: Record<string, number> = {
   RuleListProfile: 3000
 };
 
-function closePopup() {
-  window.close();
-  document.body.style.opacity = '0';
-  window.setTimeout(() => history.go(0), 300);
-}
-
-function target() {
-  return window.OmegaTargetPopup || {};
-}
-
-function waitForTarget() {
-  if (window.OmegaTargetPopup) {
-    return Promise.resolve();
-  }
-  return new Promise<void>((resolve, reject) => {
-    let tries = 0;
-    const timer = window.setInterval(() => {
-      tries++;
-      if (window.OmegaTargetPopup) {
-        window.clearInterval(timer);
-        resolve();
-      } else if (tries > 100) {
-        window.clearInterval(timer);
-        reject(new Error('Popup target API is unavailable.'));
-      }
-    }, 20);
-  });
-}
-
-function callbackPromise<T>(invoke: (callback: (error?: any, value?: T) => void) => void) {
-  return new Promise<T>((resolve, reject) => {
-    let settled = false;
-    const callback = (error?: any, value?: T) => {
-      settled = true;
-      if (error) {
-        reject(error);
-      } else {
-        resolve(value as T);
-      }
-    };
-    invoke(callback);
-    if (!settled) {
-      window.setTimeout(() => {
-        if (!settled) {
-          reject(new Error('Popup target method did not respond.'));
-        }
-      }, 15000);
-    }
-  });
-}
-
-function getState(keys: string[]) {
-  return callbackPromise<PopupState>((callback) => target().getState?.(keys, callback));
-}
-
-function getPageInfo() {
-  return callbackPromise<PageInfo | undefined>((callback) => target().getActivePageInfo?.(callback));
-}
-
-function popupMessage(key: string, fallback = key, substitutions?: string | string[]) {
-  return target().getMessage?.(key, substitutions) || message(key, fallback, substitutions);
-}
-
 function compareProfile(a: Profile, b: Profile) {
   const diff = (orderForType[a.profileType || ''] || 0) - (orderForType[b.profileType || ''] || 0);
   if (diff !== 0) {
     return diff;
   }
   return a.name === b.name ? 0 : a.name < b.name ? -1 : 1;
+}
+
+function popupErrorMessage(error: unknown) {
+  const candidate = error as {message?: unknown} | null | undefined;
+  return String(candidate?.message || error);
 }
 
 function modeFromHash() {
@@ -281,8 +175,8 @@ function PopupApp() {
   const [keyboardHelp, setKeyboardHelp] = useState(false);
 
   useEffect(() => {
-    waitForTarget().then(() => Promise.all([
-      getState([
+    waitForPopupTarget().then(() => Promise.all([
+      getPopupState([
         'availableProfiles',
         'currentProfileCanAddRule',
         'currentProfileName',
@@ -294,7 +188,7 @@ function PopupApp() {
         'showExternalProfile',
         'validResultProfiles'
       ]),
-      getPageInfo()
+      getPopupPageInfo()
     ])).then(([nextState, nextPageInfo]) => {
       if (nextState.proxyNotControllable) {
         location.href = 'proxy_not_controllable.html';
@@ -335,22 +229,22 @@ function PopupApp() {
   }
 
   function applyProfile(profileName: string) {
-    target().applyProfile?.(profileName, closePopup);
+    popupTarget().applyProfile?.(profileName, closePopup);
   }
 
   function setDefaultProfile(profileName: string, defaultProfileName: string) {
-    target().setDefaultProfile?.(profileName, defaultProfileName, closePopup);
+    popupTarget().setDefaultProfile?.(profileName, defaultProfileName, closePopup);
   }
 
   function addTempRule(domain: string, profileName: string) {
-    target().addTempRule?.(domain, profileName, () => {
-      target().setState?.('lastProfileNameForCondition', profileName);
+    popupTarget().addTempRule?.(domain, profileName, () => {
+      popupTarget().setState?.('lastProfileNameForCondition', profileName);
       closePopup();
     });
   }
 
   function showOptions() {
-    target().openOptions?.(null, closePopup);
+    popupTarget().openOptions?.(null, closePopup);
   }
 
   useEffect(() => {
@@ -734,7 +628,7 @@ function ConditionForm({pageInfo, state, onClose}: {pageInfo?: PageInfo; state: 
 
   function openConditionHelp() {
     const currentProfileName = encodeURIComponent(state.currentProfileName || '');
-    target().openOptions?.(`#!/profile/${currentProfileName}?help=condition`, closePopup);
+    popupTarget().openOptions?.(`#!/profile/${currentProfileName}?help=condition`, closePopup);
   }
 
   async function submitCondition(event: React.FormEvent) {
@@ -742,14 +636,14 @@ function ConditionForm({pageInfo, state, onClose}: {pageInfo?: PageInfo; state: 
     setSaving(true);
     setError('');
     try {
-      await callbackPromise<void>((callback) => target().addCondition?.({
+      await callbackPromise<void>((callback) => popupTarget().addCondition?.({
         conditionType,
         pattern
       }, profile, true, callback));
-      target().setState?.('lastProfileNameForCondition', profile);
+      popupTarget().setState?.('lastProfileNameForCondition', profile);
       closePopup();
-    } catch (err: any) {
-      setError(err?.message || String(err));
+    } catch (err: unknown) {
+      setError(popupErrorMessage(err));
       setSaving(false);
     }
   }
@@ -830,11 +724,11 @@ function RequestInfoForm({pageInfo, state, onClose}: {pageInfo?: PageInfo; state
     setSaving(true);
     setError('');
     try {
-      await callbackPromise<void>((callback) => target().addCondition?.(conditions, profile, true, callback));
-      target().setState?.('lastProfileNameForCondition', profile);
+      await callbackPromise<void>((callback) => popupTarget().addCondition?.(conditions, profile, true, callback));
+      popupTarget().setState?.('lastProfileNameForCondition', profile);
       closePopup();
-    } catch (err: any) {
-      setError(err?.message || String(err));
+    } catch (err: unknown) {
+      setError(popupErrorMessage(err));
       setSaving(false);
     }
   }
@@ -877,7 +771,7 @@ function RequestInfoForm({pageInfo, state, onClose}: {pageInfo?: PageInfo; state
           <button className="btn btn-default" type="button" onClick={onClose}>{popupMessage('dialog_cancel', 'Cancel')}</button>
           {state.currentProfileCanAddRule
             ? <button className="btn btn-primary" type="submit" disabled={saving || !profiles.length}>{popupMessage('popup_addCondition', 'Add Condition')}</button>
-            : <button className="btn btn-default pull-right" type="button" onClick={() => target().openOptions?.('#!/general', closePopup)}>{popupMessage('popup_configureMonitorWebRequests', 'Configure monitor web requests')}</button>}
+            : <button className="btn btn-default pull-right" type="button" onClick={() => popupTarget().openOptions?.('#!/general', closePopup)}>{popupMessage('popup_configureMonitorWebRequests', 'Configure monitor web requests')}</button>}
         </div>
       </fieldset>
     </form>
@@ -903,13 +797,13 @@ function ExternalProfileForm({state, onClose}: {state: PopupState; onClose: () =
     setSaving(true);
     setError('');
     try {
-      await callbackPromise<void>((callback) => target().addProfile?.({
+      await callbackPromise<void>((callback) => popupTarget().addProfile?.({
         ...state.externalProfile,
         name: externalName
       }, callback));
-      target().applyProfile?.(externalName, closePopup);
-    } catch (err: any) {
-      setError(err?.message || String(err));
+      popupTarget().applyProfile?.(externalName, closePopup);
+    } catch (err: unknown) {
+      setError(popupErrorMessage(err));
       setSaving(false);
     }
   }

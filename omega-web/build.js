@@ -163,6 +163,7 @@ async function main() {
   await writeReactHtml('build/react/about.html', 'SwitchyAgain About', 'about.js');
   await bundleReact('src/react/about.tsx', 'build/react/about.js');
   await bundleReact('src/react/popup_app.tsx', 'build/react/popup_app.js');
+  await bundleReact('src/react/proxy_not_controllable.tsx', 'build/react/proxy_not_controllable.js');
   await writeReactHtml('build/react/import_export.html', 'SwitchyAgain Import / Export', 'import_export.js');
   await bundleReact('src/react/import_export.tsx', 'build/react/import_export.js');
 

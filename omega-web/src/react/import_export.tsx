@@ -21,8 +21,8 @@ const RESTORE_URL_STATE = 'web.restoreOnlineUrl';
 
 export type ImportExportProps = {
   embedded?: boolean;
-  onApplyOptions?: () => Promise<any> | any;
-  onImportSuccess?: () => Promise<any> | any;
+  onApplyOptions?: () => Promise<unknown> | unknown;
+  onImportSuccess?: () => Promise<unknown> | unknown;
   onOptionsReplace?: (nextOptions: Options, options?: {dirty?: boolean}) => void;
   options?: Options | null;
   optionsDirty?: boolean;
@@ -32,8 +32,9 @@ function htmlMessage(key: string, fallback: string) {
   return {__html: message(key, fallback)};
 }
 
-function errorMessage(error: any) {
-  return error?.message || error?.reason || String(error);
+function errorMessage(error: unknown) {
+  const candidate = error as {message?: unknown; reason?: unknown} | null | undefined;
+  return String(candidate?.message || candidate?.reason || error);
 }
 
 function readTextFile(file: File) {
@@ -100,7 +101,7 @@ export function ImportExport({
     showSuccess();
   }
 
-  function showError(err: any, fallbackKey: string, fallback: string) {
+  function showError(err: unknown, fallbackKey: string, fallback: string) {
     const messageText = errorMessage(err) || message(fallbackKey, fallback);
     setError(messageText);
     setStatus('error');
@@ -178,7 +179,7 @@ export function ImportExport({
   const busy = status === 'loading' || status === 'exporting' || status === 'restoringLocal' || status === 'restoringOnline';
   const syncBusy = syncStatus !== 'ready';
 
-  function runSyncAction(nextStatus: typeof syncStatus, action?: () => Promise<any> | any) {
+  function runSyncAction(nextStatus: typeof syncStatus, action?: () => Promise<unknown> | unknown) {
     if (!action) {
       return;
     }
