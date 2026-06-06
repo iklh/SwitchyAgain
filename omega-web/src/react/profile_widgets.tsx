@@ -1,12 +1,8 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Options, message} from './options_client';
+import type {Profile as ProfileModel} from './profile_types';
 
-export type Profile = {
-  builtin?: boolean;
-  color?: string;
-  name?: string;
-  profileType?: string;
-};
+export type Profile = ProfileModel;
 
 const BUILTIN_PROFILES: Profile[] = [
   {
@@ -78,7 +74,7 @@ export function profilesFromOptions(options?: Options | null) {
   if (!options) {
     return [];
   }
-  return Object.keys(options).filter((key) => key.charAt(0) === '+').map((key) => options[key]).filter((profile) => {
+  return Object.keys(options).filter((key) => key.charAt(0) === '+').map((key) => options[key] as Profile | undefined).filter((profile) => {
     const name = profile?.name || '';
     return !(name.charAt(0) === '_' && name.charAt(1) === '_');
   }) as Profile[];

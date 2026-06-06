@@ -1,4 +1,20 @@
-export type Options = Record<string, any>;
+export type Options = Record<string, unknown>;
+
+export type BackgroundError = Error & {
+  original?: {
+    statusCode?: number | string;
+    [key: string]: unknown;
+  };
+  reason?: string;
+  statusCode?: number | string;
+};
+
+export type BackgroundResponse<T> = {
+  error?: unknown;
+  result?: T;
+};
+
+export type ProfileUpdateResults = Record<string, BackgroundError | unknown>;
 
 declare const chrome: {
   i18n?: {
@@ -10,8 +26,8 @@ declare const chrome: {
     id?: string;
     lastError?: {message?: string};
     sendMessage?: (
-      message: {method: string; args: any[]; noReply?: boolean; refreshActivePage?: boolean},
-      callback: (response?: {result?: any; error?: any}) => void
+      message: {method: string; args: unknown[]; noReply?: boolean; refreshActivePage?: boolean},
+      callback: (response?: BackgroundResponse<unknown>) => void
     ) => void;
   };
   tabs?: {
@@ -44,7 +60,7 @@ function isManifestV3() {
   return Boolean(manifest?.manifest_version && manifest.manifest_version >= 3);
 }
 
-export function callBackground<T>(method: string, ...args: any[]): Promise<T> {
+export function callBackground<T>(method: string, ...args: unknown[]): Promise<T> {
   return new Promise((resolve, reject) => {
     if (!chrome?.runtime?.sendMessage) {
       reject(new Error('Extension runtime is unavailable.'));
@@ -64,7 +80,7 @@ export function callBackground<T>(method: string, ...args: any[]): Promise<T> {
   });
 }
 
-export function callBackgroundNoReply(method: string, ...args: any[]) {
+export function callBackgroundNoReply(method: string, ...args: unknown[]) {
   chrome?.runtime?.sendMessage?.({
     method,
     args,
@@ -74,17 +90,26 @@ export function callBackgroundNoReply(method: string, ...args: any[]) {
   });
 }
 
-function decodeBackgroundError(error: any) {
-  if (error?._error !== 'error') {
+export function decodeBackgroundError(error: unknown): BackgroundError | unknown {
+  const serialized = error as {
+    _error?: string;
+    message?: string;
+    name?: string;
+    original?: BackgroundError['original'];
+    reason?: string;
+    stack?: string;
+    statusCode?: number | string;
+  } | null | undefined;
+  if (serialized?._error !== 'error') {
     return error;
   }
-  const decoded = new Error(error.message || error.name || 'Background error');
-  decoded.name = error.name || decoded.name;
-  (decoded as any).original = error.original;
-  (decoded as any).reason = error.reason;
-  (decoded as any).statusCode = error.statusCode;
-  if (error.stack) {
-    decoded.stack = error.stack;
+  const decoded = new Error(serialized.message || serialized.name || 'Background error') as BackgroundError;
+  decoded.name = serialized.name || decoded.name;
+  decoded.original = serialized.original;
+  decoded.reason = serialized.reason;
+  decoded.statusCode = serialized.statusCode;
+  if (serialized.stack) {
+    decoded.stack = serialized.stack;
   }
   return decoded;
 }
@@ -101,11 +126,11 @@ export function patchAndLoadOptions(patch: Options) {
   return patchOptions(patch).then(loadOptions);
 }
 
-export function resetOptions(options?: any) {
+export function resetOptions(options?: Options | string) {
   return callBackground<Options>('reset', options);
 }
 
-export function setOptionsSync(enabled: boolean, args?: any) {
+export function setOptionsSync(enabled: boolean, args?: unknown) {
   return callBackground<void>('setOptionsSync', enabled, args);
 }
 
@@ -117,7 +142,7 @@ function stateKey(name: string) {
   return `omega.local.${name}`;
 }
 
-export function getLocalState<T = any>(name: string) {
+export function getLocalState<T = unknown>(name: string) {
   try {
     const value = window.localStorage.getItem(stateKey(name));
     return value == null ? undefined : JSON.parse(value) as T;
@@ -126,13 +151,13 @@ export function getLocalState<T = any>(name: string) {
   }
 }
 
-export function setLocalState(name: string, value: any) {
+export function setLocalState<T>(name: string, value: T) {
   window.localStorage.setItem(stateKey(name), JSON.stringify(value));
 }
 
-export function getState<T = any>(name: string): Promise<T | undefined>;
-export function getState<T = any>(name: string[]): Promise<Array<T | undefined>>;
-export function getState<T = any>(name: string | string[]) {
+export function getState<T = unknown>(name: string): Promise<T | undefined>;
+export function getState<T = unknown>(name: string[]): Promise<Array<T | undefined>>;
+export function getState<T = unknown>(name: string | string[]) {
   if (isManifestV3()) {
     return callBackground<Record<string, T>>('getState', name).then((result) => {
       if (Array.isArray(name)) {
@@ -147,7 +172,7 @@ export function getState<T = any>(name: string | string[]) {
   return Promise.resolve(getLocalState<T>(name));
 }
 
-export function setState<T = any>(name: string, value: T) {
+export function setState<T = unknown>(name: string, value: T) {
   if (isManifestV3()) {
     return callBackground<Record<string, T>>('setState', {[name]: value}).then(() => value);
   }
@@ -173,8 +198,8 @@ export function replaceRef(fromName: string, toName: string) {
 }
 
 export function updateProfile(name?: string, bypassCache = 'bypass_cache') {
-  return callBackground<Record<string, any>>('updateProfile', name, bypassCache).then((results) => {
-    const decoded: Record<string, any> = {};
+  return callBackground<Record<string, unknown>>('updateProfile', name, bypassCache).then((results) => {
+    const decoded: ProfileUpdateResults = {};
     for (const key of Object.keys(results || {})) {
       decoded[key] = decodeBackgroundError(results[key]);
     }

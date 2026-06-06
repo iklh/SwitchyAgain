@@ -201,7 +201,7 @@ export function GeneralSettings({embedded = false, options, onOptionsChange}: Ge
           <select
             id="react-download-interval"
             className="form-control inline-form-control"
-            value={draftOptions['-downloadInterval']}
+            value={Number(draftOptions['-downloadInterval'] ?? 0)}
             onChange={(event) => updateOption('-downloadInterval', Number(event.currentTarget.value))}
           >
             {DOWNLOAD_INTERVALS.map((interval) => (

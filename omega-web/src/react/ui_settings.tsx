@@ -347,7 +347,7 @@ export function UiSettings({embedded = false, options, onOptionsChange, onOpenSh
             defaultText={message('options_startupProfile_none', '(Current Profile)')}
             dispName={displayProfileName}
             inline
-            name={draftOptions['-startupProfileName'] || ''}
+            name={String(draftOptions['-startupProfileName'] || '')}
             onChange={(name) => updateOption('-startupProfileName', name)}
             profiles={allProfiles}
           />

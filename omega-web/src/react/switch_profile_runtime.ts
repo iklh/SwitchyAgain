@@ -1,4 +1,9 @@
-import {Options} from './options_client';
+import type {BackgroundError, Options} from './options_client';
+import type {Profile, RuleListProfileModel} from './profile_types';
+
+export type {RuleListProfileModel} from './profile_types';
+
+export type ConditionFieldValue = boolean | number | string | null | undefined;
 
 export type SwitchRuleCondition = {
   conditionType?: string;
@@ -8,7 +13,7 @@ export type SwitchRuleCondition = {
   minValue?: number | string | null;
   pattern?: string;
   startHour?: number | string | null;
-  [key: string]: any;
+  [key: string]: ConditionFieldValue;
 };
 
 export type SwitchRule = {
@@ -17,7 +22,7 @@ export type SwitchRule = {
   profileName?: string;
 };
 
-export type SwitchProfileModel = {
+export type SwitchProfileModel = Profile & {
   color?: string;
   defaultProfileName?: string;
   name?: string;
@@ -30,21 +35,11 @@ export type AttachedOptions = {
   enabled?: boolean;
 };
 
-export type RuleListProfileModel = {
-  color?: string;
-  defaultProfileName?: string;
-  format?: string;
-  lastUpdate?: any;
-  matchProfileName?: string;
-  name?: string;
-  profileType?: string;
-  ruleList?: string;
-  sourceUrl?: string;
-};
-
 export type SwitchRuleSourceState = {
   code?: string;
-  error?: any;
+  error?: BackgroundError | Error | {
+    message?: string;
+  };
   touched?: boolean;
 };
 
@@ -167,7 +162,7 @@ export function createAttachedName(profileName: string) {
   return `__ruleListOf_${profileName}`;
 }
 
-export function profileKey(profileOrName: {name?: string} | string) {
+export function profileKey(profileOrName: Pick<Profile, 'name'> | string) {
   if (typeof OmegaPac !== 'undefined' && OmegaPac?.Profiles?.nameAsKey) {
     return OmegaPac.Profiles.nameAsKey(profileOrName);
   }
@@ -352,7 +347,7 @@ export function moveRule(rules: SwitchRule[], fromIndex: number, toIndex: number
   return true;
 }
 
-export function updateConditionField(rule: SwitchRule | undefined, field: string, value: any) {
+export function updateConditionField(rule: SwitchRule | undefined, field: string, value: ConditionFieldValue) {
   if (!rule) {
     return false;
   }
@@ -445,7 +440,7 @@ export function createSource(profile: SwitchProfileModel, attachedOptions: Attac
 export function parseSource(code: string, options: Options | null | undefined) {
   const profilesByKey: Record<string, string> = {};
   for (const key of Object.keys(options || {})) {
-    const profile = options?.[key];
+    const profile = options?.[key] as {name?: string} | undefined;
     if (key.charAt(0) === '+' && profile?.name) {
       profilesByKey[key] = profile.name;
     }
@@ -467,7 +462,7 @@ export function parseSource(code: string, options: Options | null | undefined) {
     };
   } catch (error) {
     return {
-      error
+      error: error as SwitchRuleSourceState['error']
     };
   }
 }

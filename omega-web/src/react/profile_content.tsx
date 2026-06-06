@@ -19,6 +19,25 @@ import {
   getUrlConditionTypeMap,
   hasNotes
 } from './switch_profile_runtime';
+import type {
+  AttachedOptions,
+  ConditionFieldValue,
+  ConditionTypeOption,
+  SwitchProfileModel,
+  SwitchRule,
+  SwitchRuleCondition,
+  SwitchRuleSourceState
+} from './switch_profile_runtime';
+import type {
+  FixedProfileBypassCondition,
+  FixedProfileModel,
+  FixedProfileProxyField,
+  FixedProfileScheme,
+  PacProfileModel,
+  ProxyEditor,
+  RuleListProfileModel,
+  VirtualProfileModel
+} from './profile_types';
 
 const INITIAL_SWITCH_RULE_BATCH_SIZE = 15;
 const SWITCH_RULE_BATCH_SIZE = 8;
@@ -30,24 +49,11 @@ export type UnsupportedProfileProps = {
   } | null;
 };
 
-type VirtualProfileModel = Profile & {
-  defaultProfileName?: string;
-};
-
 export type VirtualProfileProps = {
   onReplaceProfile?: (fromName: string, toName: string) => void;
   onTargetChange?: (name: string) => void;
   options?: Options | null;
   profile?: VirtualProfileModel | null;
-};
-
-type RuleListProfileModel = Profile & {
-  defaultProfileName?: string;
-  format?: string;
-  lastUpdate?: string;
-  matchProfileName?: string;
-  ruleList?: string;
-  sourceUrl?: string;
 };
 
 export type RuleListProfileProps = {
@@ -58,13 +64,6 @@ export type RuleListProfileProps = {
   updating?: boolean;
 };
 
-type PacProfileModel = Profile & {
-  auth?: Record<string, any>;
-  lastUpdate?: string;
-  pacScript?: string;
-  pacUrl?: string;
-};
-
 export type PacProfileProps = {
   onDownload?: (name: string) => void;
   onEditProxyAuth?: () => void;
@@ -73,29 +72,6 @@ export type PacProfileProps = {
   profile?: PacProfileModel | null;
   referenced?: boolean;
   updating?: boolean;
-};
-
-type ProxyEditor = {
-  host?: string;
-  port?: number | string;
-  scheme?: string;
-};
-
-type FixedProfileProxyField = 'fallbackProxy' | 'proxyForHttp' | 'proxyForHttps';
-
-type FixedProfileScheme = '' | 'http' | 'https';
-
-type FixedProfileBypassCondition = {
-  conditionType: 'BypassCondition';
-  pattern: string;
-};
-
-type FixedProfileModel = Profile & {
-  auth?: Record<string, any>;
-  bypassList?: FixedProfileBypassCondition[];
-  fallbackProxy?: ProxyEditor;
-  proxyForHttp?: ProxyEditor;
-  proxyForHttps?: ProxyEditor;
 };
 
 export type FixedProfileProps = {
@@ -124,14 +100,8 @@ export type SwitchRulesHeaderProps = {
   editSource?: boolean;
   onSourceChange?: (code: string) => void;
   onToggleSource?: () => void;
-  rules?: SwitchRuleModel[];
-  source?: {
-    code?: string;
-    error?: {
-      message?: string;
-    };
-    touched?: boolean;
-  } | null;
+  rules?: SwitchRule[];
+  source?: SwitchRuleSourceState | null;
 };
 
 export type SwitchRuleTableHeaderProps = {
@@ -139,34 +109,12 @@ export type SwitchRuleTableHeaderProps = {
   showNotes?: boolean;
 };
 
-type SwitchRuleCondition = {
-  conditionType?: string;
-  days?: string;
-  endHour?: number | string;
-  maxValue?: number | string;
-  minValue?: number | string;
-  pattern?: string;
-  startHour?: number | string;
-  [key: string]: any;
-};
-
-type SwitchRuleModel = {
-  condition: SwitchRuleCondition;
-  note?: string;
-  profileName?: string;
-};
-
-type ConditionTypeOption = {
-  group: string;
-  type: string;
-};
-
 export type SwitchRuleRowProps = {
   conditionTypes?: ConditionTypeOption[];
   index: number;
   onAddNote?: (index: number) => void;
   onCloneRule?: (index: number) => void;
-  onConditionFieldChange?: (index: number, field: string, value: any) => void;
+  onConditionFieldChange?: (index: number, field: string, value: ConditionFieldValue) => void;
   onConditionReplace?: (index: number, condition: SwitchRuleCondition) => void;
   onConditionTypeChange?: (index: number, type: string) => void;
   onIpConditionInputChange?: (index: number, value: string) => void;
@@ -176,7 +124,7 @@ export type SwitchRuleRowProps = {
   onWeekdayChange?: (index: number, dayIndex: number, selected: boolean) => void;
   options?: Options | null;
   resultProfiles?: Profile[];
-  rule: SwitchRuleModel;
+  rule: SwitchRule;
   selectConditionDetailsIndex?: number;
   selectConditionDetailsKey?: number;
   showNotes?: boolean;
@@ -186,7 +134,7 @@ export type SwitchRuleRowProps = {
 export type SwitchRuleRowsProps = {
   onAddNote?: (index: number) => void;
   onCloneRule?: (index: number) => void;
-  onConditionFieldChange?: (index: number, field: string, value: any) => void;
+  onConditionFieldChange?: (index: number, field: string, value: ConditionFieldValue) => void;
   onConditionReplace?: (index: number, condition: SwitchRuleCondition) => void;
   onConditionTypeChange?: (index: number, type: string) => void;
   onIpConditionInputChange?: (index: number, value: string) => void;
@@ -195,9 +143,9 @@ export type SwitchRuleRowsProps = {
   onRemoveRule?: (index: number) => void;
   onWeekdayChange?: (index: number, dayIndex: number, selected: boolean) => void;
   options?: Options | null;
-  profile?: Profile | null;
+  profile?: SwitchProfileModel | null;
   ruleKeys?: number[];
-  rules?: SwitchRuleModel[];
+  rules?: SwitchRule[];
   selectConditionDetailsIndex?: number;
   selectConditionDetailsKey?: number;
   showConditionTypes?: number;
@@ -218,7 +166,7 @@ export type SwitchRuleFooterProps = {
   onRemoveAttached?: () => void;
   onResetRules?: () => void;
   options?: Options | null;
-  profile?: Profile | null;
+  profile?: SwitchProfileModel | null;
   showNotes?: boolean;
 };
 
@@ -229,17 +177,9 @@ export type SwitchRulesSectionProps = SwitchConditionHelpProps & SwitchRulesHead
 
 export type SwitchProfileContentProps = SwitchRulesSectionProps & SwitchAttachedProfileProps;
 
-type SwitchRulesSourceState = {
-  code?: string;
-  error?: {
-    message?: string;
-  } | null;
-  touched?: boolean;
-};
-
 type SwitchSourceApplyResult = boolean | void | {
   ok?: boolean;
-  source?: SwitchRulesSourceState | null;
+  source?: SwitchRuleSourceState | null;
 };
 
 export type SwitchProfileStatefulContentProps = Omit<
@@ -248,13 +188,13 @@ export type SwitchProfileStatefulContentProps = Omit<
 > & {
   confirmDeletion?: boolean;
   onAddNote?: (index: number) => void;
-  onApplySource?: (source: SwitchRulesSourceState) => SwitchSourceApplyResult;
+  onApplySource?: (source: SwitchRuleSourceState) => SwitchSourceApplyResult;
   onConditionHelpChange?: (shown: boolean) => void;
-  onCreateSource?: () => SwitchRulesSourceState | null | undefined;
+  onCreateSource?: () => SwitchRuleSourceState | null | undefined;
   onEditorModeChange?: (editSource: boolean) => void;
-  onEditorStateChange?: (state: {editSource: boolean; source?: SwitchRulesSourceState | null}) => void;
+  onEditorStateChange?: (state: {editSource: boolean; source?: SwitchRuleSourceState | null}) => void;
   onRulesLoaded?: () => void;
-  onSourceDraftChange?: (source: SwitchRulesSourceState) => void;
+  onSourceDraftChange?: (source: SwitchRuleSourceState) => void;
 };
 
 export type ProfileShellProps = {
@@ -384,8 +324,48 @@ function conditionTypesForMode(showConditionTypes = 0): ConditionTypeOption[] {
   return switchConditionTypesForMode(showConditionTypes);
 }
 
-function getJQuery() {
-  return typeof jQuery === 'undefined' ? null : jQuery;
+type SortableUi = {
+  item: {
+    index: () => number;
+  };
+};
+
+type SortableOptions = {
+  axis: 'y';
+  containment: 'parent';
+  forceHelperSize: boolean;
+  forcePlaceholderSize: boolean;
+  handle: string;
+  start: (event: unknown, ui: SortableUi) => void;
+  stop: (event: unknown, ui: SortableUi) => void;
+  tolerance: 'pointer';
+};
+
+type JQuerySortableElement = {
+  data: (key: string) => unknown;
+  sortable: {
+    (options: SortableOptions): JQuerySortableElement;
+    (method: 'destroy' | 'refresh'): JQuerySortableElement;
+  };
+};
+
+type JQueryWithSortable = {
+  (element: Element): JQuerySortableElement;
+  fn?: {
+    sortable?: unknown;
+  };
+};
+
+type WindowWithBrowserProxy = Window & {
+  browser?: {
+    proxy?: {
+      register?: unknown;
+    };
+  };
+};
+
+function getJQuery(): JQueryWithSortable | null {
+  return typeof jQuery === 'undefined' ? null : jQuery as JQueryWithSortable;
 }
 
 function messageWithNodes(
@@ -603,7 +583,7 @@ function SwitchRuleRow({
     return '';
   }
 
-  function changeField(field: string, value: any) {
+  function changeField(field: string, value: ConditionFieldValue) {
     onConditionFieldChange?.(index, field, value);
   }
 
@@ -1073,7 +1053,7 @@ function fixedProfileAuthSupported(protocol?: string) {
     return true;
   }
   if (protocol === 'socks5') {
-    return !!((window as any).browser?.proxy?.register);
+    return !!((window as WindowWithBrowserProxy).browser?.proxy?.register);
   }
   return false;
 }
@@ -1805,7 +1785,7 @@ export function SwitchRulesSection({
   useEffect(() => {
     const body = rulesBodyRef.current;
     const jq = getJQuery();
-    if (!body || editSource || !loadRules || !(jq as any)?.fn?.sortable) {
+    if (!body || editSource || !loadRules || !jq?.fn?.sortable) {
       return;
     }
     const sortableBody = jq(body);
@@ -1817,10 +1797,10 @@ export function SwitchRulesSection({
       forceHelperSize: true,
       forcePlaceholderSize: true,
       containment: 'parent',
-      start(_event: any, ui: any) {
+      start(_event, ui) {
         sortStartIndex = ui.item.index();
       },
-      stop(_event: any, ui: any) {
+      stop(_event, ui) {
         const sortEndIndex = ui.item.index();
         if (sortStartIndex !== sortEndIndex) {
           moveRule(sortStartIndex, sortEndIndex);
@@ -1961,11 +1941,11 @@ export function SwitchProfileContent(props: SwitchProfileContentProps) {
   );
 }
 
-function sourceErrorMessage(source?: SwitchRulesSourceState | null) {
+function sourceErrorMessage(source?: SwitchRuleSourceState | null) {
   return source?.error?.message || '';
 }
 
-function cloneSourceState(source?: SwitchRulesSourceState | null): SwitchRulesSourceState | undefined {
+function cloneSourceState(source?: SwitchRuleSourceState | null): SwitchRuleSourceState | undefined {
   if (!source) {
     return undefined;
   }
@@ -1979,7 +1959,7 @@ type SwitchProfileConfirmState =
   | {
     index: number;
     kind: 'ruleRemove';
-    rule: SwitchRuleModel;
+    rule: SwitchRule;
   }
   | {
     kind: 'ruleReset';
@@ -2055,7 +2035,7 @@ export function SwitchProfileStatefulContent({
 }: SwitchProfileStatefulContentProps) {
   const [conditionHelpShown, setConditionHelpShown] = useState(!!externalConditionHelpShown);
   const [editSource, setEditSource] = useState(!!externalEditSource);
-  const [source, setSource] = useState<SwitchRulesSourceState | undefined>(() => cloneSourceState(externalSource));
+  const [source, setSource] = useState<SwitchRuleSourceState | undefined>(() => cloneSourceState(externalSource));
   const [notesForcedVisible, setNotesForcedVisible] = useState(!!externalShowNotes || hasNotes(rules));
   const [confirmState, setConfirmState] = useState<SwitchProfileConfirmState>(null);
   const [, setLocalRevision] = useState(0);
@@ -2083,7 +2063,7 @@ export function SwitchProfileStatefulContent({
     setLocalRevision((revision) => revision + 1);
   }
 
-  function runAction<T extends any[]>(action: ((...args: T) => void) | undefined, ...args: T) {
+  function runAction<T extends unknown[]>(action: ((...args: T) => void) | undefined, ...args: T) {
     action?.(...args);
     forceLocalRender();
   }
@@ -2093,7 +2073,7 @@ export function SwitchProfileStatefulContent({
     onConditionHelpChange?.(shown);
   }
 
-  function updateEditorState(nextEditSource: boolean, nextSource?: SwitchRulesSourceState | null) {
+  function updateEditorState(nextEditSource: boolean, nextSource?: SwitchRuleSourceState | null) {
     onEditorStateChange?.({
       editSource: nextEditSource,
       source: nextSource || null
@@ -2102,7 +2082,7 @@ export function SwitchProfileStatefulContent({
 
   function openSourceEditor() {
     const nextSource = cloneSourceState(onCreateSource?.()) || {
-      code: composeSource(profile as any, props.attachedOptions?.defaultProfileName)
+      code: composeSource(profile || {}, props.attachedOptions?.defaultProfileName)
     };
     setSource(nextSource);
     setEditSource(true);
