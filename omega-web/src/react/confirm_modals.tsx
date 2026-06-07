@@ -7,6 +7,7 @@ import {
   ProfileSelect,
   profileByName
 } from './profile_widgets';
+import type {RuleListProfileModel} from './profile_types';
 
 export type ConfirmKind =
   | 'apply'
@@ -25,10 +26,7 @@ type Rule = {
   };
 };
 
-type AttachedRuleList = Profile & {
-  ruleList?: string;
-  sourceUrl?: string;
-};
+type AttachedRuleList = RuleListProfileModel;
 
 export type ConfirmModalCloseValue = 'ok' | {
   fromName: string;
@@ -125,7 +123,7 @@ function bodyFor(
           <div className="well">
             <ul className="list-style-none">
               {refs.map((refProfile, index) => (
-                <li key={`${refProfile.name || 'profile'}-${index}`}>
+                <li key={`${refProfile.name}-${index}`}>
                   <ProfileInline profile={refProfile} />
                 </li>
               ))}

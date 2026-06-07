@@ -1,5 +1,5 @@
 import type {BackgroundError, Options} from './options_client';
-import type {Profile, RuleListProfileModel} from './profile_types';
+import type {NamedProfile, Profile, ProfileKey, RuleListProfileModel} from './profile_types';
 
 export type {RuleListProfileModel} from './profile_types';
 
@@ -29,6 +29,8 @@ export type SwitchProfileModel = Profile & {
   profileType?: string;
   rules?: SwitchRule[];
 };
+
+export type NamedSwitchProfileModel = SwitchProfileModel & NamedProfile;
 
 export type AttachedOptions = {
   defaultProfileName?: string;
@@ -162,9 +164,9 @@ export function createAttachedName(profileName: string) {
   return `__ruleListOf_${profileName}`;
 }
 
-export function profileKey(profileOrName: Pick<Profile, 'name'> | string) {
+export function profileKey(profileOrName: Pick<Profile, 'name'> | string): ProfileKey {
   if (typeof OmegaPac !== 'undefined' && OmegaPac?.Profiles?.nameAsKey) {
-    return OmegaPac.Profiles.nameAsKey(profileOrName);
+    return OmegaPac.Profiles.nameAsKey(profileOrName) as ProfileKey;
   }
   const name = typeof profileOrName === 'string' ? profileOrName : profileOrName.name || '';
   return `+${name}`;
@@ -178,8 +180,8 @@ export function attachedIdentity(profileName: string) {
   };
 }
 
-export function createAttachedOptions(profile: SwitchProfileModel, attached?: RuleListProfileModel | null): AttachedOptions {
-  const identity = attachedIdentity(profile.name || '');
+export function createAttachedOptions(profile: NamedSwitchProfileModel, attached?: RuleListProfileModel | null): AttachedOptions {
+  const identity = attachedIdentity(profile.name);
   const enabled = profile.defaultProfileName === identity.attachedName;
   return {
     defaultProfileName: attached && enabled ? attached.defaultProfileName : profile.defaultProfileName,

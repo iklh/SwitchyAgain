@@ -1,8 +1,8 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Options, message} from './options_client';
-import type {Profile as ProfileModel, ProfileKey} from './profile_types';
+import type {NamedProfile, Profile as ProfileModel, ProfileKey} from './profile_types';
 
-export type Profile = ProfileModel;
+export type Profile = NamedProfile;
 
 const BUILTIN_PROFILES: Profile[] = [
   {
@@ -49,13 +49,13 @@ export function displayProfileName(profile?: Profile | null) {
   if (!profile) {
     return '';
   }
-  if (profile.builtin && profile.name) {
+  if (profile.builtin) {
     return message(`profile_${profile.name}`, profile.name);
   }
-  return profile.name || '';
+  return profile.name;
 }
 
-export function ProfileIcon({profile}: {profile?: Profile | null}) {
+export function ProfileIcon({profile}: {profile?: ProfileModel | null}) {
   const icon = PROFILE_ICONS[profile?.profileType || ''] || 'glyphicon-question-sign';
   return (
     <span className={`glyphicon ${icon}`} style={{color: profile?.color}} />
@@ -74,12 +74,19 @@ function isProfileKey(key: string): key is ProfileKey {
   return key.charAt(0) === '+';
 }
 
-function isVisibleProfile(value: unknown): value is Profile {
+export function isNamedProfile(value: unknown): value is Profile {
   if (!value || typeof value !== 'object') {
     return false;
   }
-  const profile = value as Profile;
-  const name = profile.name || '';
+  const profile = value as ProfileModel;
+  return typeof profile.name === 'string' && profile.name.length > 0;
+}
+
+function isVisibleProfile(value: unknown): value is Profile {
+  if (!isNamedProfile(value)) {
+    return false;
+  }
+  const name = value.name;
   return !(name.charAt(0) === '_' && name.charAt(1) === '_');
 }
 
@@ -95,22 +102,22 @@ export function profileOrder(a: Profile, b: Profile) {
   if (diff !== 0) {
     return diff;
   }
-  return (a.name || '').localeCompare(b.name || '');
+  return a.name.localeCompare(b.name);
 }
 
 export function allProfilesFromOptions(options?: Options | null) {
   return profilesFromOptions(options).filter((profile) => {
-    const name = profile.name || '';
-  return name.charAt(0) !== '_';
+    return profile.name.charAt(0) !== '_';
   }).concat(BUILTIN_PROFILES);
 }
 
-export function profilesForFilter(options: Options | null | undefined, filter?: Profile | string | null) {
+export function profilesForFilter(options: Options | null | undefined, filter?: ProfileModel | string | null) {
   if (!options) {
     return [];
   }
-  if (typeof filter === 'object' || (typeof filter === 'string' && filter.charAt(0) === '+')) {
-    return OmegaPac.Profiles.validResultProfilesFor(typeof filter === 'string' ? filter.slice(1) : filter, options) as Profile[];
+  if (filter && (typeof filter === 'object' || (typeof filter === 'string' && filter.charAt(0) === '+'))) {
+    return OmegaPac.Profiles.validResultProfilesFor(typeof filter === 'string' ? filter.slice(1) : filter, options)
+      .filter(isNamedProfile);
   }
   if (filter === 'all') {
     return allProfilesFromOptions(options);
@@ -126,7 +133,7 @@ export function profileByName(options: Options | null | undefined, name: string)
   return profilesFromOptions(options).concat(BUILTIN_PROFILES).find((profile) => profile.name === name) || null;
 }
 
-export function resultProfilesFor(options: Options | null | undefined, filter?: Profile | string | null) {
+export function resultProfilesFor(options: Options | null | undefined, filter?: ProfileModel | string | null) {
   return profilesForFilter(options, filter);
 }
 
@@ -203,7 +210,7 @@ export function ProfileSelect({
           {profileList.map((profile) => (
             <li key={profile.name} role="option" className={name === profile.name ? 'active' : ''}>
               <a onClick={() => {
-                onChange(profile.name || '');
+                onChange(profile.name);
                 setOpen(false);
               }}>
                 <ProfileIcon profile={profile} /> {profileName(profile, dispName)}

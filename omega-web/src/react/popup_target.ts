@@ -32,29 +32,30 @@ export type PopupState = {
 export type PopupCondition = Record<string, unknown> | Array<Record<string, unknown>>;
 
 export type PopupCallback<T = unknown> = (error?: unknown, result?: T) => void;
+export type PopupVoidCallback = PopupCallback<void>;
 
 export type PopupTarget = {
   addCondition?: (
     condition: PopupCondition,
     profileName: string,
     addToBottom: boolean,
-    callback?: PopupCallback
+    callback?: PopupVoidCallback
   ) => void;
-  addProfile?: (profile: Profile, callback?: PopupCallback) => void;
-  addTempRule?: (domain: string, profileName: string, callback?: PopupCallback) => void;
-  applyProfile?: (name: string, callback?: PopupCallback) => void;
+  addProfile?: (profile: Profile, callback?: PopupVoidCallback) => void;
+  addTempRule?: (domain: string, profileName: string, callback?: PopupVoidCallback) => void;
+  applyProfile?: (name: string, callback?: PopupVoidCallback) => void;
   getActivePageInfo?: (callback: PopupCallback<PageInfo>) => void;
   getMessage?: (key: string, substitutions?: string | string[]) => string;
   getState?: (keys: string[], callback: PopupCallback<PopupState>) => void;
   openManage?: {
-    (callback?: PopupCallback): void;
-    (domain?: string, profileName?: string, callback?: PopupCallback): void;
+    (callback?: PopupVoidCallback): void;
+    (domain?: string, profileName?: string, callback?: PopupVoidCallback): void;
   };
-  openOptions?: (hash?: string | null, callback?: PopupCallback) => void;
+  openOptions?: (hash?: string | null, callback?: PopupVoidCallback) => void;
   setDefaultProfile?: (
     profileName: string,
     defaultProfileName: string,
-    callback?: PopupCallback
+    callback?: PopupVoidCallback
   ) => void;
   setState?: (name: string, value: unknown, callback?: PopupCallback) => void;
 };

@@ -21,6 +21,10 @@ export type Profile = {
   [key: string]: unknown;
 };
 
+export type NamedProfile = Profile & {
+  name: string;
+};
+
 export type ProfileKey = `+${string}`;
 
 export type OptionsData = {

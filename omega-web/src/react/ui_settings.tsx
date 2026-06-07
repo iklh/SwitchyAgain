@@ -59,10 +59,10 @@ function uiOptionPatch(before: Options, after: Options) {
 }
 
 function displayProfileName(profile: Profile) {
-  if (profile.builtin && profile.name) {
+  if (profile.builtin) {
     return message(`profile_${profile.name}`, profile.name);
   }
-  return profile.name || '';
+  return profile.name;
 }
 
 export function UiSettings({embedded = false, options, onOptionsChange, onOpenShortcutConfig}: UiSettingsProps) {
@@ -227,7 +227,7 @@ export function UiSettings({embedded = false, options, onOptionsChange, onOpenSh
   const allProfiles = allProfilesFromOptions(draftOptions);
   const quickSwitchProfiles = (draftOptions['-quickSwitchProfiles'] || []) as string[];
   const quickSwitchProfileSet = new Set(quickSwitchProfiles);
-  const notCycledProfiles = allProfiles.map((profile) => profile.name || '').filter((name) => {
+  const notCycledProfiles = allProfiles.map((profile) => profile.name).filter((name) => {
     return name && !quickSwitchProfileSet.has(name);
   });
 
@@ -251,10 +251,13 @@ export function UiSettings({embedded = false, options, onOptionsChange, onOpenSh
               event.preventDefault();
               event.stopPropagation();
               const data = quickSwitchDragData(event);
+              if (!data.name) {
+                return;
+              }
               if (data.enabled === enabled) {
-                reorderQuickSwitchProfile(data.name || '', name, enabled);
+                reorderQuickSwitchProfile(data.name, name, enabled);
               } else {
-                moveQuickSwitchProfile(data.name || '', enabled);
+                moveQuickSwitchProfile(data.name, enabled);
               }
             }}
           >

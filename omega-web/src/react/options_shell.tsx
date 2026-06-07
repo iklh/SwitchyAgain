@@ -138,7 +138,7 @@ export function OptionsShell({
           >
             <a
               href={profileHref?.(profile) || '#'}
-              onClick={(event) => navClick(event, () => onNavigate?.('profile', {name: profile.name || ''}))}
+              onClick={(event) => navClick(event, () => onNavigate?.('profile', {name: profile.name}))}
             >
               <ProfileInline profile={profile} />
             </a>
