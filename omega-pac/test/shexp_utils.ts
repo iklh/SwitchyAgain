@@ -1,5 +1,5 @@
 import chai from 'chai';
-import * as ShexpUtils from '../build-ts/shexp_utils';
+import * as ShexpUtils from '../src/shexp_utils';
 
 const should = chai.should();
 

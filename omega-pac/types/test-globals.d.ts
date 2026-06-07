@@ -8,7 +8,7 @@ declare module 'chai' {
   export default value;
 }
 
-declare module 'lolex' {
+declare module 'sinon' {
   const value: any;
   export default value;
 }

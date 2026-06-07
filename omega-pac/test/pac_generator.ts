@@ -1,5 +1,5 @@
 import chai from 'chai';
-import * as PacGenerator from '../build-ts/pac_generator';
+import * as PacGenerator from '../src/pac_generator';
 
 const should = chai.should();
 

@@ -1,14 +1,14 @@
 import chai from 'chai';
-import lolex from 'lolex';
-import * as ConditionsModule from '../build-ts/conditions';
-import * as UglifyModule from '../build-ts/uglifyjs_shim';
+import sinon from 'sinon';
+import ConditionsApi from '../src/conditions';
+import UglifyJS from '../src/uglifyjs_shim';
 
 const should = chai.should();
 
 describe('Conditions', function() {
   let Conditions: any, U2: any, testCond: (condition: any, request: any, should_match?: any) => any;
-  Conditions = ConditionsModule.default;
-  U2 = UglifyModule.default;
+  Conditions = ConditionsApi;
+  U2 = UglifyJS;
   testCond = function(condition: any, request: any, should_match?: any): any {
     let compileResult, condExpr, friendlyError, matchResult, o_request, testFunc;
     o_request = request;
@@ -456,7 +456,7 @@ describe('Conditions', function() {
     let clock: any, testCondDay: (cond: any, day: number, match: boolean) => any;
     clock = null;
     before(function() {
-      return clock = lolex.install(0, ['Date']);
+      return clock = sinon.useFakeTimers(0, 'Date');
     });
     after(function() {
       return clock.uninstall();
@@ -558,7 +558,7 @@ describe('Conditions', function() {
     let clock: any, testCondTime: (cond: any, time: string, match: boolean) => any;
     clock = null;
     before(function() {
-      return clock = lolex.install(0, ['Date']);
+      return clock = sinon.useFakeTimers(0, 'Date');
     });
     after(function() {
       return clock.uninstall();

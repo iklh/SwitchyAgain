@@ -11,6 +11,6 @@
   },
   "include": [
     "test/**/*.ts",
-    "types/test-globals.d.ts"
+    "types/**/*.d.ts"
   ]
 }

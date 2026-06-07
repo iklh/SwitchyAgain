@@ -1,5 +1,5 @@
 import chai from 'chai';
-import * as RuleList from '../build-ts/rule_list';
+import * as RuleList from '../src/rule_list';
 
 const should = chai.should();
 

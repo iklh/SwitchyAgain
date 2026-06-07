@@ -1,5 +1,5 @@
 import chai from 'chai';
-import * as Utils from '../build-ts/utils';
+import * as Utils from '../src/utils';
 
 const should = chai.should();
 

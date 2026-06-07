@@ -1,7 +1,7 @@
 declare var OmegaPac: unknown;
 
 declare module 'bluebird' {
-  const value: unknown;
+  const value: any;
   export default value;
 }
 

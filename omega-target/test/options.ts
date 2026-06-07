@@ -2,14 +2,14 @@ import chai from 'chai';
 import Promise from 'bluebird';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import * as OptionsModule from '../build-ts/options';
+import OptionsClass from '../src/options';
 
 const should = chai.should();
 chai.use(sinonChai);
 
 describe('Options', function() {
   let Options: any;
-  Options = OptionsModule.default;
+  Options = OptionsClass;
 
   describe('#setExternalProfile', function() {
     it('should revert to the current profile when no explicit revert target exists', function() {

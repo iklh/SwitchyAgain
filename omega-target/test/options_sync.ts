@@ -2,9 +2,9 @@ import chai from 'chai';
 import Promise from 'bluebird';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import * as LogModule from '../build-ts/log';
-import * as OptionsSyncModule from '../build-ts/options_sync';
-import * as StorageModule from '../build-ts/storage';
+import LogClass from '../src/log';
+import OptionsSyncClass from '../src/options_sync';
+import StorageClass from '../src/storage';
 
 const should = chai.should();
 const slice = [].slice;
@@ -16,9 +16,9 @@ describe('OptionsSync', function() {
     Storage: any,
     hookPost: (...args: any[]) => any,
     hookPostBasic: (func: (...args: any[]) => any, hook: (...args: any[]) => any) => (...args: any[]) => any;
-  OptionsSync = OptionsSyncModule.default;
-  Storage = StorageModule.default;
-  Log = LogModule.default;
+  OptionsSync = OptionsSyncClass;
+  Storage = StorageClass;
+  Log = LogClass;
   before(function() {
     return sinon.stub(Log, 'log');
   });

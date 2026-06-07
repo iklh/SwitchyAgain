@@ -2,15 +2,22 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "allowJs": false,
+    "baseUrl": ".",
     "ignoreDeprecations": "6.0",
     "module": "es2020",
     "moduleDetection": "force",
     "noImplicitAny": true,
     "noEmit": true,
+    "paths": {
+      "omega-pac": [
+        "../omega-pac/src/index.ts"
+      ]
+    },
     "target": "es2015"
   },
   "include": [
     "test/**/*.ts",
-    "types/test-globals.d.ts"
+    "types/**/*.d.ts",
+    "../omega-pac/types/**/*.d.ts"
   ]
 }
