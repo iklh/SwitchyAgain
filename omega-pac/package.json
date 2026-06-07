@@ -10,9 +10,9 @@
   "scripts": {
     "build": "npm run build:ts && node ../scripts/bundle-esbuild.mjs --entry=src/index.ts --outfile=index.js --format=cjs --platform=node --target=es2015 --external=ip-address,tldjs && node ../scripts/bundle-esbuild.mjs --entry=src/index.ts --outfile=omega_pac.min.js --global-name=OmegaPac --target=es2015 --minify",
     "build:ts": "tsc -p tsconfig.build.json",
-    "build:test": "tsc -p tsconfig.test.json --noEmit && node ../scripts/build-test-files.mjs --test-dir=test --out-dir=build-test",
+    "build:test": "tsc -p tsconfig.test.json --noEmit",
     "dev": "npm link",
-    "test": "npm run build:ts && npm run build:test && TZ=UTC mocha --reporter spec build-test/*.js",
+    "test": "npm run build:ts && npm run build:test && TZ=UTC mocha --node-option import=tsx --reporter spec 'test/*.ts'",
     "typecheck": "npm run build:ts && tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit"
   }
 }
