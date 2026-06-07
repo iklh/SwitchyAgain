@@ -5,13 +5,59 @@ export type {RuleListProfileModel} from './profile_types';
 
 export type ConditionFieldValue = boolean | number | string | null | undefined;
 
+export type SwitchRuleKnownConditionType =
+  | 'BypassCondition'
+  | 'FalseCondition'
+  | 'HostLevelsCondition'
+  | 'HostRegexCondition'
+  | 'HostWildcardCondition'
+  | 'IpCondition'
+  | 'KeywordCondition'
+  | 'TimeCondition'
+  | 'TrueCondition'
+  | 'UrlRegexCondition'
+  | 'UrlWildcardCondition'
+  | 'WeekdayCondition';
+
+export type SwitchRuleConditionType = SwitchRuleKnownConditionType | (string & {});
+
+export type SwitchRuleEditableConditionType =
+  | 'FalseCondition'
+  | 'HostLevelsCondition'
+  | 'HostRegexCondition'
+  | 'HostWildcardCondition'
+  | 'IpCondition'
+  | 'KeywordCondition'
+  | 'TimeCondition'
+  | 'UrlRegexCondition'
+  | 'UrlWildcardCondition'
+  | 'WeekdayCondition';
+
+export type SwitchRuleNumericConditionField =
+  | 'endHour'
+  | 'maxValue'
+  | 'minValue'
+  | 'startHour';
+
+export type SwitchRuleEditableConditionField =
+  | SwitchRuleNumericConditionField
+  | 'pattern';
+
+export type SwitchRuleEditableConditionValue = string | null | undefined;
+
+export type SwitchRuleConditionGroup = 'default' | 'host' | 'special' | 'url';
+
 export type SwitchRuleCondition = {
-  conditionType?: string;
+  conditionType?: SwitchRuleConditionType;
   days?: string;
+  endDay?: number | string | null;
   endHour?: number | string | null;
+  ip?: string;
   maxValue?: number | string | null;
   minValue?: number | string | null;
   pattern?: string;
+  prefixLength?: number | string | null;
+  startDay?: number | string | null;
   startHour?: number | string | null;
   [key: string]: ConditionFieldValue;
 };
@@ -46,18 +92,23 @@ export type SwitchRuleSourceState = {
 };
 
 export type ConditionTypeOption = {
-  group: string;
-  type: string;
+  group: `condition_group_${SwitchRuleConditionGroup}`;
+  type: SwitchRuleEditableConditionType;
 };
 
-const BASIC_CONDITION_GROUPS = [
+export type ConditionGroupDefinition = {
+  group: SwitchRuleConditionGroup;
+  types: SwitchRuleEditableConditionType[];
+};
+
+const BASIC_CONDITION_GROUPS: ConditionGroupDefinition[] = [
   {
     group: 'default',
     types: ['HostWildcardCondition', 'UrlWildcardCondition', 'UrlRegexCondition', 'FalseCondition']
   }
 ];
 
-const ADVANCED_CONDITION_GROUPS = [
+const ADVANCED_CONDITION_GROUPS: ConditionGroupDefinition[] = [
   {
     group: 'host',
     types: ['HostWildcardCondition', 'HostRegexCondition', 'HostLevelsCondition', 'IpCondition']
@@ -77,6 +128,13 @@ const URL_CONDITION_TYPE_MAP: Record<string, boolean> = {
   UrlWildcardCondition: true
 };
 
+const NUMERIC_CONDITION_FIELDS: Record<SwitchRuleNumericConditionField, true> = {
+  endHour: true,
+  maxValue: true,
+  minValue: true,
+  startHour: true
+};
+
 export function cloneValue<T>(value: T): T {
   return JSON.parse(JSON.stringify(value));
 }
@@ -89,7 +147,7 @@ export function getAdvancedConditionGroups() {
   return cloneValue(ADVANCED_CONDITION_GROUPS);
 }
 
-export function expandConditionGroups(groups: Array<{group: string; types: string[]}>) {
+export function expandConditionGroups(groups: ConditionGroupDefinition[]) {
   const result: ConditionTypeOption[] = [];
   for (const group of groups) {
     for (const type of group.types) {
@@ -108,6 +166,12 @@ export function conditionTypesForMode(showConditionTypes = 0) {
 
 export function getUrlConditionTypeMap() {
   return URL_CONDITION_TYPE_MAP;
+}
+
+export function isSwitchRuleNumericConditionField(
+  field: SwitchRuleEditableConditionField
+): field is SwitchRuleNumericConditionField {
+  return !!NUMERIC_CONDITION_FIELDS[field as SwitchRuleNumericConditionField];
 }
 
 export function createConditionTypeSet(conditionTypes: ConditionTypeOption[]) {
@@ -349,19 +413,23 @@ export function moveRule(rules: SwitchRule[], fromIndex: number, toIndex: number
   return true;
 }
 
-export function updateConditionField(rule: SwitchRule | undefined, field: string, value: ConditionFieldValue) {
+export function updateConditionField(
+  rule: SwitchRule | undefined,
+  field: SwitchRuleEditableConditionField,
+  value: SwitchRuleEditableConditionValue
+) {
   if (!rule) {
     return false;
   }
-  if (field === 'minValue' || field === 'maxValue' || field === 'startHour' || field === 'endHour') {
+  if (isSwitchRuleNumericConditionField(field)) {
     rule.condition[field] = value === '' ? null : Number(value);
     return true;
   }
-  rule.condition[field] = value;
+  rule.condition[field] = value ?? '';
   return true;
 }
 
-export function updateConditionType(rule: SwitchRule | undefined, type: string) {
+export function updateConditionType(rule: SwitchRule | undefined, type: SwitchRuleEditableConditionType) {
   if (!rule) {
     return false;
   }

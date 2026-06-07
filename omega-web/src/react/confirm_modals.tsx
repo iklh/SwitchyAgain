@@ -8,6 +8,7 @@ import {
   profileByName
 } from './profile_widgets';
 import type {RuleListProfileModel} from './profile_types';
+import type {SwitchRule} from './switch_profile_runtime';
 
 export type ConfirmKind =
   | 'apply'
@@ -19,13 +20,6 @@ export type ConfirmKind =
   | 'ruleRemove'
   | 'ruleReset';
 
-type Rule = {
-  condition?: {
-    conditionType?: string;
-    pattern?: string;
-  };
-};
-
 type AttachedRuleList = RuleListProfileModel;
 
 export type ConfirmModalCloseValue = 'ok' | {
@@ -33,19 +27,47 @@ export type ConfirmModalCloseValue = 'ok' | {
   toName: string;
 };
 
-export type ConfirmModalProps = {
-  attached?: AttachedRuleList | null;
-  fromName?: string;
-  kind: ConfirmKind;
+type ConfirmModalBaseProps = {
   onClose?: (value?: ConfirmModalCloseValue) => void;
   onDismiss?: () => void;
   options?: Options | null;
-  profile?: Profile | null;
-  refs?: Profile[];
-  rule?: Rule | null;
-  ruleProfile?: Profile | null;
-  toName?: string;
 };
+
+export type ConfirmModalProps = ConfirmModalBaseProps & (
+  | {
+    kind: 'apply';
+  }
+  | {
+    kind: 'cannotDeleteProfile';
+    profile: Profile;
+    refs: Profile[];
+  }
+  | {
+    attached?: AttachedRuleList | null;
+    kind: 'deleteAttached';
+  }
+  | {
+    kind: 'deleteProfile';
+    profile: Profile;
+  }
+  | {
+    kind: 'reset';
+  }
+  | {
+    fromName: string;
+    kind: 'replaceProfile';
+    toName: string;
+  }
+  | {
+    kind: 'ruleRemove';
+    rule: SwitchRule;
+    ruleProfile?: Profile | null;
+  }
+  | {
+    kind: 'ruleReset';
+    ruleProfile?: Profile | null;
+  }
+);
 
 function attachedLabel(attached?: AttachedRuleList | null) {
   if (!attached) {
@@ -105,10 +127,7 @@ function bodyFor(
     toName: string;
   }
 ) {
-  const {attached, kind, profile, refs = [], rule, ruleProfile} = props;
-  const fromProfile = profileByName(props.options, replaceState.fromName);
-  const toProfile = profileByName(props.options, replaceState.toName);
-  switch (kind) {
+  switch (props.kind) {
     case 'apply':
       return (
         <>
@@ -122,7 +141,7 @@ function bodyFor(
           <p>{message('options_profileReferredBy', 'This profile cannot be deleted because it is referred by the following profiles:')}</p>
           <div className="well">
             <ul className="list-style-none">
-              {refs.map((refProfile, index) => (
+              {props.refs.map((refProfile, index) => (
                 <li key={`${refProfile.name}-${index}`}>
                   <ProfileInline profile={refProfile} />
                 </li>
@@ -137,7 +156,7 @@ function bodyFor(
         <>
           <p>{message('options_deleteAttachedConfirm', 'Do you really want to remove the rule list from the current profile?')}</p>
           <div className="well">
-            <ProfileIcon profile={attached} /> {attachedLabel(attached)}
+            <ProfileIcon profile={props.attached} /> {attachedLabel(props.attached)}
           </div>
         </>
       );
@@ -146,65 +165,69 @@ function bodyFor(
         <>
           <p>{message('options_deleteProfileConfirm', 'Do you really want to delete the following profile?')}</p>
           <div className="well">
-            <ProfileInline profile={profile} />
+            <ProfileInline profile={props.profile} />
           </div>
         </>
       );
     case 'reset':
       return <p className="text-danger">{message('options_resetOptionsConfirm', 'Do you really want to reset the options? All profiles and settings will be LOST!')}</p>;
     case 'replaceProfile':
-      return (
-        <>
-          <p>
-            {messageWithNodes(
-              'options_replaceProfileConfirm',
-              'Do you really want to replace __FROM_PROFILE__ with __TO_PROFILE__?',
-              ['__FROM_PROFILE__', '__TO_PROFILE__'],
-              {
-                __FROM_PROFILE__: (
-                  <ProfileSelect
-                    name={replaceState.fromName}
-                    onChange={replaceState.setFromName}
-                    options={props.options}
-                  />
-                ),
-                __TO_PROFILE__: (
-                  <ProfileSelect
-                    name={replaceState.toName}
-                    onChange={replaceState.setToName}
-                    options={props.options}
-                  />
-                )
-              }
-            )}
-          </p>
-          <div className="well">
-            <ProfileInline profile={fromProfile} />{' '}
-            <span className="glyphicon glyphicon-chevron-right" />{' '}
-            <ProfileInline profile={toProfile} />
-          </div>
-          <div className="help-block">
-            {messageWithNodes(
-              'options_replaceProfileHelp',
-              'If you proceed, all rules pointing to __FROM_PROFILE__ will be updated to use __TO_PROFILE__ instead. Other options, such as startup profile and Quick Switch will also be modified as appropriate. However, the two profile themselves will NOT be changed or deleted.',
-              ['__FROM_PROFILE__', '__TO_PROFILE__'],
-              {
-                __FROM_PROFILE__: <ProfileInline profile={fromProfile} />,
-                __TO_PROFILE__: <ProfileInline profile={toProfile} />
-              }
-            )}
-          </div>
-        </>
-      );
+      {
+        const fromProfile = profileByName(props.options, replaceState.fromName);
+        const toProfile = profileByName(props.options, replaceState.toName);
+        return (
+          <>
+            <p>
+              {messageWithNodes(
+                'options_replaceProfileConfirm',
+                'Do you really want to replace __FROM_PROFILE__ with __TO_PROFILE__?',
+                ['__FROM_PROFILE__', '__TO_PROFILE__'],
+                {
+                  __FROM_PROFILE__: (
+                    <ProfileSelect
+                      name={replaceState.fromName}
+                      onChange={replaceState.setFromName}
+                      options={props.options}
+                    />
+                  ),
+                  __TO_PROFILE__: (
+                    <ProfileSelect
+                      name={replaceState.toName}
+                      onChange={replaceState.setToName}
+                      options={props.options}
+                    />
+                  )
+                }
+              )}
+            </p>
+            <div className="well">
+              <ProfileInline profile={fromProfile} />{' '}
+              <span className="glyphicon glyphicon-chevron-right" />{' '}
+              <ProfileInline profile={toProfile} />
+            </div>
+            <div className="help-block">
+              {messageWithNodes(
+                'options_replaceProfileHelp',
+                'If you proceed, all rules pointing to __FROM_PROFILE__ will be updated to use __TO_PROFILE__ instead. Other options, such as startup profile and Quick Switch will also be modified as appropriate. However, the two profile themselves will NOT be changed or deleted.',
+                ['__FROM_PROFILE__', '__TO_PROFILE__'],
+                {
+                  __FROM_PROFILE__: <ProfileInline profile={fromProfile} />,
+                  __TO_PROFILE__: <ProfileInline profile={toProfile} />
+                }
+              )}
+            </div>
+          </>
+        );
+      }
     case 'ruleRemove':
       return (
         <>
           <p>{message('options_deleteRuleConfirm', 'Do you really want to delete the following rule?')}</p>
           <div className="well">
-            <span className="label label-info">{message(`condition_${rule?.condition?.conditionType}`, rule?.condition?.conditionType || '')}</span>{' '}
-            {rule?.condition?.pattern}
+            <span className="label label-info">{message(`condition_${props.rule.condition?.conditionType}`, props.rule.condition?.conditionType || '')}</span>{' '}
+            {props.rule.condition?.pattern}
             <span className="pull-right">
-              <ProfileInline profile={ruleProfile} />
+              <ProfileInline profile={props.ruleProfile} />
             </span>
           </div>
         </>
@@ -214,7 +237,7 @@ function bodyFor(
         <>
           <p>{message('options_resetRulesConfirm', 'Are you sure to set the result profile of ALL rules to the following profile?')}</p>
           <div className="well">
-            <ProfileInline profile={ruleProfile} />
+            <ProfileInline profile={props.ruleProfile} />
           </div>
         </>
       );
@@ -272,12 +295,14 @@ function closeButtonFor(kind: ConfirmKind) {
 
 export function ConfirmModal(props: ConfirmModalProps) {
   const {kind, onClose, onDismiss} = props;
-  const [fromName, setFromName] = useState(props.fromName || '');
-  const [toName, setToName] = useState(props.toName || '');
+  const replaceFromName = props.kind === 'replaceProfile' ? props.fromName : '';
+  const replaceToName = props.kind === 'replaceProfile' ? props.toName : '';
+  const [fromName, setFromName] = useState(replaceFromName);
+  const [toName, setToName] = useState(replaceToName);
   useEffect(() => {
-    setFromName(props.fromName || '');
-    setToName(props.toName || '');
-  }, [props.fromName, props.toName]);
+    setFromName(replaceFromName);
+    setToName(replaceToName);
+  }, [replaceFromName, replaceToName]);
   const closeButton = closeButtonFor(kind);
   const handleClose = () => {
     if (kind === 'replaceProfile') {

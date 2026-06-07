@@ -21,11 +21,13 @@ import {
 } from './switch_profile_runtime';
 import type {
   AttachedOptions,
-  ConditionFieldValue,
   ConditionTypeOption,
   NamedSwitchProfileModel,
   SwitchRule,
   SwitchRuleCondition,
+  SwitchRuleEditableConditionField,
+  SwitchRuleEditableConditionType,
+  SwitchRuleEditableConditionValue,
   SwitchRuleSourceState
 } from './switch_profile_runtime';
 import type {
@@ -118,9 +120,9 @@ export type SwitchRuleRowProps = {
   index: number;
   onAddNote?: (index: number) => void;
   onCloneRule?: (index: number) => void;
-  onConditionFieldChange?: (index: number, field: string, value: ConditionFieldValue) => void;
+  onConditionFieldChange?: (index: number, field: SwitchRuleEditableConditionField, value: SwitchRuleEditableConditionValue) => void;
   onConditionReplace?: (index: number, condition: SwitchRuleCondition) => void;
-  onConditionTypeChange?: (index: number, type: string) => void;
+  onConditionTypeChange?: (index: number, type: SwitchRuleEditableConditionType) => void;
   onIpConditionInputChange?: (index: number, value: string) => void;
   onNoteChange?: (index: number, note: string) => void;
   onProfileChange?: (index: number, name: string) => void;
@@ -140,9 +142,9 @@ export type SwitchRuleRowsProps = {
   draggingRuleIndex?: number;
   onAddNote?: (index: number) => void;
   onCloneRule?: (index: number) => void;
-  onConditionFieldChange?: (index: number, field: string, value: ConditionFieldValue) => void;
+  onConditionFieldChange?: (index: number, field: SwitchRuleEditableConditionField, value: SwitchRuleEditableConditionValue) => void;
   onConditionReplace?: (index: number, condition: SwitchRuleCondition) => void;
-  onConditionTypeChange?: (index: number, type: string) => void;
+  onConditionTypeChange?: (index: number, type: SwitchRuleEditableConditionType) => void;
   onIpConditionInputChange?: (index: number, value: string) => void;
   onNoteChange?: (index: number, note: string) => void;
   onProfileChange?: (index: number, name: string) => void;
@@ -330,6 +332,10 @@ function groupedConditionTypes(conditionTypes: ConditionTypeOption[] = []) {
 
 function conditionTypesForMode(showConditionTypes = 0): ConditionTypeOption[] {
   return switchConditionTypesForMode(showConditionTypes);
+}
+
+function conditionTypeFromSelectValue(conditionTypes: ConditionTypeOption[], value: string) {
+  return conditionTypes.find((conditionType) => conditionType.type === value)?.type;
 }
 
 function moveIndex(indices: number[], fromIndex: number, toIndex: number) {
@@ -576,8 +582,15 @@ function SwitchRuleRow({
     return '';
   }
 
-  function changeField(field: string, value: ConditionFieldValue) {
+  function changeField(field: SwitchRuleEditableConditionField, value: SwitchRuleEditableConditionValue) {
     onConditionFieldChange?.(index, field, value);
+  }
+
+  function changeConditionType(value: string) {
+    const nextType = conditionTypeFromSelectValue(conditionTypes, value);
+    if (nextType) {
+      onConditionTypeChange?.(index, nextType);
+    }
   }
 
   function autoSelectKeyForConditionDetails() {
@@ -695,7 +708,7 @@ function SwitchRuleRow({
         <select
           className="form-control"
           value={conditionType}
-          onChange={(event) => onConditionTypeChange?.(index, event.currentTarget.value)}
+          onChange={(event) => changeConditionType(event.currentTarget.value)}
         >
           {conditionGroups.map(({group, types}) => (
             <optgroup key={group} label={message(group, group)}>
