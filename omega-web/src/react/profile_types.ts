@@ -47,6 +47,8 @@ export type VirtualProfileModel = Profile & {
   defaultProfileName?: string;
 };
 
+export type NamedVirtualProfileModel = VirtualProfileModel & NamedProfile;
+
 export type RuleListProfileModel = Profile & {
   defaultProfileName?: string;
   format?: string;
@@ -56,6 +58,8 @@ export type RuleListProfileModel = Profile & {
   sourceUrl?: string;
 };
 
+export type NamedRuleListProfileModel = RuleListProfileModel & NamedProfile;
+
 export type PacProfileModel = Profile & {
   auth?: ProfileAuthMap & {
     all?: ProfileAuth;
@@ -64,6 +68,8 @@ export type PacProfileModel = Profile & {
   pacScript?: string;
   pacUrl?: string;
 };
+
+export type NamedPacProfileModel = PacProfileModel & NamedProfile;
 
 export type ProxyEditor = {
   host?: string;
@@ -87,3 +93,5 @@ export type FixedProfileModel = Profile & {
   proxyForHttp?: ProxyEditor;
   proxyForHttps?: ProxyEditor;
 };
+
+export type NamedFixedProfileModel = FixedProfileModel & NamedProfile;

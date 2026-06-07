@@ -68,6 +68,9 @@ import type {
   FixedProfileModel,
   FixedProfileProxyField,
   FixedProfileScheme,
+  NamedFixedProfileModel,
+  NamedPacProfileModel,
+  NamedRuleListProfileModel,
   PacProfileModel,
   Profile as ProfileModel,
   ProfileAuth,
@@ -468,7 +471,7 @@ function SwitchProfilePreview({
   updateProfile: <TProfile extends ProfileModel = ProfileModel>(profileName: string, updater: (profile: TProfile) => void) => void;
 }) {
   const identity = attachedIdentity(profile.name);
-  const attached = (options[identity.attachedKey] || null) as RuleListProfileModel | null;
+  const attached = (options[identity.attachedKey] || null) as NamedRuleListProfileModel | null;
   const attachedOptions = createAttachedOptions(profile, attached);
   const showConditionTypes = numberOption(options['-showConditionTypes'], detectAdvancedConditionTypes(profile));
 
@@ -822,10 +825,10 @@ export function OptionsApp() {
   }
 
   function requestRenameProfile(profile: Profile | null | undefined) {
-    const fromName = profile?.name || '';
-    if (!fromName) {
+    if (!profile) {
       return;
     }
+    const fromName = profile.name;
     return requireAppliedOptions(() => setModal({
       fromName,
       kind: 'renameProfile'
@@ -897,7 +900,7 @@ export function OptionsApp() {
   }
 
   function requestDeleteProfile(profile: Profile | null | undefined) {
-    if (!options || !profile?.name) {
+    if (!options || !profile) {
       return;
     }
     const refs = referencedProfiles(profile.name, options);
@@ -916,11 +919,11 @@ export function OptionsApp() {
   }
 
   function deleteProfile(profile: Profile | null | undefined) {
-    const profileName = profile?.name || '';
-    if (!profileName) {
+    if (!profile) {
       setModal(null);
       return;
     }
+    const profileName = profile.name;
     updateOptionsDraft((nextOptions) => {
       delete nextOptions[profileKey(createAttachedName(profileName))];
       delete nextOptions[profileKey(profileName)];
@@ -969,8 +972,8 @@ export function OptionsApp() {
     }
   }
 
-  function requestPacProxyAuth(profile: PacProfileModel | null | undefined) {
-    if (!profile?.name) {
+  function requestPacProxyAuth(profile: NamedPacProfileModel | null | undefined) {
+    if (!profile) {
       return;
     }
     const profileName = profile.name;
@@ -984,8 +987,8 @@ export function OptionsApp() {
     });
   }
 
-  function requestFixedProxyAuth(profile: FixedProfileModel | null | undefined, scheme: FixedProfileScheme) {
-    if (!profile?.name) {
+  function requestFixedProxyAuth(profile: NamedFixedProfileModel | null | undefined, scheme: FixedProfileScheme) {
+    if (!profile) {
       return;
     }
     const authKey = FIXED_PROXY_AUTH_KEYS[scheme];
@@ -1223,7 +1226,7 @@ export function OptionsApp() {
         }
       })();
       const identity = profile.profileType === 'SwitchProfile' ? attachedIdentity(profile.name) : null;
-      const attached = identity ? options[identity.attachedKey] as RuleListProfileModel | undefined : null;
+      const attached = identity ? options[identity.attachedKey] as NamedRuleListProfileModel | undefined : null;
       const attachedOptions = identity ? createAttachedOptions(profile, attached) : null;
       const showConditionTypes = profile.profileType === 'SwitchProfile'
         ? numberOption(options['-showConditionTypes'], detectAdvancedConditionTypes(profile))

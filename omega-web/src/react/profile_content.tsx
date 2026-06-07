@@ -23,6 +23,7 @@ import type {
   AttachedOptions,
   ConditionFieldValue,
   ConditionTypeOption,
+  NamedSwitchProfileModel,
   SwitchProfileModel,
   SwitchRule,
   SwitchRuleCondition,
@@ -33,10 +34,13 @@ import type {
   FixedProfileModel,
   FixedProfileProxyField,
   FixedProfileScheme,
+  NamedFixedProfileModel,
+  NamedPacProfileModel,
+  NamedRuleListProfileModel,
+  NamedVirtualProfileModel,
   PacProfileModel,
   ProxyEditor,
-  RuleListProfileModel,
-  VirtualProfileModel
+  RuleListProfileModel
 } from './profile_types';
 
 const INITIAL_SWITCH_RULE_BATCH_SIZE = 15;
@@ -53,14 +57,14 @@ export type VirtualProfileProps = {
   onReplaceProfile?: (fromName: string, toName: string) => void;
   onTargetChange?: (name: string) => void;
   options?: Options | null;
-  profile?: VirtualProfileModel | null;
+  profile: NamedVirtualProfileModel;
 };
 
 export type RuleListProfileProps = {
   onDownload?: (name: string) => void;
   onProfileChange?: (field: keyof RuleListProfileModel, value: string) => void;
   options?: Options | null;
-  profile?: RuleListProfileModel | null;
+  profile: NamedRuleListProfileModel;
   updating?: boolean;
 };
 
@@ -69,7 +73,7 @@ export type PacProfileProps = {
   onEditProxyAuth?: () => void;
   onProfileChange?: (field: keyof PacProfileModel, value: string) => void;
   pacProfilesUnsupported?: boolean;
-  profile?: PacProfileModel | null;
+  profile: NamedPacProfileModel;
   referenced?: boolean;
   updating?: boolean;
 };
@@ -78,11 +82,11 @@ export type FixedProfileProps = {
   onBypassListChange?: (value: FixedProfileBypassCondition[]) => void;
   onEditProxyAuth?: (scheme: FixedProfileScheme) => void;
   onProxyChange?: (field: FixedProfileProxyField, value?: ProxyEditor, options?: {clearAuth?: boolean}) => void;
-  profile?: FixedProfileModel | null;
+  profile: NamedFixedProfileModel;
 };
 
 export type SwitchAttachedProfileProps = {
-  attached?: RuleListProfileModel | null;
+  attached?: NamedRuleListProfileModel | null;
   attachedRuleListError?: {message?: string} | null;
   onAttachNew?: () => void;
   onAttachedChange?: (field: keyof RuleListProfileModel, value: string) => void;
@@ -147,7 +151,7 @@ export type SwitchRuleRowsProps = {
   onSortPointerDown?: (index: number, event: React.PointerEvent<HTMLTableCellElement>) => void;
   onWeekdayChange?: (index: number, dayIndex: number, selected: boolean) => void;
   options?: Options | null;
-  profile?: SwitchProfileModel | null;
+  profile: NamedSwitchProfileModel;
   ruleKeys?: number[];
   rules?: SwitchRule[];
   selectConditionDetailsIndex?: number;
@@ -159,7 +163,7 @@ export type SwitchRuleRowsProps = {
 };
 
 export type SwitchRuleFooterProps = {
-  attached?: RuleListProfileModel | null;
+  attached?: NamedRuleListProfileModel | null;
   attachedOptions?: {
     defaultProfileName?: string;
     enabled?: boolean;
@@ -171,7 +175,7 @@ export type SwitchRuleFooterProps = {
   onRemoveAttached?: () => void;
   onResetRules?: () => void;
   options?: Options | null;
-  profile?: SwitchProfileModel | null;
+  profile: NamedSwitchProfileModel;
   showNotes?: boolean;
 };
 
@@ -210,12 +214,12 @@ export type ProfileShellProps = {
   onExportRuleList?: () => void;
   onExportScript?: () => void;
   onRename?: () => void;
-  profile?: Profile & {
+  profile: Profile & {
     syncError?: {
       reason?: string;
     };
     syncOptions?: string;
-  } | null;
+  };
   profileColor?: string;
   scriptable?: boolean;
 };
@@ -245,8 +249,8 @@ export function ProfileShell({
   profileColor,
   scriptable = false
 }: ProfileShellProps) {
-  const color = normalizeColor(profileColor || profile?.color);
-  const isVirtual = profile?.profileType === 'VirtualProfile';
+  const color = normalizeColor(profileColor || profile.color);
+  const isVirtual = profile.profileType === 'VirtualProfile';
 
   return (
     <>
@@ -259,7 +263,7 @@ export function ProfileShell({
               <input type="color" value={color} onChange={(event) => onColorChange?.(event.currentTarget.value)} />
             )}
           </span>
-          <h2 className="profile-name">{message('options_profileTabPrefix', 'Profile :: ')}{profile?.name}</h2>
+          <h2 className="profile-name">{message('options_profileTabPrefix', 'Profile :: ')}{profile.name}</h2>
         </div>
         <div className="profile-actions">
           {exportRuleListAvailable && (
@@ -294,7 +298,7 @@ export function ProfileShell({
           </button>
         </div>
       </div>
-      {profile?.syncOptions === 'disabled' && (
+      {profile.syncOptions === 'disabled' && (
         <section className="settings-group">
           {!profile.syncError && (
             <p className="alert alert-info width-limit">
@@ -862,18 +866,18 @@ export function PacProfile({
   referenced = false,
   updating = false
 }: PacProfileProps) {
-  const formattedLastUpdate = formatMediumDate(profile?.lastUpdate);
+  const formattedLastUpdate = formatMediumDate(profile.lastUpdate);
   const [draft, setDraft] = useState({
-    pacScript: profile?.pacScript || '',
-    pacUrl: profile?.pacUrl || ''
+    pacScript: profile.pacScript || '',
+    pacUrl: profile.pacUrl || ''
   });
 
   useEffect(() => {
     setDraft({
-      pacScript: profile?.pacScript || '',
-      pacUrl: profile?.pacUrl || ''
+      pacScript: profile.pacScript || '',
+      pacUrl: profile.pacUrl || ''
     });
-  }, [profile?.name, profile?.pacScript, profile?.pacUrl]);
+  }, [profile.name, profile.pacScript, profile.pacUrl]);
 
   function changeField(field: keyof PacProfileModel, value: string) {
     setDraft((current) => ({...current, [field]: value}));
@@ -884,7 +888,7 @@ export function PacProfile({
   const pacUrlIsFile = isFileUrl(pacUrl);
   const pacUrlPattern = referenced ? PAC_URL_REGEX : PAC_URL_WITH_FILE_REGEX;
   const pacUrlInvalid = !!pacUrl && !pacUrlPattern.test(pacUrl);
-  const authAll = !!profile?.auth?.all;
+  const authAll = !!profile.auth?.all;
 
   return (
     <div>
@@ -922,9 +926,9 @@ export function PacProfile({
           <p>
             <button
               type="button"
-              className={`btn ${pacUrl && !profile?.lastUpdate ? 'btn-primary' : 'btn-default'}`}
+              className={`btn ${pacUrl && !profile.lastUpdate ? 'btn-primary' : 'btn-default'}`}
               disabled={updating}
-              onClick={() => onDownload?.(profile?.name || '')}
+              onClick={() => onDownload?.(profile.name)}
             >
               <span className="glyphicon glyphicon-download-alt" /> {message('options_downloadProfileNow', 'Download Profile Now')}
             </button>
@@ -961,12 +965,12 @@ export function PacProfile({
         )}
         {!pacUrlIsFile && (
           <div>
-            {pacUrl && profile?.lastUpdate && (
+            {pacUrl && profile.lastUpdate && (
               <p className="alert alert-success width-limit">
                 {message('options_pacScriptLastUpdate', 'Last update: $1', formattedLastUpdate)}
               </p>
             )}
-            {pacUrl && !profile?.lastUpdate && (
+            {pacUrl && !profile.lastUpdate && (
               <p className="alert alert-danger width-limit">{message('options_pacScriptObsolete', 'PAC script is obsolete. Please download it now.')}</p>
             )}
             <textarea
@@ -1026,17 +1030,17 @@ function cloneProxyEditors(proxyEditors?: Record<string, ProxyEditor>) {
   return cloned;
 }
 
-function fixedProfileEditors(profile?: FixedProfileModel | null) {
+function fixedProfileEditors(profile: FixedProfileModel) {
   const editors: Record<string, ProxyEditor> = {};
   for (const scheme of FIXED_PROFILE_SCHEMES) {
     const field = FIXED_PROFILE_PROXY_FIELDS[scheme];
-    editors[scheme] = {...(profile?.[field] || {})};
+    editors[scheme] = {...(profile[field] || {})};
   }
   return editors;
 }
 
-function fixedProfileBypassText(profile?: FixedProfileModel | null) {
-  return (profile?.bypassList || []).map((item) => item.pattern).join('\n');
+function fixedProfileBypassText(profile: FixedProfileModel) {
+  return (profile.bypassList || []).map((item) => item.pattern).join('\n');
 }
 
 function fixedProfileBypassList(value: string): FixedProfileBypassCondition[] {
@@ -1060,8 +1064,8 @@ function fixedProfileAuthSupported(protocol?: string) {
   return false;
 }
 
-function fixedProfileAuthActive(profile: FixedProfileModel | null | undefined, scheme: FixedProfileScheme) {
-  return !!profile?.auth?.[FIXED_PROFILE_PROXY_FIELDS[scheme]];
+function fixedProfileAuthActive(profile: FixedProfileModel, scheme: FixedProfileScheme) {
+  return !!profile.auth?.[FIXED_PROFILE_PROXY_FIELDS[scheme]];
 }
 
 export function FixedProfileContent({
@@ -1074,13 +1078,13 @@ export function FixedProfileContent({
   const [draftEditors, setDraftEditors] = useState<Record<string, ProxyEditor>>(() => cloneProxyEditors(initialEditors));
   const [draftBypassList, setDraftBypassList] = useState(fixedProfileBypassText(profile));
   const [showAdvanced, setShowAdvanced] = useState(() => fixedProfileHasAdvancedProxy(initialEditors));
-  const previousProfileNameRef = useRef(profile?.name);
+  const previousProfileNameRef = useRef(profile.name);
 
   useEffect(() => {
     const editors = fixedProfileEditors(profile);
     const hasAdvancedProxy = fixedProfileHasAdvancedProxy(editors);
-    const profileChanged = previousProfileNameRef.current !== profile?.name;
-    previousProfileNameRef.current = profile?.name;
+    const profileChanged = previousProfileNameRef.current !== profile.name;
+    previousProfileNameRef.current = profile.name;
     setDraftEditors(cloneProxyEditors(editors));
     if (profileChanged) {
       setShowAdvanced(hasAdvancedProxy);
@@ -1088,21 +1092,21 @@ export function FixedProfileContent({
       setShowAdvanced(true);
     }
   }, [
-    profile?.name,
-    profile?.fallbackProxy?.scheme,
-    profile?.fallbackProxy?.host,
-    profile?.fallbackProxy?.port,
-    profile?.proxyForHttp?.scheme,
-    profile?.proxyForHttp?.host,
-    profile?.proxyForHttp?.port,
-    profile?.proxyForHttps?.scheme,
-    profile?.proxyForHttps?.host,
-    profile?.proxyForHttps?.port
+    profile.name,
+    profile.fallbackProxy?.scheme,
+    profile.fallbackProxy?.host,
+    profile.fallbackProxy?.port,
+    profile.proxyForHttp?.scheme,
+    profile.proxyForHttp?.host,
+    profile.proxyForHttp?.port,
+    profile.proxyForHttps?.scheme,
+    profile.proxyForHttps?.host,
+    profile.proxyForHttps?.port
   ]);
 
   useEffect(() => {
     setDraftBypassList(fixedProfileBypassText(profile));
-  }, [profile?.name, profile?.bypassList]);
+  }, [profile.name, profile.bypassList]);
 
   function commitProxyEditor(
     scheme: FixedProfileScheme,
@@ -1352,7 +1356,7 @@ export function SwitchAttachedProfile({
             type="button"
             className={`btn ${draft.sourceUrl && !attached.lastUpdate ? 'btn-primary' : 'btn-default'}`}
             disabled={!draft.sourceUrl || updating}
-            onClick={() => onDownload?.(attached.name || '')}
+            onClick={() => onDownload?.(attached.name)}
           >
             <span className="glyphicon glyphicon-download-alt" /> {message('options_downloadProfileNow', 'Download Profile Now')}
           </button>
@@ -1695,7 +1699,7 @@ export function SwitchRulesSection({
   }
 
   function syncRuleKeys() {
-    const profileName = profile?.name;
+    const profileName = profile.name;
     const profileChanged = ruleKeyProfileNameRef.current !== profileName;
     let keys = ruleKeysRef.current;
 
@@ -1809,19 +1813,19 @@ export function SwitchRulesSection({
 
   useEffect(() => {
     if (!loadRules || editSource) {
-      previousProfileNameRef.current = profile?.name;
+      previousProfileNameRef.current = profile.name;
       setRenderedRuleCount(0);
       return;
     }
     setRenderedRuleCount((current) => {
-      const profileChanged = previousProfileNameRef.current !== profile?.name;
-      previousProfileNameRef.current = profile?.name;
+      const profileChanged = previousProfileNameRef.current !== profile.name;
+      previousProfileNameRef.current = profile.name;
       if (profileChanged || current === 0 || current > rules.length) {
         return Math.min(INITIAL_SWITCH_RULE_BATCH_SIZE, rules.length);
       }
       return current;
     });
-  }, [editSource, loadRules, profile?.name, rules.length]);
+  }, [editSource, loadRules, profile.name, rules.length]);
 
   useEffect(() => {
     if (!loadRules || editSource || renderedRuleCount >= rules.length) {
@@ -2347,28 +2351,28 @@ export function RuleListProfile({
   const resultProfiles = resultProfilesFor(options, profile);
   const ruleListFormats = getRuleListFormats();
   const [draft, setDraft] = useState({
-    defaultProfileName: profile?.defaultProfileName || '',
-    format: profile?.format || '',
-    matchProfileName: profile?.matchProfileName || '',
-    ruleList: profile?.ruleList || '',
-    sourceUrl: profile?.sourceUrl || ''
+    defaultProfileName: profile.defaultProfileName || '',
+    format: profile.format || '',
+    matchProfileName: profile.matchProfileName || '',
+    ruleList: profile.ruleList || '',
+    sourceUrl: profile.sourceUrl || ''
   });
 
   useEffect(() => {
     setDraft({
-      defaultProfileName: profile?.defaultProfileName || '',
-      format: profile?.format || '',
-      matchProfileName: profile?.matchProfileName || '',
-      ruleList: profile?.ruleList || '',
-      sourceUrl: profile?.sourceUrl || ''
+      defaultProfileName: profile.defaultProfileName || '',
+      format: profile.format || '',
+      matchProfileName: profile.matchProfileName || '',
+      ruleList: profile.ruleList || '',
+      sourceUrl: profile.sourceUrl || ''
     });
   }, [
-    profile?.name,
-    profile?.defaultProfileName,
-    profile?.format,
-    profile?.matchProfileName,
-    profile?.ruleList,
-    profile?.sourceUrl
+    profile.name,
+    profile.defaultProfileName,
+    profile.format,
+    profile.matchProfileName,
+    profile.ruleList,
+    profile.sourceUrl
   ]);
 
   function changeField(field: keyof RuleListProfileModel, value: string) {
@@ -2434,7 +2438,7 @@ export function RuleListProfile({
             type="button"
             className="btn btn-default"
             disabled={!draft.sourceUrl || updating}
-            onClick={() => onDownload?.(profile?.name || '')}
+            onClick={() => onDownload?.(profile.name)}
           >
             <span className="glyphicon glyphicon-download-alt" /> {message('options_downloadProfileNow', 'Download Profile Now')}
           </button>
@@ -2452,10 +2456,10 @@ export function RuleListProfile({
 }
 
 export function VirtualProfile({onReplaceProfile, onTargetChange, options, profile}: VirtualProfileProps) {
-  const [targetName, setTargetName] = useState(profile?.defaultProfileName || '');
+  const [targetName, setTargetName] = useState(profile.defaultProfileName || '');
   useEffect(() => {
-    setTargetName(profile?.defaultProfileName || '');
-  }, [profile?.defaultProfileName]);
+    setTargetName(profile.defaultProfileName || '');
+  }, [profile.defaultProfileName]);
   const targetProfile = profileByName(options, targetName);
   const targetProfiles = resultProfilesFor(options, profile);
 
@@ -2494,7 +2498,7 @@ export function VirtualProfile({onReplaceProfile, onTargetChange, options, profi
           )}
         </p>
         <div className="form-group">
-          <button type="button" className="btn btn-default" onClick={() => onReplaceProfile?.(targetName, profile?.name || '')}>
+          <button type="button" className="btn btn-default" onClick={() => onReplaceProfile?.(targetName, profile.name)}>
             <span className="glyphicon glyphicon-search" /> {message('options_virtualProfileReplace', 'Replace target profile')}
           </button>
         </div>
