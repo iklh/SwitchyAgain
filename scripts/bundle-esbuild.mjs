@@ -14,10 +14,11 @@ const outfile = args['--outfile'];
 const format = args['--format'] || 'iife';
 const globalName = args['--global-name'];
 const platform = args['--platform'] || 'browser';
+const target = args['--target'] || 'es5';
 const external = args['--external'] ? args['--external'].split(',').filter(Boolean) : [];
 
 if (!entry || !outfile || (format === 'iife' && !globalName)) {
-  throw new Error('Usage: node scripts/bundle-esbuild.mjs --entry=<file> --outfile=<file> [--format=cjs|iife] [--global-name=<name>] [--platform=browser|node] [--external=a,b] [--minify]');
+  throw new Error('Usage: node scripts/bundle-esbuild.mjs --entry=<file> --outfile=<file> [--format=cjs|iife] [--global-name=<name>] [--platform=browser|node] [--target=es2015] [--external=a,b] [--minify]');
 }
 
 await esbuild.build({
@@ -32,5 +33,5 @@ await esbuild.build({
   minify: '--minify' in args,
   outfile: path.resolve(outfile),
   platform,
-  target: 'es5'
+  target
 });

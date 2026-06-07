@@ -4,6 +4,8 @@
     "allowJs": false,
     "declaration": false,
     "ignoreDeprecations": "6.0",
+    "module": "commonjs",
+    "moduleResolution": "node",
     "noEmit": false,
     "outDir": "build-ts",
     "rootDir": "src",

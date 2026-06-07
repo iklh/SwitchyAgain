@@ -71,7 +71,7 @@ async function writeBundle(dest: string, options: BundleOptions) {
     minify: isRelease && !!options.minify,
     outfile: dest,
     platform: 'browser',
-    target: 'es5'
+    target: 'es2015'
   });
 }
 
@@ -177,7 +177,7 @@ async function main() {
   await fsp.rm(path.join(root, 'build'), {recursive: true, force: true});
   await fsp.rm(path.join(root, 'tmp'), {recursive: true, force: true});
 
-  const indexSource = path.join(root, 'build-ts/module/index.js');
+  const indexSource = path.join(root, 'src/module/index.ts');
   await writeBundle(path.join(root, 'index.js'), {
     entry: indexSource,
     globalName: 'OmegaTargetChromium'
