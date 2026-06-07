@@ -300,7 +300,7 @@ describe('OptionsSync', function() {
       sinon.spy(storage, 'set');
       sinon.spy(storage, 'remove');
       sync = new OptionsSync(remote);
-      return sync.copyTo(storage);
+      sync.copyTo(storage);
     });
   });
   return describe('#watchAndPull', function() {

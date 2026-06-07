@@ -464,7 +464,7 @@ describe('Conditions', function() {
     testCondDay = function(cond: any, day: number, match: boolean): any {
       let date;
       date = day > 0 ? day : 7;
-      clock.setSystemTime(new Date("2016-02-0" + date + "T00:00:00Z").getTime());
+      clock.setSystemTime(new Date("2026-06-0" + date + "T00:00:00Z").getTime());
       return testCond(cond, "http://weekday-" + day + "/", match);
     };
     it('should match requests based on date range', function() {
@@ -564,7 +564,7 @@ describe('Conditions', function() {
       return clock.uninstall();
     });
     testCondTime = function(cond: any, time: string, match: boolean): any {
-      clock.setSystemTime(new Date("01 Feb 2016 " + time).getTime());
+      clock.setSystemTime(new Date("01 Jun 2026 " + time).getTime());
       return testCond(cond, "http://time-" + time + "/", match);
     };
     it('should match requests based on hour range', function() {
