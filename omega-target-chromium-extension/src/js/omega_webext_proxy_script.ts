@@ -34,7 +34,6 @@ type WebExtProxyMessage = {
 };
 
 (globalThis as typeof globalThis & {FindProxyForURL: ProxyFindFunction}).FindProxyForURL = (function () {
-  const OmegaPac = require('omega-pac');
   let options: Record<string, unknown> = {};
   let state: WebExtProxyState = {};
   let activeProfile: WebExtProxyProfile | null = null;

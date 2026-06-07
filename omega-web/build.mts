@@ -1,10 +1,12 @@
-const fs = require('fs/promises');
-const path = require('path');
-const less = require('less');
-const esbuild = require('esbuild');
-const postcss = require('postcss');
-const autoprefixer = require('autoprefixer-core');
-const root = path.resolve(__dirname, '..');
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import less from 'less';
+import * as esbuild from 'esbuild';
+import postcss from 'postcss';
+import autoprefixer from 'autoprefixer-core';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const workspaceRoot = path.join(root, '..');
 
 type LessRenderOutput = string | {

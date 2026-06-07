@@ -1,10 +1,4 @@
-declare var exports: Record<string, unknown>;
-declare var module: {
-  exports: unknown;
-};
 declare var OmegaPac: unknown;
-
-declare function require(id: string): unknown;
 
 declare module 'bluebird' {
   const value: unknown;

@@ -455,9 +455,7 @@ type ProxyFindFunction = (url: string, host: string, details?: unknown) => unkno
 declare var chrome: ChromeGlobal;
 declare var browser: BrowserGlobal;
 declare var angular: LegacyDynamic;
-declare var exports: Record<string, unknown>;
 declare var FindProxyForURL: ProxyFindFunction;
-declare var module: {exports: unknown};
 declare var OmegaDebug: OmegaDebugApi;
 declare var OmegaPac: OmegaPacApi;
 declare var OmegaTarget: OmegaTargetModule;
@@ -470,11 +468,6 @@ declare function drawOmega(
   resultColor: string,
   profileColor?: string
 ): void;
-declare function require(id: 'omega-target'): OmegaTargetModule;
-declare function require(id: 'omega-pac'): OmegaPacApi;
-declare function require(id: 'querystring'): QueryStringModule;
-declare function require(id: 'url'): UrlModule;
-declare function require(id: string): LegacyDynamic;
 
 declare module 'omega-target' {
   const value: OmegaTargetModule;

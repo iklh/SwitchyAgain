@@ -1,7 +1,3 @@
-declare var exports: any;
-declare var module: any;
-declare function require(id: string): any;
-
 declare module 'buffer' {
   export const Buffer: {
     from(value: string, encoding?: string): {

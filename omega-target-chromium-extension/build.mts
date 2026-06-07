@@ -1,11 +1,12 @@
-import * as fs from 'fs';
-import * as fsp from 'fs/promises';
-import * as path from 'path';
-import * as archiver from 'archiver';
+import * as fs from 'node:fs';
+import * as fsp from 'node:fs/promises';
+import * as path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import archiver from 'archiver';
 import * as esbuild from 'esbuild';
-import * as po2json from 'po2json/index.js';
+import po2json from 'po2json/index.js';
 
-const root = path.resolve(__dirname, '..');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const isRelease = process.argv.includes('release');
 
 type PathFilter = (filePath: string) => boolean;
