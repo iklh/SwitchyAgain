@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.1.16
+
+Build modernization and options style cleanup.
+
+- Migrated runtime bundle generation from Browserify/CommonJS output toward
+  esbuild-built ESM sources while preserving the extension runtime globals.
+- Modernized the Mocha test runner so tests execute directly against
+  TypeScript sources with official test types and checked-in Mocha options.
+- Removed the intermediate test build directory and simplified the test
+  source layout.
+- Added a root dist packaging helper for copying release artifacts with
+  versioned names.
+- Migrated the options page styles from Less to plain CSS while preserving the
+  generated Bootstrap-aligned rules.
+- Fixed profile selectors so internal rule-list profiles are not shown as
+  user-selectable profiles.
+
 ## v1.1.15
 
 React popup and options migration fixes.
