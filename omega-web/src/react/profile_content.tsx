@@ -34,7 +34,11 @@ import type {
 import type {
   FixedProfileBypassCondition,
   FixedProfileModel,
+  FixedProfileProxyChangeOptions,
+  FixedProfileProxyEditorField,
+  FixedProfileProxyEditors,
   FixedProfileProxyField,
+  FixedProfileProxyProtocol,
   FixedProfileScheme,
   NamedFixedProfileModel,
   NamedPacProfileModel,
@@ -43,7 +47,8 @@ import type {
   PacProfileField,
   ProfileType,
   ProxyEditor,
-  RuleListProfileField
+  RuleListProfileField,
+  RuleListProfileSourceField
 } from './profile_types';
 
 const INITIAL_SWITCH_RULE_BATCH_SIZE = 15;
@@ -84,7 +89,7 @@ export type PacProfileProps = {
 export type FixedProfileProps = {
   onBypassListChange?: (value: FixedProfileBypassCondition[]) => void;
   onEditProxyAuth?: (scheme: FixedProfileScheme) => void;
-  onProxyChange?: (field: FixedProfileProxyField, value?: ProxyEditor, options?: {clearAuth?: boolean}) => void;
+  onProxyChange?: (field: FixedProfileProxyField, value?: ProxyEditor, options?: FixedProfileProxyChangeOptions) => void;
   profile: NamedFixedProfileModel;
 };
 
@@ -92,7 +97,7 @@ export type SwitchAttachedProfileProps = {
   attached?: NamedRuleListProfileModel | null;
   attachedRuleListError?: {message?: string} | null;
   onAttachNew?: () => void;
-  onAttachedChange?: (field: RuleListProfileField, value: string) => void;
+  onAttachedChange?: (field: RuleListProfileSourceField, value: string) => void;
   onDownload?: (name: string) => void;
   updating?: boolean;
 };
@@ -871,6 +876,10 @@ function getRuleListFormats(): string[] {
   return OmegaPac.Profiles.ruleListFormats || [];
 }
 
+type PacProfileDraft = Record<PacProfileField, string>;
+type RuleListProfileDraft = Record<RuleListProfileField, string>;
+type RuleListProfileSourceDraft = Record<RuleListProfileSourceField, string>;
+
 export function PacProfile({
   onDownload,
   onEditProxyAuth,
@@ -881,7 +890,7 @@ export function PacProfile({
   updating = false
 }: PacProfileProps) {
   const formattedLastUpdate = formatMediumDate(profile.lastUpdate);
-  const [draft, setDraft] = useState({
+  const [draft, setDraft] = useState<PacProfileDraft>({
     pacScript: profile.pacScript || '',
     pacUrl: profile.pacUrl || ''
   });
@@ -1012,13 +1021,17 @@ const FIXED_PROFILE_SCHEME_DISP: Record<FixedProfileScheme, string | null> = {
   http: 'http://',
   https: 'https://'
 };
-const FIXED_PROFILE_DEFAULT_PORT: Record<string, number> = {
+const FIXED_PROFILE_DEFAULT_PORT: Record<FixedProfileProxyProtocol, number> = {
   http: 80,
   https: 443,
   socks4: 1080,
   socks5: 1080
 };
-const FIXED_PROFILE_PROTOCOLS = ['http', 'https', 'socks4', 'socks5'];
+const FIXED_PROFILE_PROTOCOLS: FixedProfileProxyProtocol[] = ['http', 'https', 'socks4', 'socks5'];
+
+function isFixedProfileProxyProtocol(value?: string): value is FixedProfileProxyProtocol {
+  return FIXED_PROFILE_PROTOCOLS.includes(value as FixedProfileProxyProtocol);
+}
 
 function fixedProfileOptionsForScheme(scheme: FixedProfileScheme) {
   const defaultLabel = scheme
@@ -1036,16 +1049,20 @@ function fixedProfileOptionsForScheme(scheme: FixedProfileScheme) {
   ];
 }
 
-function cloneProxyEditors(proxyEditors?: Record<string, ProxyEditor>) {
-  const cloned: Record<string, ProxyEditor> = {};
-  for (const scheme of Object.keys(proxyEditors || {})) {
-    cloned[scheme] = {...proxyEditors?.[scheme]};
+function cloneProxyEditors(proxyEditors?: Partial<FixedProfileProxyEditors>): FixedProfileProxyEditors {
+  const cloned: FixedProfileProxyEditors = {
+    '': {},
+    http: {},
+    https: {}
+  };
+  for (const scheme of FIXED_PROFILE_SCHEMES) {
+    cloned[scheme] = {...(proxyEditors?.[scheme] || {})};
   }
   return cloned;
 }
 
 function fixedProfileEditors(profile: FixedProfileModel) {
-  const editors: Record<string, ProxyEditor> = {};
+  const editors = cloneProxyEditors();
   for (const scheme of FIXED_PROFILE_SCHEMES) {
     const field = FIXED_PROFILE_PROXY_FIELDS[scheme];
     editors[scheme] = {...(profile[field] || {})};
@@ -1064,7 +1081,7 @@ function fixedProfileBypassList(value: string): FixedProfileBypassCondition[] {
   }));
 }
 
-function fixedProfileHasAdvancedProxy(editors: Record<string, ProxyEditor>) {
+function fixedProfileHasAdvancedProxy(editors: FixedProfileProxyEditors) {
   return !!(editors.http?.scheme || editors.https?.scheme);
 }
 
@@ -1089,7 +1106,7 @@ export function FixedProfileContent({
   onProxyChange
 }: FixedProfileProps) {
   const initialEditors = fixedProfileEditors(profile);
-  const [draftEditors, setDraftEditors] = useState<Record<string, ProxyEditor>>(() => cloneProxyEditors(initialEditors));
+  const [draftEditors, setDraftEditors] = useState<FixedProfileProxyEditors>(() => cloneProxyEditors(initialEditors));
   const [draftBypassList, setDraftBypassList] = useState(fixedProfileBypassText(profile));
   const [showAdvanced, setShowAdvanced] = useState(() => fixedProfileHasAdvancedProxy(initialEditors));
   const previousProfileNameRef = useRef(profile.name);
@@ -1126,7 +1143,7 @@ export function FixedProfileContent({
     scheme: FixedProfileScheme,
     editor: ProxyEditor,
     previousEditor: ProxyEditor,
-    editors: Record<string, ProxyEditor>
+    editors: FixedProfileProxyEditors
   ) {
     const field = FIXED_PROFILE_PROXY_FIELDS[scheme];
     const nextEditor = {...editor};
@@ -1145,7 +1162,7 @@ export function FixedProfileContent({
       if (nextEditor.scheme === defaultEditor.scheme && nextEditor.port == null) {
         nextEditor.port = defaultEditor.port;
       }
-      if (nextEditor.port == null) {
+      if (nextEditor.port == null && isFixedProfileProxyProtocol(nextEditor.scheme)) {
         nextEditor.port = FIXED_PROFILE_DEFAULT_PORT[nextEditor.scheme];
       }
       if (nextEditor.host == null) {
@@ -1157,7 +1174,7 @@ export function FixedProfileContent({
     onProxyChange?.(field, nextEditor, {clearAuth});
   }
 
-  function changeProxyEditor(scheme: FixedProfileScheme, field: keyof ProxyEditor, value?: string | number) {
+  function changeProxyEditor(scheme: FixedProfileScheme, field: FixedProfileProxyEditorField, value?: string | number) {
     const nextValue = field === 'scheme' && value === '' ? undefined : value;
     const previousEditor = draftEditors[scheme] || {};
     const nextEditor = {
@@ -1300,7 +1317,7 @@ export function SwitchAttachedProfile({
 }: SwitchAttachedProfileProps) {
   const formattedLastUpdate = formatMediumDate(attached?.lastUpdate);
   const ruleListFormats = getRuleListFormats();
-  const [draft, setDraft] = useState({
+  const [draft, setDraft] = useState<RuleListProfileSourceDraft>({
     format: attached?.format || '',
     ruleList: attached?.ruleList || '',
     sourceUrl: attached?.sourceUrl || ''
@@ -1314,7 +1331,7 @@ export function SwitchAttachedProfile({
     });
   }, [attached?.name, attached?.format, attached?.ruleList, attached?.sourceUrl]);
 
-  function changeField(field: RuleListProfileField, value: string) {
+  function changeField(field: RuleListProfileSourceField, value: string) {
     setDraft((current) => ({...current, [field]: value}));
     onAttachedChange?.(field, value);
   }
@@ -2364,7 +2381,7 @@ export function RuleListProfile({
 }: RuleListProfileProps) {
   const resultProfiles = resultProfilesFor(options, profile);
   const ruleListFormats = getRuleListFormats();
-  const [draft, setDraft] = useState({
+  const [draft, setDraft] = useState<RuleListProfileDraft>({
     defaultProfileName: profile.defaultProfileName || '',
     format: profile.format || '',
     matchProfileName: profile.matchProfileName || '',

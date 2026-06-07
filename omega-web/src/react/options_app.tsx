@@ -76,6 +76,8 @@ import {
 import {UiSettings} from './ui_settings';
 import type {
   FixedProfileModel,
+  FixedProfileBypassCondition,
+  FixedProfileProxyChangeOptions,
   FixedProfileProxyField,
   FixedProfileScheme,
   NamedFixedProfileModel,
@@ -89,6 +91,7 @@ import type {
   ProfileType,
   PacProfileField,
   RuleListProfileField,
+  RuleListProfileSourceField,
   RuleListProfileModel,
   VirtualProfileModel
 } from './profile_types';
@@ -565,6 +568,12 @@ function SwitchProfilePreview({
     });
   }
 
+  function updateAttachedSourceField(field: RuleListProfileSourceField, value: string) {
+    mutateAttached((nextAttached) => {
+      nextAttached[field] = value;
+    });
+  }
+
   function applySource(source: SwitchRuleSourceState) {
     const nextSource = {
       ...source
@@ -613,9 +622,7 @@ function SwitchProfilePreview({
         attachNew(nextOptions, identity.attachedKey, nextProfile, identity.attachedName, attachedOptions);
         updateProfileRevision(nextProfile);
       })}
-      onAttachedChange={(field, value) => mutateAttached((nextAttached) => {
-        nextAttached[field] = value;
-      })}
+      onAttachedChange={updateAttachedSourceField}
       onAttachedEnabledChange={(enabled) => mutateProfile((nextProfile) => {
         setAttachedEnabled(nextProfile, attached, identity.attachedName, attachedOptions, enabled, attachedOptions.enabled);
       })}
@@ -802,11 +809,27 @@ export function OptionsApp() {
     });
   }
 
+  function updateFixedProfileBypassList(profileName: string, value: FixedProfileBypassCondition[]) {
+    updateProfileField<FixedProfileModel, 'bypassList'>(profileName, 'bypassList', value);
+  }
+
+  function updatePacProfileField(profileName: string, field: PacProfileField, value: string) {
+    updateProfileField<PacProfileModel, PacProfileField>(profileName, field, value);
+  }
+
+  function updateRuleListProfileField(profileName: string, field: RuleListProfileField, value: string) {
+    updateProfileField<RuleListProfileModel, RuleListProfileField>(profileName, field, value);
+  }
+
+  function updateVirtualProfileTarget(profileName: string, name: string) {
+    updateProfileField<VirtualProfileModel, 'defaultProfileName'>(profileName, 'defaultProfileName', name);
+  }
+
   function updateFixedProfileProxy(
     profileName: string,
     field: FixedProfileProxyField,
     value?: FixedProfileModel[FixedProfileProxyField],
-    changeOptions?: {clearAuth?: boolean}
+    changeOptions?: FixedProfileProxyChangeOptions
   ) {
     updateProfile<FixedProfileModel>(profileName, (nextProfile) => {
       if (changeOptions?.clearAuth && nextProfile.auth) {
@@ -1265,7 +1288,7 @@ export function OptionsApp() {
           return (
             <FixedProfileContent
               profile={profile}
-              onBypassListChange={(value) => updateProfileField<FixedProfileModel, 'bypassList'>(profile.name, 'bypassList', value)}
+              onBypassListChange={(value) => updateFixedProfileBypassList(profile.name, value)}
               onEditProxyAuth={(scheme) => requestFixedProxyAuth(profile, scheme)}
               onProxyChange={(field, value, changeOptions) => updateFixedProfileProxy(profile.name, field, value, changeOptions)}
             />
@@ -1278,7 +1301,7 @@ export function OptionsApp() {
               referenced={referenced()}
               onDownload={downloadProfile}
               onEditProxyAuth={() => requestPacProxyAuth(profile)}
-              onProfileChange={(field, value) => updateProfileField<PacProfileModel, PacProfileField>(profile.name, field, value)}
+              onProfileChange={(field, value) => updatePacProfileField(profile.name, field, value)}
               pacProfilesUnsupported={pacProfilesUnsupported}
               updating={profileUpdating(updatingProfiles, profile.name)}
             />
@@ -1290,7 +1313,7 @@ export function OptionsApp() {
               options={options}
               profile={profile}
               onDownload={downloadProfile}
-              onProfileChange={(field, value) => updateProfileField<RuleListProfileModel, RuleListProfileField>(profile.name, field, value)}
+              onProfileChange={(field, value) => updateRuleListProfileField(profile.name, field, value)}
               updating={profileUpdating(updatingProfiles, profile.name)}
             />
           );
@@ -1301,7 +1324,7 @@ export function OptionsApp() {
               options={options}
               profile={profile}
               onReplaceProfile={requestReplaceProfile}
-              onTargetChange={(name) => updateProfileField<VirtualProfileModel, 'defaultProfileName'>(profile.name, 'defaultProfileName', name)}
+              onTargetChange={(name) => updateVirtualProfileTarget(profile.name, name)}
             />
           );
         }

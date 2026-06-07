@@ -113,10 +113,12 @@ export type NamedPacProfileModel = PacProfileModel & NamedProfileOfType<'PacProf
 
 export type PacProfileField = 'pacScript' | 'pacUrl';
 
+export type FixedProfileProxyProtocol = 'http' | 'https' | 'socks4' | 'socks5';
+
 export type ProxyEditor = {
   host?: string;
   port?: number | string;
-  scheme?: string;
+  scheme?: FixedProfileProxyProtocol | (string & {});
 };
 
 export type FixedProfileProxyField = 'fallbackProxy' | 'proxyForHttp' | 'proxyForHttps';
@@ -124,6 +126,14 @@ export type FixedProfileProxyField = 'fallbackProxy' | 'proxyForHttp' | 'proxyFo
 export type ProfileAuthKey = 'all' | FixedProfileProxyField;
 
 export type FixedProfileScheme = '' | 'http' | 'https';
+
+export type FixedProfileProxyEditorField = 'host' | 'port' | 'scheme';
+
+export type FixedProfileProxyEditors = Record<FixedProfileScheme, ProxyEditor>;
+
+export type FixedProfileProxyChangeOptions = {
+  clearAuth?: boolean;
+};
 
 export type FixedProfileBypassCondition = {
   conditionType: 'BypassCondition';
@@ -141,9 +151,12 @@ export type FixedProfileModel = Profile & {
 
 export type NamedFixedProfileModel = FixedProfileModel & NamedProfileOfType<'FixedProfile'>;
 
-export type RuleListProfileField =
-  | 'defaultProfileName'
+export type RuleListProfileSourceField =
   | 'format'
-  | 'matchProfileName'
   | 'ruleList'
   | 'sourceUrl';
+
+export type RuleListProfileField =
+  | 'defaultProfileName'
+  | 'matchProfileName'
+  | RuleListProfileSourceField;
