@@ -17,7 +17,7 @@
     "build:ts": "tsc -p tsconfig.build.json",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "dev": "npm link omega-pac && npm link",
-    "test": "npm run typecheck:test && TSX_TSCONFIG_PATH=tsconfig.test.json TZ=UTC mocha --node-option import=tsx --reporter spec 'test/*.ts'",
+    "test": "npm run typecheck:test && TSX_TSCONFIG_PATH=tsconfig.test.json TZ=UTC mocha",
     "typecheck": "tsc -p tsconfig.build.json --noEmit && tsc -p tsconfig.json --noEmit && npm run typecheck:test"
   }
 }

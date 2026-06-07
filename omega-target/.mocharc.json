@@ -1,0 +1,11 @@
+{
+  "fail-zero": true,
+  "forbid-only": true,
+  "node-option": [
+    "import=tsx"
+  ],
+  "reporter": "spec",
+  "spec": [
+    "test/*.ts"
+  ]
+}
