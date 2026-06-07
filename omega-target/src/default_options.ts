@@ -4,7 +4,7 @@ export = function defaultOptions() {
     '-enableQuickSwitch': false,
     '-refreshOnProfileChange': false,
     '-startupProfileName': '',
-    '-quickSwitchProfiles': [],
+    '-quickSwitchProfiles': [] as string[],
     '-revertProxyChanges': true,
     '-confirmDeletion': true,
     '-showInspectMenu': true,

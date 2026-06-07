@@ -33,11 +33,11 @@ class ProxyImpl {
     return OmegaPromise.reject();
   }
 
-  watchProxyChange(_callback: (details: unknown) => void) {
+  watchProxyChange(_callback: (details: unknown) => void): null {
     return null;
   }
 
-  parseExternalProfile(_details: unknown, _options: unknown) {
+  parseExternalProfile(_details: unknown, _options: unknown): null {
     return null;
   }
 

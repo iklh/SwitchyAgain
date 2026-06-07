@@ -47,7 +47,7 @@ class ScriptProxyImpl extends ProxyImpl {
       (browser?.proxy?.register != null || browser?.proxy?.registerProxyScript != null);
   }
 
-  watchProxyChange(_callback: (details: unknown) => void) {
+  watchProxyChange(_callback: (details: unknown) => void): null {
     return null;
   }
 

@@ -1148,11 +1148,11 @@ export function OptionsApp() {
             return (
               <FixedProfileContent
                 profile={profile}
-                onBypassListChange={(value) => updateProfile(profile.name || '', (nextProfile) => {
+                onBypassListChange={(value) => updateProfile<FixedProfileModel>(profile.name || '', (nextProfile) => {
                   nextProfile.bypassList = value;
                 })}
                 onEditProxyAuth={(scheme) => requestFixedProxyAuth(profile, scheme)}
-                onProxyChange={(field, value, changeOptions) => updateProfile(profile.name || '', (nextProfile) => {
+                onProxyChange={(field, value, changeOptions) => updateProfile<FixedProfileModel>(profile.name || '', (nextProfile) => {
                   if (changeOptions?.clearAuth && nextProfile.auth) {
                     nextProfile.auth[field] = void 0;
                   }

@@ -5,7 +5,7 @@
     "ignoreDeprecations": "6.0",
     "module": "none",
     "noEmit": false,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "outDir": "build-ts/js",
     "rootDir": "src/js",
     "skipLibCheck": true,

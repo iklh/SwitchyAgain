@@ -1,4 +1,4 @@
-var chai, should, sinon,
+let chai: any, should: any, sinon: any,
   slice = [].slice;
 
 chai = require('chai');
@@ -10,7 +10,12 @@ sinon = require('sinon');
 chai.use(require('sinon-chai'));
 
 describe('OptionsSync', function() {
-  var Log, OptionsSync, Promise, Storage, hookPost, hookPostBasic;
+  let Log: any,
+    OptionsSync: any,
+    Promise: any,
+    Storage: any,
+    hookPost: (...args: any[]) => any,
+    hookPostBasic: (func: (...args: any[]) => any, hook: (...args: any[]) => any) => (...args: any[]) => any;
   OptionsSync = require('../build-ts/options_sync');
   Storage = require('../build-ts/storage');
   Log = require('../build-ts/log');
@@ -21,17 +26,17 @@ describe('OptionsSync', function() {
   after(function() {
     return Log.log.restore();
   });
-  hookPostBasic = function(func, hook) {
-    return function() {
-      var result;
-      result = func.apply(this, arguments);
-      hook.apply(this, arguments);
+  hookPostBasic = function(func: (...args: any[]) => any, hook: (...args: any[]) => any): (...args: any[]) => any {
+    return function(this: any, ...args: any[]): any {
+      let result;
+      result = func.apply(this, args);
+      hook.apply(this, args);
       return result;
     };
   };
-  hookPost = function() {
-    var args, func, hook, method, obj;
-    args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+  hookPost = function(...hookArgs: any[]): any {
+    let args: any[], func, hook, method, obj;
+    args = 1 <= hookArgs.length ? slice.call(hookArgs, 0) : [];
     if (args.length === 2) {
       func = args[0], hook = args[1];
       return hookPostBasic(func, hook);
@@ -41,10 +46,10 @@ describe('OptionsSync', function() {
     }
   };
   describe('#merge', function() {
-    var sync;
+    let sync;
     sync = new OptionsSync();
     it('should choose the one with newer revision', function() {
-      var newVal, oldVal;
+      let newVal, oldVal;
       newVal = {
         revision: '2'
       };
@@ -54,7 +59,7 @@ describe('OptionsSync', function() {
       return sync.merge('example', newVal, oldVal).should.equal(newVal);
     });
     it('should use oldVal when sync is disabled in newVal', function() {
-      var newVal, oldVal;
+      let newVal, oldVal;
       newVal = {
         revision: '2',
         is: 'newVal',
@@ -67,7 +72,7 @@ describe('OptionsSync', function() {
       return sync.merge('example', newVal, oldVal).should.equal(oldVal);
     });
     it('should use oldVal when sync is disabled in oldVal', function() {
-      var newVal, oldVal;
+      let newVal, oldVal;
       newVal = {
         revision: '2',
         is: 'newVal'
@@ -80,7 +85,7 @@ describe('OptionsSync', function() {
       return sync.merge('example', newVal, oldVal).should.equal(oldVal);
     });
     it('should favor oldVal when revisions are equal', function() {
-      var newVal, oldVal;
+      let newVal, oldVal;
       newVal = {
         revision: '1',
         is: 'newVal'
@@ -92,7 +97,7 @@ describe('OptionsSync', function() {
       return sync.merge('example', newVal, oldVal).should.equal(oldVal);
     });
     it('should favor oldVal when newVal deeply equals oldVal', function() {
-      var newVal, oldVal;
+      let newVal, oldVal;
       newVal = {
         they: 'are',
         the: 'same'
@@ -104,7 +109,7 @@ describe('OptionsSync', function() {
       return sync.merge('example', newVal, oldVal).should.equal(oldVal);
     });
     return it('should choose newVal when newVal is different', function() {
-      var newVal, oldVal;
+      let newVal, oldVal;
       newVal = {
         they: 'are',
         not: 'equal'
@@ -117,10 +122,10 @@ describe('OptionsSync', function() {
     });
   });
   describe('#requestPush', function() {
-    var unlimited;
+    let unlimited;
     unlimited = new OptionsSync.TokenBucket();
     it('should store pendingChanges', function() {
-      var sync;
+      let sync;
       sync = new OptionsSync();
       sync.enabled = false;
       sync.requestPush({
@@ -131,8 +136,8 @@ describe('OptionsSync', function() {
       });
     });
     it('should schedule storage write', function(done) {
-      var check, storage, sync;
-      check = function() {
+      let check: () => void, storage: any, sync: any;
+      check = function(): void {
         if (storage.set.callCount === 0 || storage.remove.callCount === 0) {
           return;
         }
@@ -158,8 +163,8 @@ describe('OptionsSync', function() {
       });
     });
     it('should combine multiple write operations', function(done) {
-      var check, storage, sync;
-      check = function() {
+      let check: () => void, storage: any, sync: any;
+      check = function(): void {
         if (storage.set.callCount === 0 || storage.remove.callCount === 0) {
           return;
         }
@@ -204,7 +209,7 @@ describe('OptionsSync', function() {
       });
     });
     return it('should disable syncing for the profiles if quota is exceeded', function(done) {
-      var options, storage, sync;
+      let options: any, storage: any, sync: any;
       options = {
         '+a': {
           is: 'a',
@@ -215,8 +220,8 @@ describe('OptionsSync', function() {
         }
       };
       storage = new Storage();
-      storage.set = function(changes) {
-        var err, key, value;
+      storage.set = function(changes: Record<string, any>) {
+        let err, key, value;
         for (key in changes) {
           value = changes[key];
           if (value.oversized) {
@@ -245,7 +250,7 @@ describe('OptionsSync', function() {
   });
   describe('#copyTo', function() {
     it('should fetch all items from remote storage', function(done) {
-      var remote, storage, sync;
+      let remote: any, storage: any, sync: any;
       remote = new Storage();
       remote.set({
         a: 1,
@@ -266,8 +271,8 @@ describe('OptionsSync', function() {
       return sync.copyTo(storage);
     });
     return it('should merge with local as base', function(done) {
-      var check, remote, storage, sync;
-      check = function() {
+      let check: () => void, remote: any, storage: any, sync: any;
+      check = function(): void {
         if (storage.set.callCount === 0 || storage.remove.callCount === 0) {
           return;
         }
@@ -301,8 +306,8 @@ describe('OptionsSync', function() {
   });
   return describe('#watchAndPull', function() {
     return it('should pull changes into local when remote changes', function(done) {
-      var check, remote, storage, sync;
-      check = function() {
+      let check: () => void, remote: any, storage: any, sync: any;
+      check = function(): void {
         if (storage.set.callCount === 0 || storage.remove.callCount === 0) {
           return;
         }
@@ -315,7 +320,7 @@ describe('OptionsSync', function() {
         return done();
       };
       remote = new Storage();
-      hookPost(remote, 'watch', function(_, callback) {
+      hookPost(remote, 'watch', function(_: any, callback: any) {
         return setTimeout((function() {
           callback({
             a: 1

@@ -415,6 +415,36 @@ declare function require(id: 'querystring'): QueryStringModule;
 declare function require(id: 'url'): UrlModule;
 declare function require(id: string): LegacyDynamic;
 
+declare module 'omega-target' {
+  const value: OmegaTargetModule;
+  export = value;
+}
+
+declare module 'querystring' {
+  const value: QueryStringModule;
+  export = value;
+}
+
+declare module 'url' {
+  const value: UrlModule;
+  export = value;
+}
+
+declare module 'buffer' {
+  const value: LegacyDynamic;
+  export = value;
+}
+
+declare module 'xhr' {
+  const value: LegacyDynamic;
+  export = value;
+}
+
+declare module 'heap' {
+  const value: LegacyDynamic;
+  export = value;
+}
+
 interface Window {
   FindProxyForURL: ProxyFindFunction;
   OmegaContextMenuClickHandlers: Record<string, (info: unknown, tab: ChromeTab) => unknown>;

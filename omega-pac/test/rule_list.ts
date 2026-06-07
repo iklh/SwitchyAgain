@@ -1,17 +1,17 @@
-var chai, should;
+let chai: any, should: any;
 
 chai = require('chai');
 
 should = chai.should();
 
 describe('RuleList', function() {
-  var RuleList;
+  let RuleList: any;
   RuleList = require('../build-ts/rule_list');
   describe('AutoProxy', function() {
-    var parse;
+    let parse;
     parse = RuleList['AutoProxy'].parse;
     it('should parse keyword conditions', function() {
-      var line, result;
+      let line, result;
       line = 'example.com';
       result = parse(line, 'match', 'notmatch');
       result.should.have.length(1);
@@ -25,7 +25,7 @@ describe('RuleList', function() {
       });
     });
     it('should parse keyword conditions with asterisks', function() {
-      var line, result;
+      let line, result;
       line = 'example*.com';
       result = parse(line, 'match', 'notmatch');
       result.should.have.length(1);
@@ -39,7 +39,7 @@ describe('RuleList', function() {
       });
     });
     it('should parse host conditions', function() {
-      var line, result;
+      let line, result;
       line = '||example.com';
       result = parse(line, 'match', 'notmatch');
       result.should.have.length(1);
@@ -53,7 +53,7 @@ describe('RuleList', function() {
       });
     });
     it('should parse "starts-with" conditions', function() {
-      var line, result;
+      let line, result;
       line = '|https://ssl.example.com';
       result = parse(line, 'match', 'notmatch');
       result.should.have.length(1);
@@ -67,7 +67,7 @@ describe('RuleList', function() {
       });
     });
     it('should parse "starts-with" conditions for the HTTP scheme', function() {
-      var line, result;
+      let line, result;
       line = '|http://example.com';
       result = parse(line, 'match', 'notmatch');
       result.should.have.length(1);
@@ -81,7 +81,7 @@ describe('RuleList', function() {
       });
     });
     it('should parse url regex conditions', function() {
-      var line, result;
+      let line, result;
       line = '/^https?:\\/\\/[^\\/]+example\.com/';
       result = parse(line, 'match', 'notmatch');
       result.should.have.length(1);
@@ -95,12 +95,12 @@ describe('RuleList', function() {
       });
     });
     it('should ignore comment lines', function() {
-      var result;
+      let result;
       result = parse('!example.com', 'match', 'notmatch');
       return result.should.have.length(0);
     });
     it('should parse multiple lines', function() {
-      var result;
+      let result;
       result = parse('example.com\n!comment\n||example.com', 'match', 'notmatch');
       result.should.have.length(2);
       result[0].should.eql({
@@ -121,7 +121,7 @@ describe('RuleList', function() {
       });
     });
     return it('should put exclusive rules first', function() {
-      var result;
+      let result;
       result = parse('example.com\n@@||example.com', 'match', 'notmatch');
       result.should.have.length(2);
       result[0].should.eql({
@@ -143,10 +143,10 @@ describe('RuleList', function() {
     });
   });
   describe('Switchy', function() {
-    var compose, parse;
+    let compose, parse;
     parse = RuleList['Switchy'].parse;
-    compose = function(sections) {
-      var i, len, list, rule, rules, sec;
+    compose = function(sections: Record<string, string[]>): string {
+      let i, len, list, rule, rules, sec;
       list = '#BEGIN\r\n\r\n';
       for (sec in sections) {
         rules = sections[sec];
@@ -160,13 +160,13 @@ describe('RuleList', function() {
       return list += '\r\n\r\n#END\r\n';
     };
     it('should parse empty rule lists', function() {
-      var list, result;
+      let list, result;
       list = compose({});
       result = parse(list, 'match', 'notmatch');
       return result.should.have.length(0);
     });
     it('should ignore stuff before #BEGIN or after #END.', function() {
-      var list, result;
+      let list, result;
       list = compose({});
       list += '[RegExp]\r\ntest\r\n';
       list = '[Wildcard]\r\ntest\r\n' + list;
@@ -174,7 +174,7 @@ describe('RuleList', function() {
       return result.should.have.length(0);
     });
     it('should parse wildcard rules', function() {
-      var list, result;
+      let list, result;
       list = compose({
         'Wildcard': ['*://example.com/abc/*']
       });
@@ -190,7 +190,7 @@ describe('RuleList', function() {
       });
     });
     it('should parse RegExp rules', function() {
-      var list, result;
+      let list, result;
       list = compose({
         'RegExp': ['^http://www\.example\.com/.*']
       });
@@ -206,7 +206,7 @@ describe('RuleList', function() {
       });
     });
     it('should parse exclusive rules', function() {
-      var list, result;
+      let list, result;
       list = compose({
         'RegExp': ['!^http://www\.example\.com/.*']
       });
@@ -222,7 +222,7 @@ describe('RuleList', function() {
       });
     });
     it('should parse multiple rules in multiple sections', function() {
-      var list, result;
+      let list, result;
       list = compose({
         'Wildcard': ['http://www.example.com/*', 'http://example.com/*'],
         'RegExp': ['^http://www\.example\.com/.*', '^http://example\.com/.*']
@@ -263,7 +263,7 @@ describe('RuleList', function() {
       });
     });
     return it('should put exclusive rules first', function() {
-      var list, result;
+      let list, result;
       list = compose({
         'Wildcard': ['http://www\.example\.com/*'],
         'RegExp': ['!^http://www\.example\.com/.*']
@@ -289,11 +289,11 @@ describe('RuleList', function() {
     });
   });
   return describe('Switchy (omega format)', function() {
-    var compose, parse;
+    let compose, parse;
     parse = RuleList['Switchy'].parse;
     compose = RuleList['Switchy'].compose;
     it('should parse empty rule lists', function() {
-      var list, result;
+      let list, result;
       list = compose({
         rules: []
       });
@@ -301,7 +301,7 @@ describe('RuleList', function() {
       return result.should.have.length(0);
     });
     it('should ignore comment lines.', function() {
-      var list, result;
+      let list, result;
       list = compose({
         rules: []
       });
@@ -310,7 +310,7 @@ describe('RuleList', function() {
       return result.should.have.length(0);
     });
     it('should compose and parse HostWildcardCondition', function() {
-      var list, result, rule;
+      let list, result, rule;
       rule = {
         source: '*.example.com',
         condition: {
@@ -328,7 +328,7 @@ describe('RuleList', function() {
       return result[0].should.eql(rule);
     });
     it('should compose and parse HostRegexCondition', function() {
-      var list, result, rule;
+      let list, result, rule;
       rule = {
         source: 'HostRegex: ^http://www\.example\.com/.*',
         condition: {
@@ -346,7 +346,7 @@ describe('RuleList', function() {
       return result[0].should.eql(rule);
     });
     it('should compose and parse disabled rules', function() {
-      var list, result, rule;
+      let list, result, rule;
       rule = {
         source: 'Disabled: *.example.com',
         condition: {
@@ -364,7 +364,7 @@ describe('RuleList', function() {
       return result[0].should.eql(rule);
     });
     it('should compose and parse exclusive rules', function() {
-      var list, result, rule;
+      let list, result, rule;
       rule = {
         source: '!*.example.com',
         condition: {
@@ -382,7 +382,7 @@ describe('RuleList', function() {
       return result[0].should.eql(rule);
     });
     it('should compose and parse conditions starting with special chars', function() {
-      var list, result, rule;
+      let list, result, rule;
       rule = {
         source: ': ;abc',
         condition: {
@@ -400,7 +400,7 @@ describe('RuleList', function() {
       return result[0].should.eql(rule);
     });
     it('should parse multiple conditions', function() {
-      var list, result, rules;
+      let list, result, rules;
       rules = [
         {
           source: '*.example.com',
@@ -426,7 +426,7 @@ describe('RuleList', function() {
       return result.should.eql(rules);
     });
     it('should respect the top-down order of conditions', function() {
-      var list, result, rules;
+      let list, result, rules;
       rules = [
         {
           source: 'b.example.com',
@@ -452,7 +452,7 @@ describe('RuleList', function() {
       return result.should.eql(rules);
     });
     it('should add a default rule when results are enabled', function() {
-      var list, result;
+      let list, result;
       list = compose({
         rules: [],
         defaultProfileName: 'notmatch'
@@ -472,7 +472,7 @@ describe('RuleList', function() {
       });
     });
     it('should compose and parse conditions with results', function() {
-      var list, result, rules;
+      let list, result, rules;
       rules = [
         {
           source: 'b.example.com',
@@ -508,7 +508,7 @@ describe('RuleList', function() {
       return result.should.eql(rules);
     });
     return it('should compose and parse exclusive conditions with results', function() {
-      var list, result, rules;
+      let list, result, rules;
       rules = [
         {
           source: '!b.example.com',

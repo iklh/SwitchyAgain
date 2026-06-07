@@ -12,7 +12,8 @@ import type {
   StorageItems,
   StorageMerge,
   StorageRemoveKeys,
-  StorageWatchCallback
+  StorageWatchCallback,
+  StopWatching
 } from './types';
 
 class RateLimitExceededError extends Error {
@@ -152,7 +153,7 @@ class Storage {
    * @param {watchCallback} callback Called everytime something changes.
    * @returns {function} Calling the returned function will stop watching.
    */
-  watch(keys: StorageRemoveKeys, callback: StorageWatchCallback) {
+  watch(keys: StorageRemoveKeys, callback: StorageWatchCallback): StopWatching {
     Log.method('Storage#watch', this, arguments);
     return () => null;
   }

@@ -10,6 +10,13 @@ import type {
 const Buffer = require('buffer').Buffer;
 const hasProp = Object.prototype.hasOwnProperty;
 
+type StrictRuleErrorFields = {
+  message: string;
+  [key: string]: unknown;
+};
+
+type RuleListError = Error & Record<string, unknown>;
+
 const strStartsWith = (str: string, prefix: string): boolean => {
   return str.startsWith(prefix);
 };
@@ -246,10 +253,10 @@ export const Switchy = {
         args = {};
       }
       const strict = args.strict;
-      let error;
+      let error: ((fields: StrictRuleErrorFields) => never) | undefined;
       if (strict) {
-        error = (fields) => {
-          const err = new Error(fields.message);
+        error = (fields: StrictRuleErrorFields): never => {
+          const err = new Error(fields.message) as RuleListError;
           for (const key in fields) {
             if (!hasProp.call(fields, key)) continue;
             const value = fields[key];

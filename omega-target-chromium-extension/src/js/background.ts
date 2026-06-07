@@ -38,6 +38,10 @@ type BackgroundActionInfo = {
   title: string;
 };
 
+type ProxyChangeDetails = Record<string, unknown> & {
+  levelOfControl?: string;
+};
+
 (function() {
   const hasProp = {}.hasOwnProperty;
 
@@ -84,7 +88,7 @@ type BackgroundActionInfo = {
 
   let unhandledPromisesNextId = 1;
 
-  Promise.onPossiblyUnhandledRejection((reason, promise) => {
+  Promise.onPossiblyUnhandledRejection((reason: unknown, promise: unknown) => {
     const id = unhandledPromisesNextId++;
     unhandledPromises.push(promise);
     unhandledPromisesId.push(id);
@@ -95,7 +99,7 @@ type BackgroundActionInfo = {
     }, 0);
   });
 
-  Promise.onUnhandledRejectionHandled((promise) => {
+  Promise.onUnhandledRejectionHandled((promise: unknown) => {
     const index = unhandledPromises.indexOf(promise);
     Log.log(`[${unhandledPromisesId[index]}] Rejection handled!`, promise);
     unhandledPromises.splice(index, 1);
@@ -280,7 +284,7 @@ type BackgroundActionInfo = {
         resultColor,
         profileColor
       };
-    }).catch(() => {
+    }).catch((): null => {
       return null;
     });
   }
@@ -318,7 +322,7 @@ type BackgroundActionInfo = {
 
   tabs.watch();
 
-  options._inspect = new OmegaTargetCurrent.Inspect((url, tab) => {
+  options._inspect = new OmegaTargetCurrent.Inspect((url: string, tab: ChromeTab) => {
     if (url === tab.url) {
       options.clearBadge();
       tabs.processTab(tab);
@@ -354,9 +358,9 @@ type BackgroundActionInfo = {
 
   options.setProxyNotControllable(null);
 
-  let timeout = null;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
 
-  proxyImpl.watchProxyChange((details) => {
+  proxyImpl.watchProxyChange((details: ProxyChangeDetails | null | undefined) => {
     if (options.externalApi.disabled) {
       return;
     }
@@ -386,7 +390,7 @@ type BackgroundActionInfo = {
     if (timeout != null) {
       clearTimeout(timeout);
     }
-    let parsed = null;
+    let parsed: unknown | null = null;
     timeout = setTimeout(() => {
       if (parsed) {
         return options.setExternalProfile(parsed, {
@@ -446,7 +450,7 @@ type BackgroundActionInfo = {
     });
   };
 
-  function encodeError(obj) {
+  function encodeError(obj: unknown) {
     if (obj instanceof Error) {
       return {
         _error: 'error',
@@ -523,11 +527,11 @@ type BackgroundActionInfo = {
           if (request.refreshActivePage) {
             return refreshActivePageIfEnabled();
           }
-        }, (error) => {
+        }, (error: unknown) => {
           return Log.error(request.method + ' ==>', error);
         });
       }
-      return promise.then((result) => {
+      return promise.then((result: Record<string, unknown>) => {
         if (request.refreshActivePage) {
           refreshActivePageIfEnabled();
         }
@@ -541,7 +545,7 @@ type BackgroundActionInfo = {
         return respond({
           result: result
         });
-      }, (error) => {
+      }, (error: unknown) => {
         Log.error(request.method + ' ==>', error);
         return respond({
           error: encodeError(error)

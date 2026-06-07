@@ -2,6 +2,14 @@ import type {OptionsMap, PacGeneratorOptions, Profile, ReferenceSet} from './typ
 
 const U2 = require('./uglifyjs_shim');
 
+type UglifyAst = {
+  compute_char_frequency(): void;
+  figure_out_scope(): void;
+  mangle_names(): void;
+  transform(compressor: unknown): UglifyAst;
+  [key: string]: unknown;
+};
+
 const Profiles = require('./profiles') as {
   allReferenceSet(profile: string | Profile, options: OptionsMap, args?: PacGeneratorOptions): ReferenceSet;
   byName(profileName: string, options: OptionsMap): Profile | undefined;
@@ -22,7 +30,7 @@ export function ascii(str: string): string {
   });
 }
 
-export function compress(ast) {
+export function compress(ast: UglifyAst): UglifyAst {
   ast.figure_out_scope();
   const compressor = U2.Compressor({
     warnings: false,

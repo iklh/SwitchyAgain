@@ -11,16 +11,49 @@ const isRelease = process.argv.includes('release');
 
 type PathFilter = (filePath: string) => boolean;
 
-async function ensureDir(filePath) {
+type BundleRequire = {
+  expose: string;
+  file: string;
+};
+
+type BundleOptions = {
+  browserifyOptions?: Record<string, unknown>;
+  entries?: string[];
+  exclude?: string[];
+  minify?: boolean;
+  require?: BundleRequire[];
+};
+
+type BundleOutput = string | {
+  toString(): string;
+};
+
+type LocaleJson = Record<string, [unknown, string]>;
+
+type LocaleMessage = {
+  message: string;
+  placeholders?: Record<string, {
+    content: string;
+  }>;
+};
+
+type ReleaseManifest = Record<string, unknown> & {
+  background: Record<string, unknown>;
+  key?: string;
+  minimum_chrome_version?: string;
+  permissions: string[];
+};
+
+async function ensureDir(filePath: string) {
   await fsp.mkdir(path.dirname(filePath), {recursive: true});
 }
 
-async function copyFile(src, dest) {
+async function copyFile(src: string, dest: string) {
   await ensureDir(dest);
   await fsp.copyFile(src, dest);
 }
 
-async function copyTree(src, dest, filter: PathFilter = () => true) {
+async function copyTree(src: string, dest: string, filter: PathFilter = () => true) {
   const entries = await fsp.readdir(src, {withFileTypes: true});
   for (const entry of entries) {
     const srcPath = path.join(src, entry.name);
@@ -36,7 +69,7 @@ async function copyTree(src, dest, filter: PathFilter = () => true) {
   }
 }
 
-async function minifyBundle(output) {
+async function minifyBundle(output: BundleOutput) {
   const result = await esbuild.transform(output.toString(), {
     loader: 'js',
     minify: true
@@ -44,8 +77,8 @@ async function minifyBundle(output) {
   return result.code;
 }
 
-function bundle(options) {
-  return new Promise((resolve, reject) => {
+function bundle(options: BundleOptions) {
+  return new Promise<BundleOutput>((resolve, reject) => {
     const b = browserify(options.browserifyOptions || {});
     for (const entry of options.entries || []) {
       b.add(entry);
@@ -56,7 +89,7 @@ function bundle(options) {
     for (const item of options.require || []) {
       b.require(item.file, {expose: item.expose});
     }
-    b.bundle((error, output) => {
+    b.bundle((error: unknown, output: BundleOutput) => {
       if (error) {
         reject(error);
       } else {
@@ -66,7 +99,7 @@ function bundle(options) {
   });
 }
 
-async function writeBundle(dest, options) {
+async function writeBundle(dest: string, options: BundleOptions) {
   let output = await bundle(options);
   if (isRelease && options.minify) {
     output = await minifyBundle(output);
@@ -75,22 +108,22 @@ async function writeBundle(dest, options) {
   await fsp.writeFile(dest, output);
 }
 
-function convertPo(src) {
-  const json = po2json.parseFileSync(src);
-  const result = {};
+function convertPo(src: string) {
+  const json = po2json.parseFileSync(src) as LocaleJson;
+  const result: Record<string, LocaleMessage> = {};
   for (const key of Object.keys(json)) {
     if (!key) {
       continue;
     }
     let message = json[key][1];
-    const refs = [];
+    const refs: string[] = [];
     let matchCount = 0;
-    message = message.replace(/\$(\d+:)?(\w+)\$/g, (_, order, ref) => {
+    message = message.replace(/\$(\d+:)?(\w+)\$/g, (_match: string, order: string | undefined, ref: string) => {
       matchCount++;
       refs[order ? parseInt(order, 10) : matchCount] = ref;
       return '$' + ref + '$';
     });
-    let placeholders;
+    let placeholders: LocaleMessage['placeholders'];
     if (matchCount) {
       placeholders = {};
       for (let i = 0; i < refs.length; i++) {
@@ -106,15 +139,15 @@ function convertPo(src) {
   return result;
 }
 
-async function writeLocale(dest, src) {
+async function writeLocale(dest: string, src: string) {
   await ensureDir(dest);
   await fsp.writeFile(dest, JSON.stringify(convertPo(src)));
 }
 
-async function writeReleaseManifest(dest, target) {
+async function writeReleaseManifest(dest: string, target: 'chrome' | 'firefox') {
   const manifestPath = path.join(root, 'overlay/manifest.json');
-  const manifest = JSON.parse(await fsp.readFile(manifestPath, 'utf8'));
-  manifest.permissions = manifest.permissions.filter((permission) => permission !== 'downloads');
+  const manifest = JSON.parse(await fsp.readFile(manifestPath, 'utf8')) as ReleaseManifest;
+  manifest.permissions = manifest.permissions.filter((permission: string) => permission !== 'downloads');
   if (target === 'chrome') {
     delete manifest.background.scripts;
     delete manifest.background.preferred_environment;
@@ -127,9 +160,9 @@ async function writeReleaseManifest(dest, target) {
   await fsp.writeFile(dest, JSON.stringify(manifest));
 }
 
-async function listFiles(dir, filter: PathFilter = () => true) {
-  const files = [];
-  async function visit(current) {
+async function listFiles(dir: string, filter: PathFilter = () => true) {
+  const files: string[] = [];
+  async function visit(current: string) {
     const entries = await fsp.readdir(current, {withFileTypes: true});
     for (const entry of entries) {
       const filePath = path.join(current, entry.name);
@@ -147,7 +180,7 @@ async function listFiles(dir, filter: PathFilter = () => true) {
   return files;
 }
 
-async function zipRelease(archivePath, manifestPath) {
+async function zipRelease(archivePath: string, manifestPath: string) {
   await ensureDir(archivePath);
   await fsp.rm(archivePath, {force: true});
   const output = fs.createWriteStream(archivePath);
@@ -195,7 +228,7 @@ async function main() {
     },
     minify: true
   });
-  const fontFilter = (base) => (filePath) => {
+  const fontFilter = (base: string): PathFilter => (filePath: string) => {
     const rel = path.relative(base, filePath).replace(/\\/g, '/');
     return !/^lib\/bootstrap\/fonts\/[^/]+\.(eot|svg|ttf)$/.test(rel);
   };

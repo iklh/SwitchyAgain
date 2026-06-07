@@ -75,7 +75,7 @@ class ListenerProxyImpl extends ProxyImpl {
     return browser.proxy.onError.addListener(this.onError.bind(this));
   }
 
-  watchProxyChange(_callback: (details: unknown) => void) {
+  watchProxyChange(_callback: (details: unknown) => void): null {
     return null;
   }
 

@@ -11,29 +11,31 @@ type LessRenderOutput = string | {
   css: string;
 };
 
-async function ensureDir(filePath) {
+type StaticCopy = [src: string, dest: string];
+
+async function ensureDir(filePath: string) {
   await fs.mkdir(path.dirname(filePath), {recursive: true});
 }
 
-async function copyFile(src, dest) {
+async function copyFile(src: string, dest: string) {
   await ensureDir(dest);
   await fs.copyFile(resolveSource(src), path.join(root, dest));
 }
 
-async function copyTree(src, dest) {
+async function copyTree(src: string, dest: string) {
   await fs.cp(resolveSource(src), path.join(root, dest), {
     recursive: true
   });
 }
 
-function resolveSource(src) {
+function resolveSource(src: string) {
   if (src.startsWith('node_modules/')) {
     return path.join(workspaceRoot, src);
   }
   return path.join(root, src);
 }
 
-async function writeReactHtml(dest, title, script, extraScripts = []) {
+async function writeReactHtml(dest: string, title: string, script: string, extraScripts: string[] = []) {
   const html = [
     '<!doctype html>',
     '<html>',
@@ -56,7 +58,7 @@ async function writeReactHtml(dest, title, script, extraScripts = []) {
   await fs.writeFile(path.join(root, dest), html);
 }
 
-async function writeRootReactHtml(dest, title, script, extraScripts = []) {
+async function writeRootReactHtml(dest: string, title: string, script: string, extraScripts: string[] = []) {
   const html = [
     '<!doctype html>',
     '<html lang="en">',
@@ -80,7 +82,7 @@ async function writeRootReactHtml(dest, title, script, extraScripts = []) {
   await fs.writeFile(path.join(root, dest), html);
 }
 
-async function bundleReact(entry, dest) {
+async function bundleReact(entry: string, dest: string) {
   await ensureDir(path.join(root, dest));
   await esbuild.build({
     bundle: true,
@@ -93,10 +95,10 @@ async function bundleReact(entry, dest) {
   });
 }
 
-async function renderLess(src, tmpDest, buildDest) {
+async function renderLess(src: string, tmpDest: string, buildDest: string) {
   const input = await fs.readFile(path.join(root, src), 'utf8');
   const rendered = await new Promise<LessRenderOutput>((resolve, reject) => {
-    less.render(input, {filename: path.join(root, src)}, (error, output) => {
+    less.render(input, {filename: path.join(root, src)}, (error: unknown, output: LessRenderOutput) => {
       if (error) {
         reject(error);
       } else {
@@ -124,7 +126,7 @@ async function clean() {
 async function main() {
   await clean();
 
-  const staticCopies = [
+  const staticCopies: StaticCopy[] = [
     ['../omega-pac/omega_pac.min.js', 'build/js/omega_pac.min.js'],
     ['build-ts/js/log_error.js', 'build/js/log_error.js'],
     ['build-ts/js/omega_pac_preload.js', 'build/js/omega_pac_preload.js'],

@@ -6,28 +6,109 @@ import type {
   ProfileMatchResult,
   ProxyServer,
   ReferenceSet,
-  ReferenceSetOptions
+  ReferenceSetOptions,
+  SwitchRule
 } from './types';
+import type {AttachedCache as AttachedCacheType} from './utils';
 
 const U2 = require('./uglifyjs_shim');
 const ShexpUtils = require('./shexp_utils');
-const Conditions = require('./conditions');
-const RuleList = require('./rule_list');
 const hasProp = Object.prototype.hasOwnProperty;
 
 const {AttachedCache, Revision} = require('./utils') as typeof import('./utils');
 
+type UglifyNode = any;
+
+type ProfileRecord = Profile & Record<string, any>;
+
+type RuleListFormat = {
+  detect?: (text: string) => boolean | undefined;
+  directReferenceSet?: (profile: ProfileRecord) => ReferenceSet | undefined;
+  parse: (
+    text: string,
+    matchProfileName: string,
+    defaultProfileName: string,
+    args?: unknown
+  ) => SwitchRule[];
+  preprocess?: (text: string) => string;
+};
+
+const Conditions = require('./conditions') as {
+  compile(condition: Condition): UglifyNode;
+  match(condition: Condition, request: PacRequest): boolean;
+};
+
+const RuleList = require('./rule_list') as Record<string, RuleListFormat>;
+
 type ProfileCache = {
-  analyzed?: unknown;
-  compiled?: unknown;
+  analyzed?: any;
+  compiled?: any;
   directReferenceSet?: ReferenceSet;
-  [key: string]: unknown;
+  [key: string]: any;
+};
+
+type ProfileHandlerObject = {
+  analyze?(this: ProfilesApiType, profile: ProfileRecord): any;
+  compile?(this: ProfilesApiType, profile: ProfileRecord, cache: ProfileCache): UglifyNode;
+  create?(this: ProfilesApiType, profile: ProfileRecord): unknown;
+  directReferenceSet?(this: ProfilesApiType, profile: ProfileRecord): ReferenceSet;
+  includable?: boolean | ((this: ProfilesApiType, profile: ProfileRecord) => boolean);
+  inclusive?: boolean;
+  match?(this: ProfilesApiType, profile: ProfileRecord, request: PacRequest, cache: ProfileCache): ProfileMatchResult;
+  replaceRef?(this: ProfilesApiType, profile: ProfileRecord, fromName: string, toName: string): boolean;
+  update?(this: ProfilesApiType, profile: ProfileRecord, data: any): boolean;
+  updateContentTypeHints?(this: ProfilesApiType, profile: ProfileRecord): string[] | undefined;
+  updateUrl?(this: ProfilesApiType, profile: ProfileRecord): string | undefined;
+};
+
+type ProfileHandler = string | ProfileHandlerObject;
+
+type ProfileScheme = {
+  prop: string;
+  scheme: string;
+};
+
+type ProfilesApiType = {
+  _handler(profileType: string | ProfileRecord): ProfileHandlerObject;
+  _profileCache: AttachedCacheType;
+  _profileTypes: Record<string, ProfileHandler>;
+  allReferenceSet(profile: string | ProfileRecord, options: OptionsMap, opt_args?: ReferenceSetOptions): ReferenceSet;
+  analyze(profile: ProfileRecord): ProfileCache;
+  builtinProfiles: Record<string, ProfileRecord>;
+  byKey(key: string | ProfileRecord, options?: OptionsMap): Profile | undefined;
+  byName(profileName: string | ProfileRecord, options?: OptionsMap): Profile | undefined;
+  compile(profile: ProfileRecord, opt_profileType?: string): UglifyNode;
+  create(profile: string | ProfileRecord, opt_profileType?: string): Profile;
+  directReferenceSet(profile: ProfileRecord): ReferenceSet;
+  dropCache(profile: ProfileRecord): void;
+  each(options: OptionsMap, callback: (key: string, profile: ProfileRecord) => unknown): unknown[];
+  formatByType: Record<string, string>;
+  isFileUrl(url?: string | null): boolean;
+  isIncludable(profile: ProfileRecord): boolean;
+  isInclusive(profile: ProfileRecord): boolean;
+  match(profile: ProfileRecord, request: PacRequest, opt_profileType?: string): ProfileMatchResult;
+  nameAsKey(profileName: string | ProfileRecord): string;
+  pacProtocols: Record<string, string>;
+  pacResult(proxy?: ProxyServer | null): string;
+  parseHostPort(str: string, scheme: string): ProxyServer | undefined;
+  profileNotFound(name: string | ProfileRecord, action?: any): Profile | null;
+  profileResult(profileName: string | ProfileRecord): UglifyNode;
+  referencedBySet(profile: string | ProfileRecord, options: OptionsMap, opt_args?: ReferenceSetOptions): ReferenceSet;
+  replaceRef(profile: ProfileRecord, fromName: string, toName: string): boolean;
+  ruleListFormats: string[];
+  schemes: ProfileScheme[];
+  tag(profile: ProfileRecord): unknown;
+  update(profile: ProfileRecord, data: any): boolean;
+  updateContentTypeHints(profile: ProfileRecord): string[] | undefined;
+  updateRevision(profile: ProfileRecord, revision?: string): string;
+  updateUrl(profile: ProfileRecord): string | undefined;
+  validResultProfilesFor(profile: string | ProfileRecord, options: OptionsMap): Profile[];
 };
 
 class AST_Raw extends U2.AST_SymbolRef {
   aborts: () => boolean;
 
-  constructor(raw) {
+  constructor(raw: string) {
     super({
       name: raw
     });
@@ -37,7 +118,7 @@ class AST_Raw extends U2.AST_SymbolRef {
   }
 }
 
-const ProfilesApi = {
+const ProfilesApi: ProfilesApiType = {
   builtinProfiles: {
     '+direct': {
       name: 'direct',
@@ -117,13 +198,13 @@ const ProfilesApi = {
   byName(profileName: string | Profile, options?: OptionsMap): Profile | undefined {
     if (typeof profileName === 'string') {
       const key = ProfilesApi.nameAsKey(profileName);
-      profileName = ProfilesApi.builtinProfiles[key] != null ? ProfilesApi.builtinProfiles[key] : options != null ? options[key] : void 0;
+      profileName = (ProfilesApi.builtinProfiles[key] != null ? ProfilesApi.builtinProfiles[key] : options != null ? options[key] : void 0) as Profile | undefined;
     }
     return profileName as Profile | undefined;
   },
   byKey(key: string | Profile, options?: OptionsMap): Profile | undefined {
     if (typeof key === 'string') {
-      key = ProfilesApi.builtinProfiles[key] != null ? ProfilesApi.builtinProfiles[key] : options != null ? options[key] : void 0;
+      key = (ProfilesApi.builtinProfiles[key] != null ? ProfilesApi.builtinProfiles[key] : options != null ? options[key] : void 0) as Profile | undefined;
     }
     return key as Profile | undefined;
   },
@@ -246,7 +327,7 @@ const ProfilesApi = {
         return null;
       case 'dumb':
         return ProfilesApi.create({
-          name: name,
+          name: name as string,
           profileType: 'VirtualProfile',
           defaultProfileName: 'direct'
         });
@@ -303,7 +384,7 @@ const ProfilesApi = {
     const profileKey = ProfilesApi.nameAsKey(profile);
     const ref = ProfilesApi.referencedBySet(profile, options);
     ref[profileKey] = profileKey;
-    const result = [];
+    const result: Profile[] = [];
     ProfilesApi.each(options, (key, prof) => {
       if (!ref[key] && ProfilesApi.isIncludable(prof)) {
         return result.push(prof);
@@ -334,15 +415,13 @@ const ProfilesApi = {
     return profile.revision;
   }),
   _handler(profileType) {
-    if (typeof profileType !== 'string') {
-      profileType = profileType.profileType;
-    }
-    let handler = profileType;
+    const profileTypeName = typeof profileType === 'string' ? profileType : profileType.profileType;
+    let handler: ProfileHandler = profileTypeName;
     while (typeof handler === 'string') {
       handler = ProfilesApi._profileTypes[handler];
     }
     if (handler == null) {
-      throw new Error("Unknown profile type: " + profileType);
+      throw new Error("Unknown profile type: " + profileTypeName);
     }
     return handler;
   },
@@ -540,7 +619,7 @@ const ProfilesApi = {
         return profile.rules != null ? profile.rules : profile.rules = [];
       },
       directReferenceSet(profile) {
-        const refs = {};
+        const refs: ReferenceSet = {};
         refs[ProfilesApi.nameAsKey(profile.defaultProfileName)] = profile.defaultProfileName;
         for (const rule of profile.rules) {
           refs[ProfilesApi.nameAsKey(rule.profileName)] = rule.profileName;
@@ -635,7 +714,7 @@ const ProfilesApi = {
             return refs;
           }
         }
-        refs = {};
+        refs = {} as ReferenceSet;
         for (const name of [profile.matchProfileName, profile.defaultProfileName]) {
           refs[ProfilesApi.nameAsKey(name)] = name;
         }

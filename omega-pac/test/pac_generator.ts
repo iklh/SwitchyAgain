@@ -1,11 +1,11 @@
-var chai, should;
+let chai, should;
 
 chai = require('chai');
 
 should = chai.should();
 
 describe('PacGenerator', function() {
-  var PacGenerator, options;
+  let PacGenerator, options;
   PacGenerator = require('../build-ts/pac_generator');
   options = {
     '+auto': {
@@ -66,7 +66,7 @@ describe('PacGenerator', function() {
     }
   };
   it('should generate pac scripts from options', function() {
-    var ast, func, pac, result;
+    let ast, func, pac, result;
     ast = PacGenerator.script(options, 'auto');
     pac = ast.print_to_string({
       beautify: true,
@@ -78,7 +78,7 @@ describe('PacGenerator', function() {
     return result.should.equal('PROXY 127.0.0.1:8888');
   });
   return it('should be able to compress pac scripts', function() {
-    var ast, func, pac, result;
+    let ast, func, pac, result;
     ast = PacGenerator.script(options, 'auto');
     pac = PacGenerator.compress(ast).print_to_string();
     pac.should.not.be.empty;

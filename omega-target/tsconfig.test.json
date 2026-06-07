@@ -6,6 +6,7 @@
     "ignoreDeprecations": "6.0",
     "module": "commonjs",
     "moduleDetection": "force",
+    "noImplicitAny": true,
     "noEmit": false,
     "outDir": "build-test",
     "rootDir": "test",

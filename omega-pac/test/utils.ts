@@ -1,4 +1,4 @@
-var Utils, chai, should;
+let Utils, chai, should;
 
 chai = require('chai');
 
@@ -7,7 +7,7 @@ should = chai.should();
 Utils = require('../build-ts/utils');
 
 describe('getBaseDomain', function() {
-  var getBaseDomain;
+  let getBaseDomain;
   getBaseDomain = Utils.getBaseDomain;
   it('should return domains with zero level unchanged', function() {
     return getBaseDomain('someinternaldomain').should.equal('someinternaldomain');

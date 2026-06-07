@@ -4,7 +4,7 @@
     "forceConsistentCasingInFileNames": true,
     "module": "commonjs",
     "noEmit": true,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "skipLibCheck": true,
     "strict": false,
     "target": "es2015"

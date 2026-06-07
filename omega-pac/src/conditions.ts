@@ -1,4 +1,5 @@
 import type {Condition, PacRequest} from './types';
+import type {AttachedCache as AttachedCacheType} from './utils';
 
 const U2 = require('./uglifyjs_shim');
 const IP = require('ip-address');
@@ -10,49 +11,99 @@ const {shExp2RegExp, escapeSlash} = require('./shexp_utils') as typeof import('.
 const {AttachedCache} = require('./utils') as typeof import('./utils');
 
 type ConditionCache = {
-  analyzed?: unknown;
-  compiled?: unknown;
+  analyzed?: any;
+  compiled?: any;
+  [key: string]: any;
+};
+
+type ParsedUrl = {
+  hostname: string;
+  protocol: string;
   [key: string]: unknown;
 };
 
-const ConditionsApi = {
-  requestFromUrl(url): PacRequest {
-    if (typeof url === 'string') {
-      url = Url.parse(url);
-    }
+type UglifyNode = any;
+
+type IpAddress = any;
+
+type ConditionHandler = {
+  abbrs: string[];
+  analyze(this: ConditionsApiType, condition: Condition): any;
+  compile?(this: ConditionsApiType, condition: Condition, cache: ConditionCache): UglifyNode;
+  fromStr?(this: ConditionsApiType, str: string, condition: Condition): Condition;
+  match?(this: ConditionsApiType, condition: Condition, request: PacRequest, cache: ConditionCache): boolean;
+  str?(this: ConditionsApiType, condition: Condition): string;
+  tag?(this: ConditionsApiType, condition: Condition): string;
+};
+
+type ConditionsApiType = {
+  _abbrs: Record<string, string> | null;
+  _condCache: AttachedCacheType;
+  _conditionTypes: Record<string, ConditionHandler>;
+  _handler(conditionType: string | Condition): ConditionHandler;
+  _setProp(obj: Record<string, any>, prop: string, value: unknown): unknown;
+  analyze(condition: Condition): ConditionCache;
+  between(val: UglifyNode, min: any, max: any, comment?: string): UglifyNode;
+  colonCharCode: number;
+  comment(comment: string | null | undefined, node: UglifyNode): UglifyNode;
+  compile(condition: Condition): UglifyNode;
+  fromStr(str: string): Condition | null;
+  getWeekdayList(condition: Condition): boolean[];
+  ipv6Max: string;
+  isInt(num: unknown): num is number;
+  localHosts: string[];
+  match(condition: Condition, request: PacRequest): boolean;
+  normalizeIp(addr: IpAddress): string;
+  parseIp(ip: string): IpAddress | null;
+  regTest(expr: string | UglifyNode, regexp: string | RegExp): UglifyNode;
+  requestFromUrl(url: string | ParsedUrl): PacRequest;
+  safeRegex(expr: string): RegExp;
+  str(condition: Condition, arg?: {abbr?: number}): string;
+  tag(condition: Condition): unknown;
+  typeFromAbbr(abbr: string): string | undefined;
+  urlWildcard2HostWildcard(pattern: string): string | undefined;
+};
+
+const ConditionsApi: ConditionsApiType = {
+  requestFromUrl(url: string | ParsedUrl): PacRequest {
+    const parsedUrl = typeof url === 'string' ? Url.parse(url) as ParsedUrl : url;
     return {
-      url: Url.format(url),
-      host: url.hostname,
-      scheme: url.protocol.replace(':', '')
+      url: Url.format(parsedUrl),
+      host: parsedUrl.hostname,
+      scheme: parsedUrl.protocol.replace(':', '')
     };
   },
-  urlWildcard2HostWildcard(pattern: string) {
+  urlWildcard2HostWildcard(pattern: string): string | undefined {
     const result = pattern.match(/^\*:\/\/((?:\w|[?*._\-])+)\/\*$/);
     return result != null ? result[1] : void 0;
   },
-  tag(condition: Condition) {
+  tag(condition: Condition): unknown {
     return ConditionsApi._condCache.tag(condition);
   },
-  analyze(condition: Condition) {
+  analyze(condition: Condition): ConditionCache {
     return ConditionsApi._condCache.get(condition, () => {
       return {
         analyzed: ConditionsApi._handler(condition.conditionType).analyze.call(ConditionsApi, condition)
       };
     });
   },
-  match(condition: Condition, request: PacRequest) {
+  match(condition: Condition, request: PacRequest): boolean {
     const cache = ConditionsApi.analyze(condition);
-    return ConditionsApi._handler(condition.conditionType).match.call(ConditionsApi, condition, request, cache);
+    const match = ConditionsApi._handler(condition.conditionType).match;
+    return match != null ? match.call(ConditionsApi, condition, request, cache) : false;
   },
-  compile(condition: Condition) {
+  compile(condition: Condition): UglifyNode {
     const cache = ConditionsApi.analyze(condition) as ConditionCache;
     if (cache.compiled) {
       return cache.compiled;
     }
     const handler = ConditionsApi._handler(condition.conditionType);
+    if (handler.compile == null) {
+      return void 0;
+    }
     return cache.compiled = handler.compile.call(ConditionsApi, condition, cache);
   },
-  str(condition: Condition, arg?: {abbr?: number}) {
+  str(condition: Condition, arg?: {abbr?: number}): string {
     const abbr = (arg != null ? arg : {
       abbr: -1
     }).abbr;
@@ -102,7 +153,7 @@ const ConditionsApi = {
     }
   },
   _abbrs: null,
-  typeFromAbbr(abbr) {
+  typeFromAbbr(abbr: string): string | undefined {
     if (!ConditionsApi._abbrs) {
       ConditionsApi._abbrs = {};
       const ref1 = ConditionsApi._conditionTypes;
@@ -117,7 +168,7 @@ const ConditionsApi = {
     }
     return ConditionsApi._abbrs[abbr.toUpperCase()];
   },
-  comment(comment, node) {
+  comment(comment: string | null | undefined, node: UglifyNode): UglifyNode {
     if (!comment) {
       return node;
     }
@@ -141,14 +192,14 @@ const ConditionsApi = {
     });
     return node;
   },
-  safeRegex(expr) {
+  safeRegex(expr: string): RegExp {
     try {
       return new RegExp(expr);
     } catch (error) {
       return /(?!)/;
     }
   },
-  regTest(expr, regexp) {
+  regTest(expr: string | UglifyNode, regexp: string | RegExp): UglifyNode {
     if (typeof regexp === 'string') {
       regexp = ConditionsApi.safeRegex(escapeSlash(regexp));
     }
@@ -167,10 +218,10 @@ const ConditionsApi = {
       })
     });
   },
-  isInt(num) {
+  isInt(num: unknown): num is number {
     return typeof num === 'number' && !isNaN(num) && parseFloat(String(num)) === parseInt(String(num), 10);
   },
-  between(val, min, max, comment) {
+  between(val: UglifyNode, min: any, max: any, comment?: string): UglifyNode {
     if (min === max) {
       if (typeof min === 'number') {
         min = new U2.AST_Number({
@@ -263,7 +314,7 @@ const ConditionsApi = {
       })
     }));
   },
-  parseIp(ip) {
+  parseIp(ip: string): IpAddress | null {
     if (ip.charCodeAt(0) === '['.charCodeAt(0)) {
       ip = ip.slice(1, -1);
     }
@@ -276,12 +327,12 @@ const ConditionsApi = {
     }
     return addr;
   },
-  normalizeIp(addr) {
+  normalizeIp(addr: IpAddress): string {
     return (addr.correctForm != null ? addr.correctForm : addr.canonicalForm).call(addr);
   },
   ipv6Max: new IP.v6.Address('::/0').endAddress().canonicalForm(),
   localHosts: ["127.0.0.1", "[::1]", "localhost"],
-  getWeekdayList(condition) {
+  getWeekdayList(condition: Condition): boolean[] {
     if (condition.days) {
       const results = [];
       for (let i = 0; i < 7; i++) {
@@ -302,7 +353,7 @@ const ConditionsApi = {
     const result = tag ? tag.call(ConditionsApi, typedCondition) : ConditionsApi.str(typedCondition);
     return typedCondition.conditionType + '$' + result;
   }),
-  _setProp(obj, prop, value) {
+  _setProp(obj: Record<string, any>, prop: string, value: unknown): unknown {
     if (!Object.prototype.hasOwnProperty.call(obj, prop)) {
       Object.defineProperty(obj, prop, {
         writable: true
@@ -310,7 +361,7 @@ const ConditionsApi = {
     }
     return obj[prop] = value;
   },
-  _handler(conditionType) {
+  _handler(conditionType: string | Condition): ConditionHandler {
     if (typeof conditionType !== 'string') {
       conditionType = conditionType.conditionType;
     }
@@ -438,7 +489,7 @@ const ConditionsApi = {
     'BypassCondition': {
       abbrs: ['B', 'Bypass'],
       analyze(condition) {
-        const cache = {
+        const cache: ConditionCache = {
           host: null,
           ip: null,
           port: null,
@@ -550,7 +601,7 @@ const ConditionsApi = {
         }
         const conditions = [];
         if (cache.host === '<local>') {
-          const hostEquals = (host) => {
+          const hostEquals = (host: string) => {
             return new U2.AST_Binary({
               left: new U2.AST_SymbolRef({
                 name: 'host'
@@ -664,7 +715,7 @@ const ConditionsApi = {
     'IpCondition': {
       abbrs: ['Ip'],
       analyze(condition) {
-        const cache = {
+        const cache: ConditionCache = {
           addr: null,
           mask: null,
           normalized: null
