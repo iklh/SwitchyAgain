@@ -90,5 +90,4 @@ type OmegaPacGlobal = {
   };
 };
 
-declare var jQuery: unknown;
 declare var OmegaPac: OmegaPacGlobal;

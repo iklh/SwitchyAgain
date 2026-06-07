@@ -111,6 +111,7 @@ export type SwitchRuleTableHeaderProps = {
 
 export type SwitchRuleRowProps = {
   conditionTypes?: ConditionTypeOption[];
+  isDragging?: boolean;
   index: number;
   onAddNote?: (index: number) => void;
   onCloneRule?: (index: number) => void;
@@ -121,6 +122,7 @@ export type SwitchRuleRowProps = {
   onNoteChange?: (index: number, note: string) => void;
   onProfileChange?: (index: number, name: string) => void;
   onRemoveRule?: (index: number) => void;
+  onSortPointerDown?: (index: number, event: React.PointerEvent<HTMLTableCellElement>) => void;
   onWeekdayChange?: (index: number, dayIndex: number, selected: boolean) => void;
   options?: Options | null;
   resultProfiles?: Profile[];
@@ -132,6 +134,7 @@ export type SwitchRuleRowProps = {
 };
 
 export type SwitchRuleRowsProps = {
+  draggingRuleIndex?: number;
   onAddNote?: (index: number) => void;
   onCloneRule?: (index: number) => void;
   onConditionFieldChange?: (index: number, field: string, value: ConditionFieldValue) => void;
@@ -141,6 +144,7 @@ export type SwitchRuleRowsProps = {
   onNoteChange?: (index: number, note: string) => void;
   onProfileChange?: (index: number, name: string) => void;
   onRemoveRule?: (index: number) => void;
+  onSortPointerDown?: (index: number, event: React.PointerEvent<HTMLTableCellElement>) => void;
   onWeekdayChange?: (index: number, dayIndex: number, selected: boolean) => void;
   options?: Options | null;
   profile?: SwitchProfileModel | null;
@@ -150,6 +154,7 @@ export type SwitchRuleRowsProps = {
   selectConditionDetailsKey?: number;
   showConditionTypes?: number;
   showNotes?: boolean;
+  visualRuleIndices?: number[];
   visibleRuleCount?: number;
 };
 
@@ -324,37 +329,18 @@ function conditionTypesForMode(showConditionTypes = 0): ConditionTypeOption[] {
   return switchConditionTypesForMode(showConditionTypes);
 }
 
-type SortableUi = {
-  item: {
-    index: () => number;
-  };
-};
-
-type SortableOptions = {
-  axis: 'y';
-  containment: 'parent';
-  forceHelperSize: boolean;
-  forcePlaceholderSize: boolean;
-  handle: string;
-  start: (event: unknown, ui: SortableUi) => void;
-  stop: (event: unknown, ui: SortableUi) => void;
-  tolerance: 'pointer';
-};
-
-type JQuerySortableElement = {
-  data: (key: string) => unknown;
-  sortable: {
-    (options: SortableOptions): JQuerySortableElement;
-    (method: 'destroy' | 'refresh'): JQuerySortableElement;
-  };
-};
-
-type JQueryWithSortable = {
-  (element: Element): JQuerySortableElement;
-  fn?: {
-    sortable?: unknown;
-  };
-};
+function moveIndex(indices: number[], fromIndex: number, toIndex: number) {
+  if (fromIndex === toIndex) {
+    return indices;
+  }
+  const next = indices.slice();
+  const [item] = next.splice(fromIndex, 1);
+  if (item == null) {
+    return indices;
+  }
+  next.splice(toIndex, 0, item);
+  return next;
+}
 
 type WindowWithBrowserProxy = Window & {
   browser?: {
@@ -364,9 +350,11 @@ type WindowWithBrowserProxy = Window & {
   };
 };
 
-function getJQuery(): JQueryWithSortable | null {
-  return typeof jQuery === 'undefined' ? null : jQuery as JQueryWithSortable;
-}
+type RuleDragState = {
+  pointerId: number;
+  startIndex: number;
+  targetIndex: number;
+};
 
 function messageWithNodes(
   key: string,
@@ -551,6 +539,7 @@ function DraftInput({
 
 function SwitchRuleRow({
   conditionTypes = [],
+  isDragging = false,
   index,
   onAddNote,
   onCloneRule,
@@ -560,6 +549,7 @@ function SwitchRuleRow({
   onNoteChange,
   onProfileChange,
   onRemoveRule,
+  onSortPointerDown,
   onWeekdayChange,
   options,
   resultProfiles,
@@ -694,8 +684,8 @@ function SwitchRuleRow({
   }
 
   return (
-    <tr className="switch-rule-row" data-rule-index={index}>
-      <td className="sort-bar">
+    <tr className={`switch-rule-row ${isDragging ? 'switch-rule-row-dragging' : ''}`} data-rule-index={index}>
+      <td className="sort-bar" onPointerDown={(event) => onSortPointerDown?.(index, event)}>
         <span className="glyphicon glyphicon-sort" />
       </td>
       <td className={hasUrlIcon ? 'has-icon' : undefined}>
@@ -757,6 +747,7 @@ function SwitchRuleRow({
 }
 
 function SwitchRuleRows({
+  draggingRuleIndex,
   onAddNote,
   onCloneRule,
   onConditionFieldChange,
@@ -766,6 +757,7 @@ function SwitchRuleRows({
   onNoteChange,
   onProfileChange,
   onRemoveRule,
+  onSortPointerDown,
   onWeekdayChange,
   options,
   profile,
@@ -775,37 +767,47 @@ function SwitchRuleRows({
   selectConditionDetailsKey,
   showConditionTypes = 0,
   showNotes = false,
+  visualRuleIndices,
   visibleRuleCount = 0
 }: SwitchRuleRowsProps) {
   const conditionTypes = conditionTypesForMode(showConditionTypes);
   const resultProfiles = resultProfilesFor(options, profile);
+  const visibleIndices = visualRuleIndices || rules.slice(0, visibleRuleCount).map((_rule, index) => index);
 
   return (
     <>
-      {rules.slice(0, visibleRuleCount).map((rule, index) => (
-        <SwitchRuleRow
-          conditionTypes={conditionTypes}
-          index={index}
-          key={ruleKeys?.[index] ?? index}
-          onAddNote={onAddNote}
-          onCloneRule={onCloneRule}
-          onConditionFieldChange={onConditionFieldChange}
-          onConditionReplace={onConditionReplace}
-          onConditionTypeChange={onConditionTypeChange}
-          onIpConditionInputChange={onIpConditionInputChange}
-          onNoteChange={onNoteChange}
-          onProfileChange={onProfileChange}
-          onRemoveRule={onRemoveRule}
-          onWeekdayChange={onWeekdayChange}
-          options={options}
-          resultProfiles={resultProfiles}
-          rule={rule}
-          selectConditionDetailsIndex={selectConditionDetailsIndex}
-          selectConditionDetailsKey={selectConditionDetailsKey}
-          showNotes={showNotes}
-          weekdayList={OmegaPac.Conditions.getWeekdayList(rule.condition) || []}
-        />
-      ))}
+      {visibleIndices.map((index) => {
+        const rule = rules[index];
+        if (!rule) {
+          return null;
+        }
+        return (
+          <SwitchRuleRow
+            conditionTypes={conditionTypes}
+            index={index}
+            isDragging={draggingRuleIndex === index}
+            key={ruleKeys?.[index] ?? index}
+            onAddNote={onAddNote}
+            onCloneRule={onCloneRule}
+            onConditionFieldChange={onConditionFieldChange}
+            onConditionReplace={onConditionReplace}
+            onConditionTypeChange={onConditionTypeChange}
+            onIpConditionInputChange={onIpConditionInputChange}
+            onNoteChange={onNoteChange}
+            onProfileChange={onProfileChange}
+            onRemoveRule={onRemoveRule}
+            onSortPointerDown={onSortPointerDown}
+            onWeekdayChange={onWeekdayChange}
+            options={options}
+            resultProfiles={resultProfiles}
+            rule={rule}
+            selectConditionDetailsIndex={selectConditionDetailsIndex}
+            selectConditionDetailsKey={selectConditionDetailsKey}
+            showNotes={showNotes}
+            weekdayList={OmegaPac.Conditions.getWeekdayList(rule.condition) || []}
+          />
+        );
+      })}
     </>
   );
 }
@@ -1679,7 +1681,9 @@ export function SwitchRulesSection({
   const ruleKeysRef = useRef<number[]>([]);
   const pendingInsertedRuleIndexRef = useRef<number | null>(null);
   const pendingRemovedRuleIndexRef = useRef<number | null>(null);
+  const ruleDragRef = useRef<RuleDragState | null>(null);
   const [cloneSelectTarget, setCloneSelectTarget] = useState<{expectedLength: number; index: number; key: number} | null>(null);
+  const [ruleDrag, setRuleDrag] = useState<RuleDragState | null>(null);
   const [renderedRuleCount, setRenderedRuleCount] = useState(0);
 
   useEffect(() => {
@@ -1748,6 +1752,61 @@ export function SwitchRulesSection({
     onRemoveRule?.(index);
   }
 
+  function updateRuleDrag(nextDrag: RuleDragState | null) {
+    ruleDragRef.current = nextDrag;
+    setRuleDrag(nextDrag);
+  }
+
+  function visibleRuleIndicesForDrag() {
+    const count = Math.min(displayRuleCount, rules.length);
+    const indices = Array.from({length: count}, (_value, index) => index);
+    if (!ruleDrag || ruleDrag.startIndex >= count || ruleDrag.targetIndex >= count) {
+      return indices;
+    }
+    return moveIndex(indices, ruleDrag.startIndex, ruleDrag.targetIndex);
+  }
+
+  function ruleDragTargetIndex(clientY: number) {
+    const body = rulesBodyRef.current;
+    const visibleCount = Math.min(displayRuleCount, rules.length);
+    if (!body || visibleCount <= 0) {
+      return 0;
+    }
+    const rows = Array.from(body.querySelectorAll<HTMLTableRowElement>('.switch-rule-row'));
+    if (!rows.length) {
+      return 0;
+    }
+    let targetIndex = rows.length - 1;
+    for (let index = 0; index < rows.length; index++) {
+      const rect = rows[index].getBoundingClientRect();
+      if (clientY < rect.top + rect.height / 2) {
+        targetIndex = index;
+        break;
+      }
+    }
+    return Math.max(0, Math.min(targetIndex, visibleCount - 1));
+  }
+
+  function beginRuleDrag(index: number, event: React.PointerEvent<HTMLTableCellElement>) {
+    if (editSource || !loadRules || rules.length < 2) {
+      return;
+    }
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return;
+    }
+    const visibleCount = Math.min(displayRuleCount, rules.length);
+    if (index < 0 || index >= visibleCount) {
+      return;
+    }
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    updateRuleDrag({
+      pointerId: event.pointerId,
+      startIndex: index,
+      targetIndex: index
+    });
+  }
+
   useEffect(() => {
     if (!loadRules || editSource) {
       previousProfileNameRef.current = profile?.name;
@@ -1783,48 +1842,57 @@ export function SwitchRulesSection({
   }, [editSource, loadRules, renderedRuleCount, rules.length]);
 
   useEffect(() => {
-    const body = rulesBodyRef.current;
-    const jq = getJQuery();
-    if (!body || editSource || !loadRules || !jq?.fn?.sortable) {
+    if (!ruleDrag) {
       return;
     }
-    const sortableBody = jq(body);
-    let sortStartIndex = 0;
-    sortableBody.sortable({
-      handle: '.sort-bar',
-      tolerance: 'pointer',
-      axis: 'y',
-      forceHelperSize: true,
-      forcePlaceholderSize: true,
-      containment: 'parent',
-      start(_event, ui) {
-        sortStartIndex = ui.item.index();
-      },
-      stop(_event, ui) {
-        const sortEndIndex = ui.item.index();
-        if (sortStartIndex !== sortEndIndex) {
-          moveRule(sortStartIndex, sortEndIndex);
-        }
+
+    document.body.classList.add('switch-rule-dragging-active');
+
+    const updateTarget = (event: PointerEvent) => {
+      const current = ruleDragRef.current;
+      if (!current || event.pointerId !== current.pointerId) {
+        return;
       }
-    });
-    return () => {
-      if (sortableBody.data('ui-sortable')) {
-        sortableBody.sortable('destroy');
+      event.preventDefault();
+      const targetIndex = ruleDragTargetIndex(event.clientY);
+      if (targetIndex !== current.targetIndex) {
+        updateRuleDrag({
+          ...current,
+          targetIndex
+        });
       }
     };
-  }, [editSource, loadRules]);
 
-  useEffect(() => {
-    const body = rulesBodyRef.current;
-    const jq = getJQuery();
-    if (!body || !jq) {
-      return;
-    }
-    const sortableBody = jq(body);
-    if (sortableBody.data('ui-sortable')) {
-      sortableBody.sortable('refresh');
-    }
-  }, [rules, renderedRuleCount]);
+    const finishDrag = (event: PointerEvent) => {
+      const current = ruleDragRef.current;
+      if (!current || event.pointerId !== current.pointerId) {
+        return;
+      }
+      event.preventDefault();
+      updateRuleDrag(null);
+      if (current.startIndex !== current.targetIndex) {
+        moveRule(current.startIndex, current.targetIndex);
+      }
+    };
+
+    const cancelDrag = (event: PointerEvent) => {
+      const current = ruleDragRef.current;
+      if (!current || event.pointerId !== current.pointerId) {
+        return;
+      }
+      updateRuleDrag(null);
+    };
+
+    window.addEventListener('pointermove', updateTarget, {passive: false});
+    window.addEventListener('pointerup', finishDrag);
+    window.addEventListener('pointercancel', cancelDrag);
+    return () => {
+      document.body.classList.remove('switch-rule-dragging-active');
+      window.removeEventListener('pointermove', updateTarget);
+      window.removeEventListener('pointerup', finishDrag);
+      window.removeEventListener('pointercancel', cancelDrag);
+    };
+  }, [ruleDrag?.pointerId]);
 
   useEffect(() => {
     if (!cloneSelectTarget || rules.length < cloneSelectTarget.expectedLength) {
@@ -1847,6 +1915,7 @@ export function SwitchRulesSection({
     cloneSelectTarget.index < rules.length
     ? cloneSelectTarget
     : null;
+  const visualRuleIndices = visibleRuleIndicesForDrag();
 
   return (
     <>
@@ -1889,15 +1958,18 @@ export function SwitchRulesSection({
                     onNoteChange={onNoteChange}
                     onProfileChange={onProfileChange}
                     onRemoveRule={removeRule}
+                    onSortPointerDown={beginRuleDrag}
                     onWeekdayChange={onWeekdayChange}
                     options={options}
                     profile={profile}
+                    draggingRuleIndex={ruleDrag?.startIndex}
                     ruleKeys={ruleKeys}
                     rules={rules}
                     selectConditionDetailsIndex={activeCloneSelectTarget?.index}
                     selectConditionDetailsKey={activeCloneSelectTarget?.key}
                     showConditionTypes={showConditionTypes}
                     showNotes={showNotes}
+                    visualRuleIndices={visualRuleIndices}
                     visibleRuleCount={displayRuleCount}
                   />
                 </tbody>

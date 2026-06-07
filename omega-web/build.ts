@@ -134,9 +134,6 @@ async function main() {
     ['node_modules/bootstrap/fonts/glyphicons-halflings-regular.woff', 'build/lib/bootstrap/fonts/glyphicons-halflings-regular.woff'],
     ['node_modules/bootstrap/fonts/glyphicons-halflings-regular.woff2', 'build/lib/bootstrap/fonts/glyphicons-halflings-regular.woff2'],
     ['node_modules/file-saver/dist/FileSaver.min.js', 'build/lib/FileSaver/FileSaver.min.js'],
-    ['node_modules/jquery/dist/jquery.min.js', 'build/lib/jquery/jquery.min.js'],
-    ['node_modules/jquery-ui-dist/jquery-ui.min.js', 'build/lib/jquery-ui-1.13.3.min.js'],
-    ['node_modules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js', 'build/lib/jqueryui-touch-punch/jquery.ui.touch-punch.min.js'],
     ['img', 'build/img'],
     ['src/popup', 'build/popup'],
     ['src/react/react_options.css', 'build/react/react_options.css']
@@ -156,9 +153,6 @@ async function main() {
   await writeRootReactHtml('build/options.html', 'SwitchyAgain Options', 'react/options_app.js', [
     'js/omega_debug.js',
     'js/log_error.js',
-    'lib/jquery/jquery.min.js',
-    'lib/jquery-ui-1.13.3.min.js',
-    'lib/jqueryui-touch-punch/jquery.ui.touch-punch.min.js',
     'js/omega_pac_preload.js',
     'js/omega_pac.min.js'
   ]);

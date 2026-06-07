@@ -502,6 +502,16 @@ main .profile-header {
   width: 1em;
   text-align: center;
   cursor: move;
+  touch-action: none;
+}
+
+.switch-rule-dragging-active {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.switch-rule-row-dragging .sort-bar {
+  cursor: grabbing;
 }
 
 .switch-rule-row td.has-icon {
