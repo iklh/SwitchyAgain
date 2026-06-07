@@ -117,6 +117,10 @@ function visibleResultProfiles(state?: PopupState) {
     .sort(compareProfile);
 }
 
+function isVisibleResultProfileName(name: string) {
+  return name.charAt(0) !== '_' || name.charAt(1) !== '_';
+}
+
 function requestDomains(info?: PageInfo) {
   return Object.keys(info?.summary || {})
     .map((domain) => ({
@@ -577,6 +581,7 @@ function MenuProfileItem({
 }) {
   const hasDefaultMenu = !!(profile?.validResultProfiles?.length && onDefaultMenuToggle && onDefaultProfileChange);
   const resultProfiles = (profile?.validResultProfiles || [])
+    .filter(isVisibleResultProfileName)
     .map((name) => profileFromMap(state.availableProfiles, name))
     .filter((item): item is Profile => !!item)
     .sort(compareProfile);

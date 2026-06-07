@@ -130,7 +130,7 @@ export function isVirtualProfile(value: unknown): value is NamedVirtualProfileMo
   return isNamedProfileType<NamedVirtualProfileModel>(value, 'VirtualProfile');
 }
 
-function isVisibleProfile(value: unknown): value is Profile {
+export function isVisibleProfile(value: unknown): value is Profile {
   if (!isNamedProfile(value)) {
     return false;
   }
@@ -165,7 +165,7 @@ export function profilesForFilter(options: Options | null | undefined, filter?: 
   }
   if (filter && (typeof filter === 'object' || (typeof filter === 'string' && filter.charAt(0) === '+'))) {
     return OmegaPac.Profiles.validResultProfilesFor(typeof filter === 'string' ? filter.slice(1) : filter, options)
-      .filter(isNamedProfile);
+      .filter(isVisibleProfile);
   }
   if (filter === 'all') {
     return allProfilesFromOptions(options);
