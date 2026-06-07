@@ -375,18 +375,26 @@ interface OmegaDebugApi {
   resetOptions(): unknown;
 }
 
+type PopupApiCallback<T = unknown> = (error?: unknown, result?: T) => void;
+
+type PopupApiPageInfo = {
+  url?: string;
+  [key: string]: unknown;
+};
+
 interface OmegaTargetPopupApi {
-  addCondition(condition: unknown, profileName: string, addToBottom: boolean, cb?: (...args: unknown[]) => void): void;
-  addProfile(profile: unknown, cb?: (...args: unknown[]) => void): void;
-  addTempRule(domain: string, profileName: string, cb?: (...args: unknown[]) => void): void;
-  applyProfile(name: string, cb?: (...args: unknown[]) => void): void;
-  getActivePageInfo(cb: (...args: unknown[]) => void): void;
+  addCondition(condition: unknown, profileName: string, addToBottom: boolean, cb?: PopupApiCallback): void;
+  addProfile(profile: unknown, cb?: PopupApiCallback): void;
+  addTempRule(domain: string, profileName: string, cb?: PopupApiCallback): void;
+  applyProfile(name: string, cb?: PopupApiCallback): void;
+  getActivePageInfo(cb: PopupApiCallback<PopupApiPageInfo>): void;
   getMessage(messageName: string, substitutions?: string | string[]): string;
-  getState(keys: string[], cb?: (...args: unknown[]) => void): void;
-  openManage(domain?: string, profileName?: string, cb?: (...args: unknown[]) => void): void;
-  openOptions(hash?: string, cb?: (...args: unknown[]) => void): void;
-  setDefaultProfile(profileName: string, defaultProfileName: string, cb?: (...args: unknown[]) => void): void;
-  setState(name: string, value: unknown, cb?: (...args: unknown[]) => void): void;
+  getState(keys: string[], cb?: PopupApiCallback<Record<string, unknown>>): void;
+  openManage(cb?: PopupApiCallback): void;
+  openManage(domain?: string, profileName?: string, cb?: PopupApiCallback): void;
+  openOptions(hash?: string | null, cb?: PopupApiCallback): void;
+  setDefaultProfile(profileName: string, defaultProfileName: string, cb?: PopupApiCallback): void;
+  setState(name: string, value: unknown, cb?: PopupApiCallback): void;
 }
 
 type ProxyFindFunction = (url: string, host: string, details?: unknown) => unknown;

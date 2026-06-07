@@ -5,6 +5,13 @@ type BackgroundRequest = {
   refreshActivePage?: boolean;
 };
 
+type BackgroundRuntimeResponse<T = unknown> = {
+  error?: unknown;
+  result?: T;
+};
+
+type BackgroundRespond = (response: BackgroundRuntimeResponse) => void;
+
 type BackgroundSync = {
   enabled: boolean;
   transformValue?: unknown;
@@ -17,6 +24,18 @@ type BackgroundOptions = LegacyDynamic & {
   ready: OmegaPromise<unknown>;
   _inspect: LegacyDynamic;
   _options: OmegaOptionsData;
+};
+
+type BackgroundState = LegacyDynamic & {
+  get(keys: unknown): unknown;
+  set(items: Record<string, unknown>): unknown;
+};
+
+type BackgroundCallable = (...args: unknown[]) => unknown;
+
+type BackgroundDispatch = {
+  method: BackgroundCallable;
+  target: object;
 };
 
 type BackgroundIcon = Record<number, ImageData>;
@@ -181,7 +200,7 @@ type ProxyChangeDetails = Record<string, unknown> & {
   }
 
   let options: BackgroundOptions;
-  let state: LegacyDynamic;
+  let state: BackgroundState;
   let tabs: LegacyDynamic;
   let proxyImpl: LegacyDynamic;
 
@@ -493,24 +512,38 @@ type ProxyChangeDetails = Record<string, unknown> & {
     });
   }
 
-  chrome.runtime.onMessage.addListener((request: BackgroundRequest, sender, respond) => {
+  function resolveBackgroundDispatch(request: BackgroundRequest): BackgroundDispatch | null {
+    if (!request.method) {
+      return null;
+    }
+    let method: unknown;
+    let target: object;
+    if (request.method === 'getState') {
+      target = state;
+      method = state.get;
+    } else if (request.method === 'setState') {
+      target = state;
+      method = state.set;
+    } else {
+      target = options;
+      method = options[request.method];
+    }
+    if (typeof method !== 'function') {
+      return null;
+    }
+    return {
+      method: method as BackgroundCallable,
+      target
+    };
+  }
+
+  chrome.runtime.onMessage.addListener((request: BackgroundRequest, _sender: unknown, respond: BackgroundRespond) => {
     if (!(request && request.method)) {
       return;
     }
     options.ready.then(() => {
-      let method;
-      let target;
-      if (request.method === 'getState') {
-        target = state;
-        method = state.get;
-      } else if (request.method === 'setState') {
-        target = state;
-        method = state.set;
-      } else {
-        target = options;
-        method = target[request.method];
-      }
-      if (typeof method !== 'function') {
+      const dispatch = resolveBackgroundDispatch(request);
+      if (!dispatch) {
         Log.error(`No such method ${request.method}!`);
         respond({
           error: {
@@ -520,7 +553,7 @@ type ProxyChangeDetails = Record<string, unknown> & {
         return;
       }
       const promise = Promise.resolve().then(() => {
-        return method.apply(target, request.args);
+        return dispatch.method.apply(dispatch.target, request.args || []);
       });
       if (request.noReply) {
         return promise.then(() => {

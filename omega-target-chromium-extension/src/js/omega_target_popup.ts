@@ -1,8 +1,8 @@
-type PopupCallback = (error?: unknown, result?: unknown) => unknown;
+type PopupCallback<T = unknown> = (error?: unknown, result?: T) => unknown;
 
-type BackgroundResponse = {
+type BackgroundResponse<T = unknown> = {
   error?: unknown;
-  result?: unknown;
+  result?: T;
 };
 
 type PopupPageInfo = {
@@ -10,18 +10,48 @@ type PopupPageInfo = {
   [key: string]: unknown;
 };
 
-type BackgroundMessage = {
-  args: unknown[];
-  method: string;
+type PageInfoRequest = {
+  tabId?: number;
+  url: string;
+};
+
+type PopupBackgroundMethodArgs = {
+  addCondition: [condition: unknown, profileName: string, addToBottom: boolean];
+  addProfile: [profile: unknown];
+  addTempRule: [domain: string, profileName: string];
+  applyProfile: [name: string];
+  getPageInfo: [args: PageInfoRequest];
+  getState: [keys: string[]];
+  setDefaultProfile: [profileName: string, defaultProfileName: string];
+  setState: [name: string, value: unknown];
+};
+
+type PopupBackgroundMethodResult = {
+  addCondition: unknown;
+  addProfile: unknown;
+  addTempRule: unknown;
+  applyProfile: unknown;
+  getPageInfo: PopupPageInfo;
+  getState: Record<string, unknown>;
+  setDefaultProfile: unknown;
+  setState: unknown;
+};
+
+type PopupBackgroundMethod = keyof PopupBackgroundMethodArgs;
+type PopupNoReplyMethod = 'addTempRule' | 'applyProfile' | 'setDefaultProfile';
+
+type BackgroundMessage<M extends PopupBackgroundMethod = PopupBackgroundMethod> = {
+  args: PopupBackgroundMethodArgs[M];
+  method: M;
   noReply?: boolean;
   refreshActivePage?: boolean;
 };
 
-function handleBackgroundResponse(response: LegacyDynamic, cb?: PopupCallback) {
+function handleBackgroundResponse<T>(response: LegacyDynamic, cb?: PopupCallback<T>) {
   if (!cb) {
     return;
   }
-  const backgroundResponse = response as unknown as BackgroundResponse | undefined;
+  const backgroundResponse = response as unknown as BackgroundResponse<T> | undefined;
   if (chrome.runtime.lastError != null) {
     cb(chrome.runtime.lastError);
     return;
@@ -33,13 +63,20 @@ function handleBackgroundResponse(response: LegacyDynamic, cb?: PopupCallback) {
   cb(null, backgroundResponse != null ? backgroundResponse.result : undefined);
 }
 
-function sendBackgroundMessage(message: BackgroundMessage, cb?: PopupCallback) {
+function sendBackgroundMessage<M extends PopupBackgroundMethod>(
+  message: BackgroundMessage<M>,
+  cb?: PopupCallback<PopupBackgroundMethodResult[M]>
+) {
   chrome.runtime.sendMessage(message, (response: LegacyDynamic) => {
     handleBackgroundResponse(response, cb);
   });
 }
 
-function callBackgroundNoReply(method: string, args: unknown[], cb?: PopupCallback) {
+function callBackgroundNoReply<M extends PopupNoReplyMethod>(
+  method: M,
+  args: PopupBackgroundMethodArgs[M],
+  cb?: PopupCallback
+) {
   chrome.runtime.sendMessage({
     method: method,
     args: args,
@@ -51,14 +88,22 @@ function callBackgroundNoReply(method: string, args: unknown[], cb?: PopupCallba
   if (cb) return cb();
 }
 
-function callBackground(method: string, args: unknown[], cb?: PopupCallback) {
+function callBackground<M extends PopupBackgroundMethod>(
+  method: M,
+  args: PopupBackgroundMethodArgs[M],
+  cb?: PopupCallback<PopupBackgroundMethodResult[M]>
+) {
   sendBackgroundMessage({
     method: method,
     args: args,
   }, cb);
 }
 
-function callBackgroundWithRefresh(method: string, args: unknown[], cb?: PopupCallback) {
+function callBackgroundWithRefresh<M extends PopupBackgroundMethod>(
+  method: M,
+  args: PopupBackgroundMethodArgs[M],
+  cb?: PopupCallback<PopupBackgroundMethodResult[M]>
+) {
   sendBackgroundMessage({
     method: method,
     args: args,
@@ -79,7 +124,7 @@ function cacheActivePageInfo(info?: PopupPageInfo | null) {
 }
 
 (globalThis as typeof globalThis & {OmegaTargetPopup: OmegaTargetPopupApi}).OmegaTargetPopup = {
-  getState(keys: string[], cb?: PopupCallback) {
+  getState(keys: string[], cb?: PopupCallback<Record<string, unknown>>) {
     if (isManifestV3 || typeof localStorage === 'undefined' ||
         !localStorage.length) {
       callBackground('getState', [keys], cb);
@@ -98,7 +143,7 @@ function cacheActivePageInfo(info?: PopupPageInfo | null) {
   applyProfile(name: string, cb?: PopupCallback) {
     callBackgroundNoReply('applyProfile', [name], cb);
   },
-  openOptions(hash?: string, cb?: PopupCallback) {
+  openOptions(hash?: string | null, cb?: PopupCallback) {
     const optionsUrl = chrome.runtime.getURL('options.html');
 
     chrome.tabs.query({
@@ -130,11 +175,11 @@ function cacheActivePageInfo(info?: PopupPageInfo | null) {
       if (cb) return cb();
     });
   },
-  getActivePageInfo(cb: PopupCallback) {
+  getActivePageInfo(cb: PopupCallback<PopupPageInfo>) {
     chrome.tabs.query({active: true, lastFocusedWindow: true}, (tabs) => {
       if (tabs.length === 0 || !tabs[0].url) return cb();
       const args = {tabId: tabs[0].id, url: tabs[0].url};
-      callBackground('getPageInfo', [args], (err: unknown, info: PopupPageInfo) => {
+      callBackground('getPageInfo', [args], (err?: unknown, info?: PopupPageInfo) => {
         if (!err) cacheActivePageInfo(info);
         cb(err, info);
       });
@@ -157,10 +202,11 @@ function cacheActivePageInfo(info?: PopupPageInfo | null) {
   setState(name: string, value: unknown, cb?: PopupCallback) {
     callBackground('setState', [name, value], cb);
   },
-  openManage(domain?: string, profileName?: string, cb?: PopupCallback) {
+  openManage(domainOrCallback?: string | PopupCallback, _profileName?: string, cb?: PopupCallback) {
+    const callback = typeof domainOrCallback === 'function' ? domainOrCallback : cb;
     chrome.tabs.create({
       url: 'chrome://extensions/?id=' + chrome.runtime.id,
-    }, cb);
+    }, callback);
   },
   getMessage: chrome.i18n.getMessage.bind(chrome.i18n),
 };

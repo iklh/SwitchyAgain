@@ -16,6 +16,41 @@ export type BackgroundResponse<T> = {
 
 export type ProfileUpdateResults = Record<string, BackgroundError | unknown>;
 
+type BackgroundMethodArgs = {
+  getAll: [];
+  getState: [name: string | string[]];
+  patch: [patch: Options];
+  renameProfile: [fromName: string, toName: string];
+  replaceRef: [fromName: string, toName: string];
+  reset: [options?: Options | string];
+  resetOptionsSync: [];
+  setOptionsSync: [enabled: boolean, args?: unknown];
+  setState: [items: Record<string, unknown>];
+  updateProfile: [name?: string | string[] | null, bypassCache?: boolean | string];
+};
+
+type BackgroundMethodResult = {
+  getAll: Options;
+  getState: Record<string, unknown>;
+  patch: Options;
+  renameProfile: Options;
+  replaceRef: Options;
+  reset: Options;
+  resetOptionsSync: void;
+  setOptionsSync: void;
+  setState: Record<string, unknown>;
+  updateProfile: Record<string, unknown>;
+};
+
+type BackgroundMethod = keyof BackgroundMethodArgs;
+
+type BackgroundMessage<M extends BackgroundMethod = BackgroundMethod> = {
+  args: BackgroundMethodArgs[M];
+  method: M;
+  noReply?: boolean;
+  refreshActivePage?: boolean;
+};
+
 declare const chrome: {
   i18n?: {
     getMessage?: (key: string, substitutions?: string | string[]) => string;
@@ -26,7 +61,7 @@ declare const chrome: {
     id?: string;
     lastError?: {message?: string};
     sendMessage?: (
-      message: {method: string; args: unknown[]; noReply?: boolean; refreshActivePage?: boolean},
+      message: BackgroundMessage,
       callback: (response?: BackgroundResponse<unknown>) => void
     ) => void;
   };
@@ -60,7 +95,7 @@ function isManifestV3() {
   return Boolean(manifest?.manifest_version && manifest.manifest_version >= 3);
 }
 
-export function callBackground<T>(method: string, ...args: unknown[]): Promise<T> {
+export function callBackground<M extends BackgroundMethod>(method: M, ...args: BackgroundMethodArgs[M]): Promise<BackgroundMethodResult[M]> {
   return new Promise((resolve, reject) => {
     if (!chrome?.runtime?.sendMessage) {
       reject(new Error('Extension runtime is unavailable.'));
@@ -75,12 +110,12 @@ export function callBackground<T>(method: string, ...args: unknown[]): Promise<T
         reject(decodeBackgroundError(response.error));
         return;
       }
-      resolve(response?.result as T);
+      resolve(response?.result as BackgroundMethodResult[M]);
     });
   });
 }
 
-export function callBackgroundNoReply(method: string, ...args: unknown[]) {
+export function callBackgroundNoReply<M extends BackgroundMethod>(method: M, ...args: BackgroundMethodArgs[M]) {
   chrome?.runtime?.sendMessage?.({
     method,
     args,
@@ -115,11 +150,11 @@ export function decodeBackgroundError(error: unknown): BackgroundError | unknown
 }
 
 export function loadOptions() {
-  return callBackground<Options>('getAll');
+  return callBackground('getAll');
 }
 
 export function patchOptions(patch: Options) {
-  return callBackground<Options>('patch', patch);
+  return callBackground('patch', patch);
 }
 
 export function patchAndLoadOptions(patch: Options) {
@@ -127,15 +162,15 @@ export function patchAndLoadOptions(patch: Options) {
 }
 
 export function resetOptions(options?: Options | string) {
-  return callBackground<Options>('reset', options);
+  return callBackground('reset', options);
 }
 
 export function setOptionsSync(enabled: boolean, args?: unknown) {
-  return callBackground<void>('setOptionsSync', enabled, args);
+  return callBackground('setOptionsSync', enabled, args);
 }
 
 export function resetOptionsSync() {
-  return callBackground<void>('resetOptionsSync');
+  return callBackground('resetOptionsSync');
 }
 
 function stateKey(name: string) {
@@ -159,11 +194,12 @@ export function getState<T = unknown>(name: string): Promise<T | undefined>;
 export function getState<T = unknown>(name: string[]): Promise<Array<T | undefined>>;
 export function getState<T = unknown>(name: string | string[]) {
   if (isManifestV3()) {
-    return callBackground<Record<string, T>>('getState', name).then((result) => {
+    return callBackground('getState', name).then((result) => {
+      const typedResult = result as Record<string, T>;
       if (Array.isArray(name)) {
-        return name.map((key) => result?.[key]);
+        return name.map((key) => typedResult?.[key]);
       }
-      return result?.[name];
+      return typedResult?.[name];
     });
   }
   if (Array.isArray(name)) {
@@ -174,7 +210,7 @@ export function getState<T = unknown>(name: string | string[]) {
 
 export function setState<T = unknown>(name: string, value: T) {
   if (isManifestV3()) {
-    return callBackground<Record<string, T>>('setState', {[name]: value}).then(() => value);
+    return callBackground('setState', {[name]: value}).then(() => value);
   }
   setLocalState(name, value);
   return Promise.resolve(value);
@@ -190,15 +226,15 @@ export function lastUrl(url?: string) {
 }
 
 export function renameProfile(fromName: string, toName: string) {
-  return callBackground<Options>('renameProfile', fromName, toName).then(loadOptions);
+  return callBackground('renameProfile', fromName, toName).then(loadOptions);
 }
 
 export function replaceRef(fromName: string, toName: string) {
-  return callBackground<Options>('replaceRef', fromName, toName).then(loadOptions);
+  return callBackground('replaceRef', fromName, toName).then(loadOptions);
 }
 
 export function updateProfile(name?: string, bypassCache = 'bypass_cache') {
-  return callBackground<Record<string, unknown>>('updateProfile', name, bypassCache).then((results) => {
+  return callBackground('updateProfile', name, bypassCache).then((results) => {
     const decoded: ProfileUpdateResults = {};
     for (const key of Object.keys(results || {})) {
       decoded[key] = decodeBackgroundError(results[key]);

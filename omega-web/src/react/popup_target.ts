@@ -33,27 +33,32 @@ export type PopupState = {
 
 export type PopupCondition = Record<string, unknown> | Array<Record<string, unknown>>;
 
+export type PopupCallback<T = unknown> = (error?: unknown, result?: T) => void;
+
 export type PopupTarget = {
   addCondition?: (
     condition: PopupCondition,
     profileName: string,
     addToBottom: boolean,
-    callback?: (error?: unknown) => void
+    callback?: PopupCallback
   ) => void;
-  addProfile?: (profile: Profile, callback?: (error?: unknown) => void) => void;
-  addTempRule?: (domain: string, profileName: string, callback?: (error?: unknown) => void) => void;
-  applyProfile?: (name: string, callback?: (error?: unknown) => void) => void;
-  getActivePageInfo?: (callback: (error?: unknown, info?: PageInfo) => void) => void;
+  addProfile?: (profile: Profile, callback?: PopupCallback) => void;
+  addTempRule?: (domain: string, profileName: string, callback?: PopupCallback) => void;
+  applyProfile?: (name: string, callback?: PopupCallback) => void;
+  getActivePageInfo?: (callback: PopupCallback<PageInfo>) => void;
   getMessage?: (key: string, substitutions?: string | string[]) => string;
-  getState?: (keys: string[], callback: (error?: unknown, state?: PopupState) => void) => void;
-  openManage?: (callback?: () => void) => void;
-  openOptions?: (hash?: string | null, callback?: () => void) => void;
+  getState?: (keys: string[], callback: PopupCallback<PopupState>) => void;
+  openManage?: {
+    (callback?: PopupCallback): void;
+    (domain?: string, profileName?: string, callback?: PopupCallback): void;
+  };
+  openOptions?: (hash?: string | null, callback?: PopupCallback) => void;
   setDefaultProfile?: (
     profileName: string,
     defaultProfileName: string,
-    callback?: (error?: unknown) => void
+    callback?: PopupCallback
   ) => void;
-  setState?: (name: string, value: unknown, callback?: (error?: unknown) => void) => void;
+  setState?: (name: string, value: unknown, callback?: PopupCallback) => void;
 };
 
 declare global {
@@ -92,7 +97,7 @@ export function waitForPopupTarget() {
 }
 
 export function callbackPromise<T>(
-  invoke: (callback: (error?: unknown, value?: T) => void) => void
+  invoke: (callback: PopupCallback<T>) => void
 ) {
   return new Promise<T>((resolve, reject) => {
     let settled = false;
