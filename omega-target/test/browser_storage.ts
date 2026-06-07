@@ -1,14 +1,12 @@
-let chai: any, should: any;
+import chai from 'chai';
+import Promise from 'bluebird';
+import * as BrowserStorageModule from '../build-ts/browser_storage';
 
-chai = require('chai');
-
-should = chai.should();
+const should = chai.should();
 
 describe('BrowserStorage', function() {
-  let BrowserStorage: any, Promise: any;
-
-  BrowserStorage = require('../build-ts/browser_storage').default;
-  Promise = require('bluebird');
+  let BrowserStorage: any;
+  BrowserStorage = BrowserStorageModule.default;
 
   function createStorage(data: Record<string, any>, ready: any): any {
     let Storage: any;

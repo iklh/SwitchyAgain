@@ -13,11 +13,11 @@
     "omega-pac": "./build-ts/omega_pac_shim.js"
   },
   "scripts": {
-    "build": "npm run build:ts && node ../scripts/write-cjs-wrapper.mjs --module=./build-ts/index.js --outfile=index.js && node ../scripts/bundle-esbuild.mjs --entry=src/index.ts --outfile=omega_target.min.js --global-name=OmegaTarget --target=es2015 --minify",
+    "build": "npm run build:ts && node ../scripts/bundle-esbuild.mjs --entry=src/index.ts --outfile=index.js --format=cjs --platform=node --target=es2015 --external=bluebird,buffer,jsondiffpatch,limiter,omega-pac && node ../scripts/bundle-esbuild.mjs --entry=src/index.ts --outfile=omega_target.min.js --global-name=OmegaTarget --target=es2015 --minify",
     "build:ts": "tsc -p tsconfig.build.json",
-    "build:test": "tsc -p tsconfig.test.json",
+    "build:test": "tsc -p tsconfig.test.json --noEmit && node ../scripts/build-test-files.mjs --test-dir=test --out-dir=build-test",
     "dev": "npm link omega-pac && npm link",
     "test": "npm run build:ts && npm run build:test && NODE_PATH=.. TZ=Europe/London _mocha --reporter spec build-test/*.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit"
+    "typecheck": "npm run build:ts && tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit"
   }
 }

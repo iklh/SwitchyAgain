@@ -1,12 +1,9 @@
-let chai: any, should: any;
+import chai from 'chai';
+import * as RuleList from '../build-ts/rule_list';
 
-chai = require('chai');
-
-should = chai.should();
+const should = chai.should();
 
 describe('RuleList', function() {
-  let RuleList: any;
-  RuleList = require('../build-ts/rule_list');
   describe('AutoProxy', function() {
     let parse;
     parse = RuleList['AutoProxy'].parse;

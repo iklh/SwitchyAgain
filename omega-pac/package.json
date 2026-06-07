@@ -8,11 +8,11 @@
     "tldjs": "^1.5.2"
   },
   "scripts": {
-    "build": "npm run build:ts && node ../scripts/write-cjs-wrapper.mjs --module=./build-ts/index.js --outfile=index.js && node ../scripts/bundle-esbuild.mjs --entry=src/index.ts --outfile=omega_pac.min.js --global-name=OmegaPac --target=es2015 --minify",
+    "build": "npm run build:ts && node ../scripts/bundle-esbuild.mjs --entry=src/index.ts --outfile=index.js --format=cjs --platform=node --target=es2015 --external=ip-address,tldjs && node ../scripts/bundle-esbuild.mjs --entry=src/index.ts --outfile=omega_pac.min.js --global-name=OmegaPac --target=es2015 --minify",
     "build:ts": "tsc -p tsconfig.build.json",
-    "build:test": "tsc -p tsconfig.test.json",
+    "build:test": "tsc -p tsconfig.test.json --noEmit && node ../scripts/build-test-files.mjs --test-dir=test --out-dir=build-test",
     "dev": "npm link",
     "test": "npm run build:ts && npm run build:test && TZ=Europe/London _mocha --reporter spec build-test/*.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit"
+    "typecheck": "npm run build:ts && tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit"
   }
 }

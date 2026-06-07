@@ -2,15 +2,11 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "allowJs": false,
-    "declaration": false,
     "ignoreDeprecations": "6.0",
-    "module": "commonjs",
+    "module": "es2020",
     "moduleDetection": "force",
     "noImplicitAny": true,
-    "noEmit": false,
-    "outDir": "build-test",
-    "rootDir": "test",
-    "sourceMap": false,
+    "noEmit": true,
     "target": "es2015"
   },
   "include": [

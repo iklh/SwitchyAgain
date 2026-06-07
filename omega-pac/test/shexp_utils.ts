@@ -1,12 +1,9 @@
-let chai, should;
+import chai from 'chai';
+import * as ShexpUtils from '../build-ts/shexp_utils';
 
-chai = require('chai');
-
-should = chai.should();
+const should = chai.should();
 
 describe('ShexpUtils', function() {
-  let ShexpUtils;
-  ShexpUtils = require('../build-ts/shexp_utils');
   describe('#escapeSlash', function() {
     it('should escape all forward slashes', function() {
       let regex;

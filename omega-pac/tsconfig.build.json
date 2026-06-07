@@ -2,10 +2,10 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "allowJs": false,
-    "declaration": false,
+    "declaration": true,
     "ignoreDeprecations": "6.0",
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "es2020",
+    "moduleResolution": "bundler",
     "noEmit": false,
     "outDir": "build-ts",
     "rootDir": "src",

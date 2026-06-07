@@ -1,12 +1,10 @@
-let chai, should;
+import chai from 'chai';
+import * as PacGenerator from '../build-ts/pac_generator';
 
-chai = require('chai');
-
-should = chai.should();
+const should = chai.should();
 
 describe('PacGenerator', function() {
-  let PacGenerator, options;
-  PacGenerator = require('../build-ts/pac_generator');
+  let options;
   options = {
     '+auto': {
       name: 'auto',
@@ -80,7 +78,7 @@ describe('PacGenerator', function() {
   return it('should be able to compress pac scripts', function() {
     let ast, func, pac, result;
     ast = PacGenerator.script(options, 'auto');
-    pac = PacGenerator.compress(ast).print_to_string();
+    pac = (PacGenerator.compress(ast) as any).print_to_string();
     pac.should.not.be.empty;
     func = eval("(function () { " + pac + "\n return FindProxyForURL; })()");
     result = func('http://www.example.com/', 'www.example.com');

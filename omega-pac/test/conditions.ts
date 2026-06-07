@@ -1,15 +1,14 @@
-let chai: any, lolex: any, should: any;
+import chai from 'chai';
+import lolex from 'lolex';
+import * as ConditionsModule from '../build-ts/conditions';
+import * as UglifyModule from '../build-ts/uglifyjs_shim';
 
-chai = require('chai');
-
-should = chai.should();
-
-lolex = require('lolex');
+const should = chai.should();
 
 describe('Conditions', function() {
   let Conditions: any, U2: any, testCond: (condition: any, request: any, should_match?: any) => any;
-  Conditions = require('../build-ts/conditions').default;
-  U2 = require('../build-ts/uglifyjs_shim').default;
+  Conditions = ConditionsModule.default;
+  U2 = UglifyModule.default;
   testCond = function(condition: any, request: any, should_match?: any): any {
     let compileResult, condExpr, friendlyError, matchResult, o_request, testFunc;
     o_request = request;

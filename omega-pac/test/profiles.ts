@@ -1,8 +1,9 @@
-let chai: any, should: any;
+import chai from 'chai';
+import * as ConditionsModule from '../build-ts/conditions';
+import * as ProfilesModule from '../build-ts/profiles';
+import * as UglifyModule from '../build-ts/uglifyjs_shim';
 
-chai = require('chai');
-
-should = chai.should();
+const should = chai.should();
 
 describe('Profiles', function() {
   let Conditions: any,
@@ -10,9 +11,9 @@ describe('Profiles', function() {
     U2: any,
     ruleListResult: (profileName: any, source: any) => any,
     testProfile: (profile: any, request: any, expected: any, expectedCompiled?: any) => any;
-  Profiles = require('../build-ts/profiles').default;
-  Conditions = require('../build-ts/conditions').default;
-  U2 = require('../build-ts/uglifyjs_shim').default;
+  Profiles = ProfilesModule.default;
+  Conditions = ConditionsModule.default;
+  U2 = UglifyModule.default;
   ruleListResult = function(profileName: any, source: any): any {
     return {
       profileName: profileName,

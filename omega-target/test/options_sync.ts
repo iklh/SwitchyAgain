@@ -1,25 +1,24 @@
-let chai: any, should: any, sinon: any,
-  slice = [].slice;
+import chai from 'chai';
+import Promise from 'bluebird';
+import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
+import * as LogModule from '../build-ts/log';
+import * as OptionsSyncModule from '../build-ts/options_sync';
+import * as StorageModule from '../build-ts/storage';
 
-chai = require('chai');
-
-should = chai.should();
-
-sinon = require('sinon');
-
-chai.use(require('sinon-chai'));
+const should = chai.should();
+const slice = [].slice;
+chai.use(sinonChai);
 
 describe('OptionsSync', function() {
   let Log: any,
     OptionsSync: any,
-    Promise: any,
     Storage: any,
     hookPost: (...args: any[]) => any,
     hookPostBasic: (func: (...args: any[]) => any, hook: (...args: any[]) => any) => (...args: any[]) => any;
-  OptionsSync = require('../build-ts/options_sync').default;
-  Storage = require('../build-ts/storage').default;
-  Log = require('../build-ts/log').default;
-  Promise = require('bluebird');
+  OptionsSync = OptionsSyncModule.default;
+  Storage = StorageModule.default;
+  Log = LogModule.default;
   before(function() {
     return sinon.stub(Log, 'log');
   });

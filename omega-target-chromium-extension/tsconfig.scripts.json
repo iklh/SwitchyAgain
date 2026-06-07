@@ -5,6 +5,7 @@
     "declaration": false,
     "ignoreDeprecations": "6.0",
     "module": "none",
+    "moduleResolution": "node",
     "noEmit": false,
     "outDir": "build-ts/js",
     "rootDir": "src/js",

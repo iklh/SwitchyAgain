@@ -1,10 +1,7 @@
-let Utils, chai, should;
+import chai from 'chai';
+import * as Utils from '../build-ts/utils';
 
-chai = require('chai');
-
-should = chai.should();
-
-Utils = require('../build-ts/utils');
+const should = chai.should();
 
 describe('getBaseDomain', function() {
   let getBaseDomain;
