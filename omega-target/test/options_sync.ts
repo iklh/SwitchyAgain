@@ -273,7 +273,7 @@ describe('OptionsSync', function() {
       });
       spyOn(storage, 'set');
       sync = new OptionsSync(remote);
-      return sync.copyTo(storage);
+      sync.copyTo(storage).catch(done);
     });
     return it('should merge with local as base', function(done) {
       let check: () => void, remote: any, storage: any, sync: any;

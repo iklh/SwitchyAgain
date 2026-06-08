@@ -4,7 +4,7 @@
   "private": true,
   "main": "./index.js",
   "dependencies": {
-    "bluebird": "^2.3.2",
+    "bluebird": "^3.7.2",
     "jsondiffpatch": "^0.7.6",
     "limiter": "^3.0.0",
     "omega-pac": "0.0.1"
