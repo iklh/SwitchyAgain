@@ -119,7 +119,11 @@ describe('OptionsSync', function() {
   });
   describe('#requestPush', function() {
     let unlimited;
-    unlimited = new OptionsSync.TokenBucket();
+    unlimited = new OptionsSync.TokenBucket({
+      bucketSize: 0,
+      tokensPerInterval: 0,
+      interval: 'minute'
+    });
     it('should store pendingChanges', function() {
       let sync;
       sync = new OptionsSync();

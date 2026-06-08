@@ -6,11 +6,19 @@ declare module 'bluebird' {
 }
 
 declare module 'limiter' {
+  type Interval = number | 'second' | 'sec' | 'minute' | 'min' | 'hour' | 'hr' | 'day';
+  type TokenBucketOptions = {
+    bucketSize: number;
+    tokensPerInterval: number;
+    interval: Interval;
+    parentBucket?: TokenBucket;
+  };
+
   export class TokenBucket {
     clear?: () => unknown;
     content: number;
-    constructor(bucketSize: number, tokensPerInterval: number, interval: string, parentBucket: unknown);
-    removeTokens(count: number, callback: () => unknown): unknown;
+    constructor(options: TokenBucketOptions);
+    removeTokens(count: number): Promise<number>;
     tryRemoveTokens(count: number): boolean;
   }
 }

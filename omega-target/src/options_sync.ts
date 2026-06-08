@@ -21,7 +21,7 @@ import type {
 type TokenBucketLike = {
   clear?: () => unknown;
   content: number;
-  removeTokens: (count: number, callback: () => unknown) => unknown;
+  removeTokens: (count: number) => PromiseLike<unknown>;
   tryRemoveTokens: (count: number) => boolean;
 };
 
@@ -90,7 +90,11 @@ class OptionsSync {
     this._bucket = _bucket;
     this._pending = {};
     if (this._bucket == null) {
-      this._bucket = new TokenBucket(10, 10, 'minute', null) as TokenBucketLike;
+      this._bucket = new TokenBucket({
+        bucketSize: 10,
+        tokensPerInterval: 10,
+        interval: 'minute'
+      }) as TokenBucketLike;
     }
     if (this._bucket.clear == null) {
       this._bucket.clear = () => {
@@ -184,7 +188,7 @@ class OptionsSync {
       return;
     }
     this._waiting = true;
-    return this._bucket!.removeTokens(1, () => {
+    return Promise.resolve(this._bucket!.removeTokens(1)).then(() => {
       return this.storage!.get(null).then((base: StorageItems) => {
         const changes = this._pending;
         this._pending = {};
