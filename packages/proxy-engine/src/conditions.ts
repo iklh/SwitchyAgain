@@ -1,6 +1,6 @@
 import type {Condition, PacRequest} from './types';
 import type {AttachedCache as AttachedCacheType} from './utils';
-import U2 from './uglifyjs_shim';
+import * as Ast from './pac_ast';
 import {Address4, Address6} from 'ip-address';
 import {escapeSlash, shExp2RegExp} from './shexp_utils';
 import {parseUrlCompat} from './url_utils';
@@ -242,19 +242,9 @@ const ConditionsApi: ConditionsApiType = {
       regexp = ConditionsApi.safeRegex(escapeSlash(regexp));
     }
     if (typeof expr === 'string') {
-      expr = new U2.AST_SymbolRef({
-        name: expr
-      });
+      expr = Ast.symbol(expr);
     }
-    return new U2.AST_Call({
-      args: [expr],
-      expression: new U2.AST_Dot({
-        property: 'test',
-        expression: new U2.AST_RegExp({
-          value: regexp
-        })
-      })
-    });
+    return Ast.call(Ast.dot(Ast.regexp(regexp), 'test'), [expr]);
   },
   isInt(num: unknown): num is number {
     return typeof num === 'number' && !isNaN(num) && parseFloat(String(num)) === parseInt(String(num), 10);
@@ -262,95 +252,37 @@ const ConditionsApi: ConditionsApiType = {
   between(val: UglifyNode, min: any, max: any, comment?: string): UglifyNode {
     if (min === max) {
       if (typeof min === 'number') {
-        min = new U2.AST_Number({
-          value: min
-        });
+        min = Ast.num(min);
       }
-      return ConditionsApi.comment(comment, new U2.AST_Binary({
-        left: val,
-        operator: '===',
-        right: min
-      }));
+      return ConditionsApi.comment(comment, Ast.binary(val, '===', min));
     }
     if (min > max) {
-      return ConditionsApi.comment(comment, new U2.AST_False);
+      return ConditionsApi.comment(comment, Ast.falseNode());
     }
     if (ConditionsApi.isInt(min) && ConditionsApi.isInt(max) && max - min < 32) {
       comment || (comment = min + " <= value && value <= " + max);
       const tmpl = "0123456789abcdefghijklmnopqrstuvwxyz";
       const str = max < tmpl.length ? tmpl.slice(min, max + 1) : tmpl.slice(0, max - min + 1);
-      const pos = min === 0 ? val : new U2.AST_Binary({
-        left: val,
-        operator: '-',
-        right: new U2.AST_Number({
-          value: min
-        })
-      });
-      return ConditionsApi.comment(comment, new U2.AST_Binary({
-        left: new U2.AST_Call({
-          expression: new U2.AST_Dot({
-            expression: new U2.AST_String({
-              value: str
-            }),
-            property: 'charCodeAt'
-          }),
-          args: [pos]
-        }),
-        operator: '>',
-        right: new U2.AST_Number({
-          value: 0
-        })
-      }));
+      const pos = min === 0 ? val : Ast.binary(val, '-', Ast.num(min));
+      return ConditionsApi.comment(comment, Ast.binary(
+        Ast.call(Ast.dot(Ast.str(str), 'charCodeAt'), [pos]),
+        '>',
+        Ast.num(0)
+      ));
     }
     if (typeof min === 'number') {
-      min = new U2.AST_Number({
-        value: min
-      });
+      min = Ast.num(min);
     }
     if (typeof max === 'number') {
-      max = new U2.AST_Number({
-        value: max
-      });
+      max = Ast.num(max);
     }
-    return ConditionsApi.comment(comment, new U2.AST_Call({
-      args: [val, min, max],
-      expression: new U2.AST_Function({
-        argnames: [
-          new U2.AST_SymbolFunarg({
-            name: 'value'
-          }), new U2.AST_SymbolFunarg({
-            name: 'min'
-          }), new U2.AST_SymbolFunarg({
-            name: 'max'
-          })
-        ],
-        body: [
-          new U2.AST_Return({
-            value: new U2.AST_Binary({
-              left: new U2.AST_Binary({
-                left: new U2.AST_SymbolRef({
-                  name: 'min'
-                }),
-                operator: '<=',
-                right: new U2.AST_SymbolRef({
-                  name: 'value'
-                })
-              }),
-              operator: '&&',
-              right: new U2.AST_Binary({
-                left: new U2.AST_SymbolRef({
-                  name: 'value'
-                }),
-                operator: '<=',
-                right: new U2.AST_SymbolRef({
-                  name: 'max'
-                })
-              })
-            })
-          })
-        ]
-      })
-    }));
+    return ConditionsApi.comment(comment, Ast.call(Ast.fn(['value', 'min', 'max'], [
+      Ast.returnStmt(Ast.binary(
+        Ast.binary(Ast.symbol('min'), '<=', Ast.symbol('value')),
+        '&&',
+        Ast.binary(Ast.symbol('value'), '<=', Ast.symbol('max'))
+      ))
+    ]), [val, min, max]));
   },
   parseIp(ip: string): IpAddress | null {
     if (ip.charCodeAt(0) === '['.charCodeAt(0)) {
@@ -599,58 +531,14 @@ const ConditionsApi: ConditionsApiType = {
     return value > 0 && value <= 65535;
   },
   _portEqualsAst(port: string): UglifyNode {
-    return new U2.AST_Binary({
-      left: new U2.AST_SymbolRef({
-        name: 'port'
-      }),
-      operator: '===',
-      right: new U2.AST_String({
-        value: port
-      })
-    });
+    return Ast.binary(Ast.symbol('port'), '===', Ast.str(port));
   },
   _hostIsLocalAst(): UglifyNode {
-    return new U2.AST_Binary({
-      left: new U2.AST_Binary({
-        left: new U2.AST_Call({
-          expression: new U2.AST_Dot({
-            expression: new U2.AST_SymbolRef({
-              name: 'host'
-            }),
-            property: 'indexOf'
-          }),
-          args: [
-            new U2.AST_String({
-              value: '.'
-            })
-          ]
-        }),
-        operator: '<',
-        right: new U2.AST_Number({
-          value: 0
-        })
-      }),
-      operator: '&&',
-      right: new U2.AST_Binary({
-        left: new U2.AST_Call({
-          expression: new U2.AST_Dot({
-            expression: new U2.AST_SymbolRef({
-              name: 'host'
-            }),
-            property: 'indexOf'
-          }),
-          args: [
-            new U2.AST_String({
-              value: ':'
-            })
-          ]
-        }),
-        operator: '<',
-        right: new U2.AST_Number({
-          value: 0
-        })
-      })
-    });
+    return Ast.binary(
+      Ast.binary(Ast.call(Ast.dot(Ast.symbol('host'), 'indexOf'), [Ast.str('.')]), '<', Ast.num(0)),
+      '&&',
+      Ast.binary(Ast.call(Ast.dot(Ast.symbol('host'), 'indexOf'), [Ast.str(':')]), '<', Ast.num(0))
+    );
   },
   ipv6Max: new Address6('::/0').endAddress().correctForm(),
   localHosts: ["127.0.0.1", "[::1]", "localhost"],
@@ -703,7 +591,7 @@ const ConditionsApi: ConditionsApiType = {
         return true;
       },
       compile(condition) {
-        return new U2.AST_True;
+        return Ast.trueNode();
       },
       str(condition) {
         return '';
@@ -721,7 +609,7 @@ const ConditionsApi: ConditionsApiType = {
         return false;
       },
       compile(condition) {
-        return new U2.AST_False;
+        return Ast.falseNode();
       },
       fromStr(str, condition) {
         if (str.length > 0) {
@@ -961,19 +849,11 @@ const ConditionsApi: ConditionsApiType = {
         cache = cache.analyzed;
         const pattern = cache.pattern;
         if (cache.kind === 'invalid' || pattern == null || !pattern.valid) {
-          return new U2.AST_False;
+          return Ast.falseNode();
         }
         const conditions = [];
         if (pattern.scheme != null) {
-          conditions.push(new U2.AST_Binary({
-            left: new U2.AST_SymbolRef({
-              name: 'scheme'
-            }),
-            operator: '===',
-            right: new U2.AST_String({
-              value: pattern.scheme
-            })
-          }));
+          conditions.push(Ast.binary(Ast.symbol('scheme'), '===', Ast.str(pattern.scheme)));
         }
         if (pattern.port != null) {
           conditions.push(this._portEqualsAst(pattern.port));
@@ -984,15 +864,7 @@ const ConditionsApi: ConditionsApiType = {
             break;
           case 'ipv4Literal':
           case 'ipv6Literal':
-            conditions.push(new U2.AST_Binary({
-              left: new U2.AST_SymbolRef({
-                name: 'host'
-              }),
-              operator: '===',
-              right: new U2.AST_String({
-                value: cache.ip.ip
-              })
-            }));
+            conditions.push(Ast.binary(Ast.symbol('host'), '===', Ast.str(cache.ip.ip)));
             break;
           case 'ipv4Cidr':
           case 'ipv6Cidr':
@@ -1004,15 +876,11 @@ const ConditionsApi: ConditionsApiType = {
             break;
         }
         if (conditions.length === 0) {
-          return new U2.AST_True;
+          return Ast.trueNode();
         }
         let result = conditions[0];
         for (let i = 1; i < conditions.length; i++) {
-          result = new U2.AST_Binary({
-            left: result,
-            operator: '&&',
-            right: conditions[i]
-          });
+          result = Ast.binary(result, '&&', conditions[i]);
         }
         return result;
       }
@@ -1026,37 +894,15 @@ const ConditionsApi: ConditionsApiType = {
         return request.scheme === 'http' && request.url.indexOf(condition.pattern) >= 0;
       },
       compile(condition) {
-        return new U2.AST_Binary({
-          left: new U2.AST_Binary({
-            left: new U2.AST_SymbolRef({
-              name: 'scheme'
-            }),
-            operator: '===',
-            right: new U2.AST_String({
-              value: 'http'
-            })
-          }),
-          operator: '&&',
-          right: new U2.AST_Binary({
-            left: new U2.AST_Call({
-              expression: new U2.AST_Dot({
-                expression: new U2.AST_SymbolRef({
-                  name: 'url'
-                }),
-                property: 'indexOf'
-              }),
-              args: [
-                new U2.AST_String({
-                  value: condition.pattern
-                })
-              ]
-            }),
-            operator: '>=',
-            right: new U2.AST_Number({
-              value: 0
-            })
-          })
-        });
+        return Ast.binary(
+          Ast.binary(Ast.symbol('scheme'), '===', Ast.str('http')),
+          '&&',
+          Ast.binary(
+            Ast.call(Ast.dot(Ast.symbol('url'), 'indexOf'), [Ast.str(condition.pattern)]),
+            '>=',
+            Ast.num(0)
+          )
+        );
       }
     },
     'IpCondition': {
@@ -1103,101 +949,42 @@ const ConditionsApi: ConditionsApiType = {
       compile(condition, cache) {
         cache = cache.analyzed;
         if (cache.invalid) {
-          return new U2.AST_False;
+          return Ast.falseNode();
         }
-        const hostLooksLikeIp = isIpv4Address(cache.addr) ? new U2.AST_Binary({
-          left: new U2.AST_Sub({
-            expression: new U2.AST_SymbolRef({
-              name: 'host'
-            }),
-            property: new U2.AST_Binary({
-              left: new U2.AST_Dot({
-                expression: new U2.AST_SymbolRef({
-                  name: 'host'
-                }),
-                property: 'length'
-              }),
-              operator: '-',
-              right: new U2.AST_Number({
-                value: 1
-              })
-            })
-          }),
-          operator: '>=',
-          right: new U2.AST_Number({
-            value: 0
-          })
-        }) : new U2.AST_Binary({
-          left: new U2.AST_Call({
-            expression: new U2.AST_Dot({
-              expression: new U2.AST_SymbolRef({
-                name: 'host'
-              }),
-              property: 'indexOf'
-            }),
-            args: [
-              new U2.AST_String({
-                value: ':'
-              })
-            ]
-          }),
-          operator: '>=',
-          right: new U2.AST_Number({
-            value: 0
-          })
-        });
+        const hostLooksLikeIp = isIpv4Address(cache.addr)
+          ? Ast.binary(
+            Ast.sub(
+              Ast.symbol('host'),
+              Ast.binary(Ast.dot(Ast.symbol('host'), 'length'), '-', Ast.num(1))
+            ),
+            '>=',
+            Ast.num(0)
+          )
+          : Ast.binary(
+            Ast.call(Ast.dot(Ast.symbol('host'), 'indexOf'), [Ast.str(':')]),
+            '>=',
+            Ast.num(0)
+          );
         if (cache.addr.subnetMask === 0) {
           return hostLooksLikeIp;
         }
-        let hostIsInNet = new U2.AST_Call({
-          expression: new U2.AST_SymbolRef({
-            name: 'isInNet'
-          }),
-          args: [
-            new U2.AST_SymbolRef({
-              name: 'host'
-            }), new U2.AST_String({
-              value: cache.normalized
-            }), new U2.AST_String({
-              value: cache.mask
-            })
-          ]
-        });
+        let hostIsInNet = Ast.call(Ast.symbol('isInNet'), [
+          Ast.symbol('host'),
+          Ast.str(cache.normalized),
+          Ast.str(cache.mask)
+        ]);
         if (!isIpv4Address(cache.addr)) {
-          const hostIsInNetEx = new U2.AST_Call({
-            expression: new U2.AST_SymbolRef({
-              name: 'isInNetEx'
-            }),
-            args: [
-              new U2.AST_SymbolRef({
-                name: 'host'
-              }), new U2.AST_String({
-                value: cache.normalized + cache.addr.subnet
-              })
-            ]
-          });
-          hostIsInNet = new U2.AST_Conditional({
-            condition: new U2.AST_Binary({
-              left: new U2.AST_UnaryPrefix({
-                operator: 'typeof',
-                expression: new U2.AST_SymbolRef({
-                  name: 'isInNetEx'
-                })
-              }),
-              operator: '===',
-              right: new U2.AST_String({
-                value: 'function'
-              })
-            }),
-            consequent: hostIsInNetEx,
-            alternative: hostIsInNet
-          });
+          const hostIsInNetEx = Ast.call(Ast.symbol('isInNetEx'), [
+            Ast.symbol('host'),
+            Ast.str(cache.normalized + cache.addr.subnet)
+          ]);
+          hostIsInNet = Ast.conditional(
+            Ast.binary(Ast.unaryPrefix('typeof', Ast.symbol('isInNetEx')), '===', Ast.str('function')),
+            hostIsInNetEx,
+            hostIsInNet
+          );
         }
-        return new U2.AST_Binary({
-          left: hostLooksLikeIp,
-          operator: '&&',
-          right: hostIsInNet
-        });
+        return Ast.binary(hostLooksLikeIp, '&&', hostIsInNet);
       },
       str(condition) {
         const addr = this.parseIp(condition.ip + '/' + condition.prefixLength);
@@ -1240,22 +1027,10 @@ const ConditionsApi: ConditionsApiType = {
         return dotCount >= condition.minValue;
       },
       compile(condition) {
-        const val = new U2.AST_Dot({
-          property: 'length',
-          expression: new U2.AST_Call({
-            args: [
-              new U2.AST_String({
-                value: '.'
-              })
-            ],
-            expression: new U2.AST_Dot({
-              expression: new U2.AST_SymbolRef({
-                name: 'host'
-              }),
-              property: 'split'
-            })
-          })
-        });
+        const val = Ast.dot(
+          Ast.call(Ast.dot(Ast.symbol('host'), 'split'), [Ast.str('.')]),
+          'length'
+        );
         return this.between(val, condition.minValue + 1, condition.maxValue + 1, condition.minValue + " <= hostLevels <= " + condition.maxValue);
       },
       str(condition) {
@@ -1287,34 +1062,13 @@ const ConditionsApi: ConditionsApiType = {
         return condition.startDay <= day && day <= condition.endDay;
       },
       compile(condition) {
-        const getDay = new U2.AST_Call({
-          args: [],
-          expression: new U2.AST_Dot({
-            property: 'getDay',
-            expression: new U2.AST_New({
-              args: [],
-              expression: new U2.AST_SymbolRef({
-                name: 'Date'
-              })
-            })
-          })
-        });
+        const getDay = Ast.call(Ast.dot(Ast.newExpr(Ast.symbol('Date')), 'getDay'));
         if (condition.days) {
-          return new U2.AST_Binary({
-            left: new U2.AST_Call({
-              expression: new U2.AST_Dot({
-                expression: new U2.AST_String({
-                  value: condition.days
-                }),
-                property: 'charCodeAt'
-              }),
-              args: [getDay]
-            }),
-            operator: '>',
-            right: new U2.AST_Number({
-              value: 64
-            })
-          });
+          return Ast.binary(
+            Ast.call(Ast.dot(Ast.str(condition.days), 'charCodeAt'), [getDay]),
+            '>',
+            Ast.num(64)
+          );
         } else {
           return this.between(getDay, condition.startDay, condition.endDay);
         }
@@ -1353,18 +1107,7 @@ const ConditionsApi: ConditionsApiType = {
         return condition.startHour <= hour && hour <= condition.endHour;
       },
       compile(condition) {
-        const val = new U2.AST_Call({
-          args: [],
-          expression: new U2.AST_Dot({
-            property: 'getHours',
-            expression: new U2.AST_New({
-              args: [],
-              expression: new U2.AST_SymbolRef({
-                name: 'Date'
-              })
-            })
-          })
-        });
+        const val = Ast.call(Ast.dot(Ast.newExpr(Ast.symbol('Date')), 'getHours'));
         return this.between(val, condition.startHour, condition.endHour);
       },
       str(condition) {

@@ -13,7 +13,7 @@ import type {AttachedCache as AttachedCacheType} from './utils';
 import Conditions from './conditions';
 import * as RuleList from './rule_list';
 import * as ShexpUtils from './shexp_utils';
-import U2 from './uglifyjs_shim';
+import * as Ast from './pac_ast';
 import {AttachedCache, Revision} from './utils';
 
 const hasProp = Object.prototype.hasOwnProperty;
@@ -100,19 +100,6 @@ type ProfilesApiType = {
   updateUrl(profile: ProfileRecord): string | undefined;
   validResultProfilesFor(profile: string | ProfileRecord, options: OptionsMap): Profile[];
 };
-
-class AST_Raw extends U2.AST_SymbolRef {
-  aborts: () => boolean;
-
-  constructor(raw: string) {
-    super({
-      name: raw
-    });
-    this.aborts = () => {
-      return false;
-    };
-  }
-}
 
 const ProfilesApi: ProfilesApiType = {
   builtinProfiles: {
@@ -228,9 +215,7 @@ const ProfilesApi: ProfilesApiType = {
     if (key === '+direct') {
       key = ProfilesApi.pacResult();
     }
-    return new U2.AST_String({
-      value: key
-    });
+    return Ast.str(key);
   },
   isIncludable(profile: Profile): boolean {
     let includable = ProfilesApi._handler(profile).includable;
@@ -430,9 +415,7 @@ const ProfilesApi: ProfilesApiType = {
     'DirectProfile': {
       includable: true,
       compile(profile) {
-        return new U2.AST_String({
-          value: this.pacResult()
-        });
+        return Ast.str(this.pacResult());
       }
     },
     'FixedProfile': {
@@ -474,93 +457,48 @@ const ProfilesApi: ProfilesApiType = {
       },
       compile(profile) {
         if ((!profile.bypassList || !profile.fallbackProxy) && !profile.proxyForHttp && !profile.proxyForHttps && !profile.proxyForFtp) {
-          return new U2.AST_String({
-            value: this.pacResult(profile.fallbackProxy)
-          });
+          return Ast.str(this.pacResult(profile.fallbackProxy));
         }
         const body = [
-          new U2.AST_Directive({
-            value: 'use strict'
-          })
+          Ast.directive('use strict')
         ];
         if (profile.bypassList && profile.bypassList.length) {
           let conditions = null;
           for (const cond of profile.bypassList) {
             const condition = Conditions.compile(cond);
             if (conditions != null) {
-              conditions = new U2.AST_Binary({
-                left: conditions,
-                operator: '||',
-                right: condition
-              });
+              conditions = Ast.binary(conditions, '||', condition);
             } else {
               conditions = condition;
             }
           }
-          body.push(new U2.AST_If({
-            condition: conditions,
-            body: new U2.AST_Return({
-              value: new U2.AST_String({
-                value: this.pacResult()
-              })
-            })
-          }));
+          body.push(Ast.ifStmt(conditions, Ast.returnStmt(Ast.str(this.pacResult()))));
         }
         if (!profile.proxyForHttp && !profile.proxyForHttps && !profile.proxyForFtp) {
-          body.push(new U2.AST_Return({
-            value: new U2.AST_String({
-              value: this.pacResult(profile.fallbackProxy)
-            })
-          }));
+          body.push(Ast.returnStmt(Ast.str(this.pacResult(profile.fallbackProxy))));
         } else {
-          body.push(new U2.AST_Switch({
-            expression: new U2.AST_SymbolRef({
-              name: 'scheme'
-            }),
-            body: (() => {
+          body.push(Ast.switchStmt(
+            Ast.symbol('scheme'),
+            (() => {
               const results = [];
               for (const s of this.schemes) {
                 if (!(!s.scheme || profile[s.prop])) {
                   continue;
                 }
                 const ret = [
-                  new U2.AST_Return({
-                    value: new U2.AST_String({
-                      value: this.pacResult(profile[s.prop])
-                    })
-                  })
+                  Ast.returnStmt(Ast.str(this.pacResult(profile[s.prop])))
                 ];
                 if (s.scheme) {
-                  results.push(new U2.AST_Case({
-                    expression: new U2.AST_String({
-                      value: s.scheme
-                    }),
-                    body: ret
-                  }));
+                  results.push(Ast.caseStmt(Ast.str(s.scheme), ret));
                 } else {
-                  results.push(new U2.AST_Default({
-                    body: ret
-                  }));
+                  results.push(Ast.defaultStmt(ret));
                 }
               }
               return results;
             })()
-          }));
+          ));
         }
-        return new U2.AST_Function({
-          argnames: [
-            new U2.AST_SymbolFunarg({
-              name: 'url'
-            }), new U2.AST_SymbolFunarg({
-              name: 'host'
-            }), new U2.AST_SymbolFunarg({
-              name: 'port'
-            }), new U2.AST_SymbolFunarg({
-              name: 'scheme'
-            })
-          ],
-          body: body
-        });
+        return Ast.fn(['url', 'host', 'port', 'scheme'], body);
       }
     },
     'PacProfile': {
@@ -571,22 +509,10 @@ const ProfilesApi: ProfilesApiType = {
         return profile.pacScript != null ? profile.pacScript : profile.pacScript = 'function FindProxyForURL(url, host) {\n  return "DIRECT";\n}';
       },
       compile(profile) {
-        return new U2.AST_Call({
-          args: [new U2.AST_This],
-          expression: new U2.AST_Dot({
-            property: 'call',
-            expression: new U2.AST_Function({
-              argnames: [],
-              body: [
-                new AST_Raw(';\n' + profile.pacScript + '\n\n/* End of PAC */;'), new U2.AST_Return({
-                  value: new U2.AST_SymbolRef({
-                    name: 'FindProxyForURL'
-                  })
-                })
-              ]
-            })
-          })
-        });
+        return Ast.call(Ast.dot(Ast.fn([], [
+          Ast.rawStatement(';\n' + profile.pacScript + '\n\n/* End of PAC */;'),
+          Ast.returnStmt(Ast.symbol('FindProxyForURL'))
+        ]), 'call'), [Ast.thisNode()]);
       },
       updateUrl(profile) {
         if (this.isFileUrl(profile.pacUrl)) {
@@ -655,35 +581,16 @@ const ProfilesApi: ProfilesApiType = {
           return this.profileResult(profile.defaultProfileName);
         }
         const body = [
-          new U2.AST_Directive({
-            value: 'use strict'
-          })
+          Ast.directive('use strict')
         ];
         for (const rule of rules) {
-          body.push(new U2.AST_If({
-            condition: Conditions.compile(rule.condition),
-            body: new U2.AST_Return({
-              value: this.profileResult(rule.profileName)
-            })
-          }));
+          body.push(Ast.ifStmt(
+            Conditions.compile(rule.condition),
+            Ast.returnStmt(this.profileResult(rule.profileName))
+          ));
         }
-        body.push(new U2.AST_Return({
-          value: this.profileResult(profile.defaultProfileName)
-        }));
-        return new U2.AST_Function({
-          argnames: [
-            new U2.AST_SymbolFunarg({
-              name: 'url'
-            }), new U2.AST_SymbolFunarg({
-              name: 'host'
-            }), new U2.AST_SymbolFunarg({
-              name: 'port'
-            }), new U2.AST_SymbolFunarg({
-              name: 'scheme'
-            })
-          ],
-          body: body
-        });
+        body.push(Ast.returnStmt(this.profileResult(profile.defaultProfileName)));
+        return Ast.fn(['url', 'host', 'port', 'scheme'], body);
       }
     },
     'VirtualProfile': 'SwitchProfile',

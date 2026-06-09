@@ -1,21 +1,21 @@
 import type {OptionsMap, PacGeneratorOptions, Profile, ReferenceSet} from './types';
+import * as Ast from './pac_ast';
 import Profiles from './profiles';
-import U2 from './uglifyjs_shim';
 
-type UglifyAst = {
+type PacAst = Ast.Node & {
   compute_char_frequency(): void;
   figure_out_scope(): void;
   mangle_names(): void;
-  transform(compressor: unknown): UglifyAst;
+  transform(compressor: unknown): PacAst;
   [key: string]: unknown;
 };
 
 const ProfilesApi = Profiles as {
   allReferenceSet(profile: string | Profile, options: OptionsMap, args?: PacGeneratorOptions): ReferenceSet;
   byName(profileName: string, options: OptionsMap): Profile | undefined;
-  compile(profile: Profile): unknown;
+  compile(profile: Profile): Ast.Node;
   profileNotFound(name: string, action?: unknown): Profile | null;
-  profileResult(profileName: string | Profile): unknown;
+  profileResult(profileName: string | Profile): Ast.Node;
 };
 
 export function ascii(str: string): string {
@@ -30,9 +30,9 @@ export function ascii(str: string): string {
   });
 }
 
-export function compress(ast: UglifyAst): UglifyAst {
+export function compress(ast: PacAst): PacAst {
   ast.figure_out_scope();
-  const compressor = U2.Compressor({
+  const compressor = Ast.compressor({
     warnings: false,
     keep_fargs: true
   }, {
@@ -65,252 +65,70 @@ export function script(options: OptionsMap, profile: string | Profile, args?: Pa
     if (p == null) {
       p = ProfilesApi.profileNotFound(name, args != null ? args.profileNotFound : void 0);
     }
-    properties.push(new U2.AST_ObjectKeyVal({
-      key: key,
-      value: ProfilesApi.compile(p)
-    }));
+    properties.push(Ast.objectKeyVal(key, ProfilesApi.compile(p)));
   }
-  const profiles = new U2.AST_Object({
-    properties: properties
-  });
-  const factory = new U2.AST_Function({
-      argnames: [
-        new U2.AST_SymbolFunarg({
-          name: 'init'
-        }), new U2.AST_SymbolFunarg({
-          name: 'profiles'
-        })
-      ],
-      body: [
-        new U2.AST_Return({
-          value: new U2.AST_Function({
-            argnames: [
-              new U2.AST_SymbolFunarg({
-                name: 'url'
-              }), new U2.AST_SymbolFunarg({
-                name: 'host'
-              })
-            ],
-            body: [
-              new U2.AST_Directive({
-                value: 'use strict'
-              }), new U2.AST_Var({
-                definitions: [
-                  new U2.AST_VarDef({
-                    name: new U2.AST_SymbolVar({
-                      name: 'result'
-                    }),
-                    value: new U2.AST_SymbolRef({
-                      name: 'init'
-                    })
-                  }), new U2.AST_VarDef({
-                    name: new U2.AST_SymbolVar({
-                      name: 'scheme'
-                    }),
-                    value: new U2.AST_Call({
-                      expression: new U2.AST_Dot({
-                        expression: new U2.AST_SymbolRef({
-                          name: 'url'
-                        }),
-                        property: 'substr'
-                      }),
-                      args: [
-                        new U2.AST_Number({
-                          value: 0
-                        }), new U2.AST_Call({
-                          expression: new U2.AST_Dot({
-                            expression: new U2.AST_SymbolRef({
-                              name: 'url'
-                            }),
-                            property: 'indexOf'
-                          }),
-                          args: [
-                            new U2.AST_String({
-                              value: ':'
-                            })
-                          ]
-                        })
-                      ]
-                    })
-                  }), new U2.AST_VarDef({
-                    name: new U2.AST_SymbolVar({
-                      name: 'port'
-                    }),
-                    value: new U2.AST_Call({
-                      args: [
-                        new U2.AST_SymbolRef({
-                          name: 'url'
-                        })
-                      ],
-                      expression: new U2.AST_Function({
-                        argnames: [
-                          new U2.AST_SymbolFunarg({
-                            name: 'url'
-                          })
-                        ],
-                        body: [
-                          new U2.AST_Var({
-                            definitions: [
-                              new U2.AST_VarDef({
-                                name: new U2.AST_SymbolVar({
-                                  name: 'match'
-                                }),
-                                value: new U2.AST_Call({
-                                  expression: new U2.AST_Dot({
-                                    expression: new U2.AST_SymbolRef({
-                                      name: 'url'
-                                    }),
-                                    property: 'match'
-                                  }),
-                                  args: [
-                                    new U2.AST_RegExp({
-                                      value: /^[-+.a-z0-9]+:\/\/(?:[^/?#@]*@)?(?:\[[^\]]+\]|[^/?#:]+):(\d+)(?:[/?#]|$)/i
-                                    })
-                                  ]
-                                })
-                              })
-                            ]
-                          }),
-                          new U2.AST_Return({
-                            value: new U2.AST_Conditional({
-                              condition: new U2.AST_SymbolRef({
-                                name: 'match'
-                              }),
-                              consequent: new U2.AST_Sub({
-                                expression: new U2.AST_SymbolRef({
-                                  name: 'match'
-                                }),
-                                property: new U2.AST_Number({
-                                  value: 1
-                                })
-                              }),
-                              alternative: new U2.AST_String({
-                                value: ''
-                              })
-                            })
-                          })
-                        ]
-                      })
-                    })
-                  })
-                ]
-              }), new U2.AST_Do({
-                body: new U2.AST_BlockStatement({
-                  body: [
-                    new U2.AST_SimpleStatement({
-                      body: new U2.AST_Assign({
-                        left: new U2.AST_SymbolRef({
-                          name: 'result'
-                        }),
-                        operator: '=',
-                        right: new U2.AST_Sub({
-                          expression: new U2.AST_SymbolRef({
-                            name: 'profiles'
-                          }),
-                          property: new U2.AST_SymbolRef({
-                            name: 'result'
-                          })
-                        })
-                      })
-                    }), new U2.AST_If({
-                      condition: new U2.AST_Binary({
-                        left: new U2.AST_UnaryPrefix({
-                          operator: 'typeof',
-                          expression: new U2.AST_SymbolRef({
-                            name: 'result'
-                          })
-                        }),
-                        operator: '===',
-                        right: new U2.AST_String({
-                          value: 'function'
-                        })
-                      }),
-                      body: new U2.AST_SimpleStatement({
-                        body: new U2.AST_Assign({
-                          left: new U2.AST_SymbolRef({
-                            name: 'result'
-                          }),
-                          operator: '=',
-                          right: new U2.AST_Call({
-                            expression: new U2.AST_SymbolRef({
-                              name: 'result'
-                            }),
-                            args: [
-                              new U2.AST_SymbolRef({
-                                name: 'url'
-                              }), new U2.AST_SymbolRef({
-                                name: 'host'
-                              }), new U2.AST_SymbolRef({
-                                name: 'port'
-                              }), new U2.AST_SymbolRef({
-                                name: 'scheme'
-                              })
-                            ]
-                          })
-                        })
-                      })
-                    })
-                  ]
-                }),
-                condition: new U2.AST_Binary({
-                  left: new U2.AST_Binary({
-                    left: new U2.AST_UnaryPrefix({
-                      operator: 'typeof',
-                      expression: new U2.AST_SymbolRef({
-                        name: 'result'
-                      })
-                    }),
-                    operator: '!==',
-                    right: new U2.AST_String({
-                      value: 'string'
-                    })
-                  }),
-                  operator: '||',
-                  right: new U2.AST_Binary({
-                    left: new U2.AST_Call({
-                      expression: new U2.AST_Dot({
-                        expression: new U2.AST_SymbolRef({
-                          name: 'result'
-                        }),
-                        property: 'charCodeAt'
-                      }),
-                      args: [
-                        new U2.AST_Number({
-                          value: 0
-                        })
-                      ]
-                    }),
-                    operator: '===',
-                    right: new U2.AST_Number({
-                      value: '+'.charCodeAt(0)
-                    })
-                  })
-                })
-              }), new U2.AST_Return({
-                value: new U2.AST_SymbolRef({
-                  name: 'result'
-                })
-              })
-            ]
-          })
-        })
-      ]
-    });
-  return new U2.AST_Toplevel({
-    body: [
-      new U2.AST_Var({
-        definitions: [
-          new U2.AST_VarDef({
-            name: new U2.AST_SymbolVar({
-              name: 'FindProxyForURL'
-            }),
-            value: new U2.AST_Call({
-              expression: factory,
-              args: [ProfilesApi.profileResult(targetProfile.name), profiles]
-            })
-          })
-        ]
-      })
-    ]
-  });
+  const profiles = Ast.object(properties);
+  const portParser = Ast.call(Ast.fn(['url'], [
+    Ast.varStmt([
+      Ast.varDef('match', Ast.call(Ast.dot(Ast.symbol('url'), 'match'), [
+        Ast.regexp(/^[-+.a-z0-9]+:\/\/(?:[^/?#@]*@)?(?:\[[^\]]+\]|[^/?#:]+):(\d+)(?:[/?#]|$)/i)
+      ]))
+    ]),
+    Ast.returnStmt(Ast.conditional(
+      Ast.symbol('match'),
+      Ast.sub(Ast.symbol('match'), Ast.num(1)),
+      Ast.str('')
+    ))
+  ]), [Ast.symbol('url')]);
+  const factory = Ast.fn(['init', 'profiles'], [
+    Ast.returnStmt(Ast.fn(['url', 'host'], [
+      Ast.directive('use strict'),
+      Ast.varStmt([
+        Ast.varDef('result', Ast.symbol('init')),
+        Ast.varDef('scheme', Ast.call(Ast.dot(Ast.symbol('url'), 'substr'), [
+          Ast.num(0),
+          Ast.call(Ast.dot(Ast.symbol('url'), 'indexOf'), [Ast.str(':')])
+        ])),
+        Ast.varDef('port', portParser)
+      ]),
+      Ast.doWhile(
+        Ast.block([
+          Ast.simple(Ast.assign(
+            Ast.symbol('result'),
+            Ast.sub(Ast.symbol('profiles'), Ast.symbol('result'))
+          )),
+          Ast.ifStmt(
+            Ast.binary(Ast.unaryPrefix('typeof', Ast.symbol('result')), '===', Ast.str('function')),
+            Ast.simple(Ast.assign(
+              Ast.symbol('result'),
+              Ast.call(Ast.symbol('result'), [
+                Ast.symbol('url'),
+                Ast.symbol('host'),
+                Ast.symbol('port'),
+                Ast.symbol('scheme')
+              ])
+            ))
+          )
+        ]),
+        Ast.binary(
+          Ast.binary(Ast.unaryPrefix('typeof', Ast.symbol('result')), '!==', Ast.str('string')),
+          '||',
+          Ast.binary(
+            Ast.call(Ast.dot(Ast.symbol('result'), 'charCodeAt'), [Ast.num(0)]),
+            '===',
+            Ast.num('+'.charCodeAt(0))
+          )
+        )
+      ),
+      Ast.returnStmt(Ast.symbol('result'))
+    ]))
+  ]);
+  return Ast.toplevel([
+    Ast.varStmt([
+      Ast.varDef('FindProxyForURL', Ast.call(factory, [
+        ProfilesApi.profileResult(targetProfile.name),
+        profiles
+      ]))
+    ])
+  ]);
 }

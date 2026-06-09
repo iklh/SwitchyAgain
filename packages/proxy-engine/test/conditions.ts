@@ -1,12 +1,11 @@
 import assert from 'assert';
 import ConditionsApi from '../src/conditions';
-import UglifyJS from '../src/uglifyjs_shim';
+import * as Ast from '../src/pac_ast';
 import {useFakeDate} from './helpers/fake_date';
 
 describe('Conditions', function() {
-  let Conditions: any, U2: any, testCond: (condition: any, request: any, should_match?: any) => any;
+  let Conditions: any, testCond: (condition: any, request: any, should_match?: any) => any;
   Conditions = ConditionsApi;
-  U2 = UglifyJS;
   testCond = function(condition: any, request: any, should_match?: any): any {
     let compileResult, condExpr, friendlyError, matchResult, o_request, testFunc;
     o_request = request;
@@ -16,24 +15,9 @@ describe('Conditions', function() {
     }
     matchResult = Conditions.match(condition, request);
     condExpr = Conditions.compile(condition);
-    testFunc = new U2.AST_Function({
-      argnames: [
-        new U2.AST_SymbolFunarg({
-          name: 'url'
-        }), new U2.AST_SymbolFunarg({
-          name: 'host'
-        }), new U2.AST_SymbolFunarg({
-          name: 'port'
-        }), new U2.AST_SymbolFunarg({
-          name: 'scheme'
-        })
-      ],
-      body: [
-        new U2.AST_Return({
-          value: condExpr
-        })
-      ]
-    });
+    testFunc = Ast.fn(['url', 'host', 'port', 'scheme'], [
+      Ast.returnStmt(condExpr)
+    ]);
     testFunc = eval('(' + testFunc.print_to_string() + ')');
     compileResult = testFunc(request.url, request.host, request.port || '', request.scheme);
     friendlyError = function(compiled?: any): any {
@@ -554,41 +538,15 @@ describe('Conditions', function() {
           ip: ip,
           prefixLength: prefixLen
         };
-        dummyIsInNet = new U2.AST_Function({
-          argnames: [],
-          body: [
-            new U2.AST_Return({
-              value: new U2.AST_True
-            })
-          ]
-        });
-        testFunc = new U2.AST_Function({
-          argnames: [
-            new U2.AST_SymbolFunarg({
-              name: 'url'
-            }), new U2.AST_SymbolFunarg({
-              name: 'host'
-            }), new U2.AST_SymbolFunarg({
-              name: 'port'
-            }), new U2.AST_SymbolFunarg({
-              name: 'scheme'
-            })
-          ],
-          body: [
-            new U2.AST_Var({
-              definitions: [
-                new U2.AST_VarDef({
-                  name: new U2.AST_SymbolVar({
-                    name: 'isInNet'
-                  }),
-                  value: dummyIsInNet
-                })
-              ]
-            }), new U2.AST_Return({
-              value: Conditions.compile(cond)
-            })
-          ]
-        });
+        dummyIsInNet = Ast.fn([], [
+          Ast.returnStmt(Ast.trueNode())
+        ]);
+        testFunc = Ast.fn(['url', 'host', 'port', 'scheme'], [
+          Ast.varStmt([
+            Ast.varDef('isInNet', dummyIsInNet)
+          ]),
+          Ast.returnStmt(Conditions.compile(cond))
+        ]);
         return eval('(' + testFunc.print_to_string() + ')');
       };
       compiledFunc = ipToCompiledFunc('0.0.0.0', 0);

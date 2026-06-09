@@ -1,17 +1,14 @@
 import assert from 'assert';
 import ConditionsApi from '../src/conditions';
 import ProfilesApi from '../src/profiles';
-import UglifyJS from '../src/uglifyjs_shim';
 
 describe('Profiles', function() {
   let Conditions: any,
     Profiles: any,
-    U2: any,
     ruleListResult: (profileName: any, source: any) => any,
     testProfile: (profile: any, request: any, expected: any, expectedCompiled?: any) => any;
   Profiles = ProfilesApi;
   Conditions = ConditionsApi;
-  U2 = UglifyJS;
   ruleListResult = function(profileName: any, source: any): any {
     return {
       profileName: profileName,
