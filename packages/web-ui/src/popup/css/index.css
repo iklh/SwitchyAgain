@@ -187,7 +187,7 @@ body {
 
 @font-face {
   font-family: 'Glyphicons Halflings';
-  src: url(../../../lib/bootstrap/fonts/glyphicons-halflings-regular.woff2) format('woff2');
+  src: url(../../lib/bootstrap/fonts/glyphicons-halflings-regular.woff2) format('woff2');
 }
 
 .glyphicon {
