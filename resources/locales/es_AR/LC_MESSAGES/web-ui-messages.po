@@ -1274,16 +1274,16 @@ msgid "about_version"
 msgstr "Version $VERSION$"
 
 msgid "about_projectHomepage"
-msgstr "Project homepage"
+msgstr "Página del proyecto"
 
 msgid "about_basedOnSwitchyOmega"
-msgstr "Based on SwitchyOmega, Copyright 2012-2017 __SWITCHYOMEGA_AUTHORS__."
+msgstr "Basado en SwitchyOmega, Copyright 2012-2017 __SWITCHYOMEGA_AUTHORS__."
 
 msgid "about_switchyagainChangesCopyright"
-msgstr "SwitchyAgain changes Copyright 2026 __SWITCHYAGAIN_AUTHORS__."
+msgstr "Cambios de SwitchyAgain Copyright 2026 __SWITCHYAGAIN_AUTHORS__."
 
 msgid "about_licenseLine"
-msgstr "Licensed under the __GPL_LICENSE__ Version 3 or later."
+msgstr "Licenciado bajo la __GPL_LICENSE__ versión 3 o posterior."
 
 msgid "about_experimental_warning_moz"
 msgstr "Mozilla Firefox support is highly experimental! If you encounter issues, please report using the buttons below."

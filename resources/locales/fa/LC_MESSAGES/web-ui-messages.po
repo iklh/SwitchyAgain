@@ -1279,16 +1279,16 @@ msgid "about_version"
 msgstr "نسخه $VERSION$"
 
 msgid "about_projectHomepage"
-msgstr ""
+msgstr "صفحه پروژه"
 
 msgid "about_basedOnSwitchyOmega"
-msgstr ""
+msgstr "بر پایه SwitchyOmega، حق نشر ۲۰۱۲-۲۰۱۷ __SWITCHYOMEGA_AUTHORS__."
 
 msgid "about_switchyagainChangesCopyright"
-msgstr ""
+msgstr "تغییرات SwitchyAgain حق نشر ۲۰۲۶ __SWITCHYAGAIN_AUTHORS__."
 
 msgid "about_licenseLine"
-msgstr ""
+msgstr "تحت __GPL_LICENSE__ نسخه ۳ یا بالاتر مجوز داده شده است."
 
 msgid "about_experimental_warning_moz"
 msgstr ""

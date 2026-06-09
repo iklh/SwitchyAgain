@@ -1076,16 +1076,16 @@ msgid "about_version"
 msgstr "Version $VERSION$"
 
 msgid "about_projectHomepage"
-msgstr "Project homepage"
+msgstr "Domača stran projekta"
 
 msgid "about_basedOnSwitchyOmega"
-msgstr "Based on SwitchyOmega, Copyright 2012-2017 __SWITCHYOMEGA_AUTHORS__."
+msgstr "Temelji na SwitchyOmega, Copyright 2012-2017 __SWITCHYOMEGA_AUTHORS__."
 
 msgid "about_switchyagainChangesCopyright"
-msgstr "SwitchyAgain changes Copyright 2026 __SWITCHYAGAIN_AUTHORS__."
+msgstr "Spremembe SwitchyAgain Copyright 2026 __SWITCHYAGAIN_AUTHORS__."
 
 msgid "about_licenseLine"
-msgstr "Licensed under the __GPL_LICENSE__ Version 3 or later."
+msgstr "Licencirano pod __GPL_LICENSE__ različice 3 ali novejše."
 
 msgid "about_experimental_warning_moz"
 msgstr "Mozilla Firefox support is highly experimental! If you encounter issues, please report using the buttons below."
