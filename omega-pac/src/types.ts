@@ -30,6 +30,7 @@ export type Condition = {
 
 export type PacRequest = {
   host: string;
+  port?: string;
   scheme: string;
   url: string;
   [key: string]: unknown;

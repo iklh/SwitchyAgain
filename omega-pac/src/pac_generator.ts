@@ -132,6 +132,66 @@ export function script(options: OptionsMap, profile: string | Profile, args?: Pa
                         })
                       ]
                     })
+                  }), new U2.AST_VarDef({
+                    name: new U2.AST_SymbolVar({
+                      name: 'port'
+                    }),
+                    value: new U2.AST_Call({
+                      args: [
+                        new U2.AST_SymbolRef({
+                          name: 'url'
+                        })
+                      ],
+                      expression: new U2.AST_Function({
+                        argnames: [
+                          new U2.AST_SymbolFunarg({
+                            name: 'url'
+                          })
+                        ],
+                        body: [
+                          new U2.AST_Var({
+                            definitions: [
+                              new U2.AST_VarDef({
+                                name: new U2.AST_SymbolVar({
+                                  name: 'match'
+                                }),
+                                value: new U2.AST_Call({
+                                  expression: new U2.AST_Dot({
+                                    expression: new U2.AST_SymbolRef({
+                                      name: 'url'
+                                    }),
+                                    property: 'match'
+                                  }),
+                                  args: [
+                                    new U2.AST_RegExp({
+                                      value: /^[-+.a-z0-9]+:\/\/(?:[^/?#@]*@)?(?:\[[^\]]+\]|[^/?#:]+):(\d+)(?:[/?#]|$)/i
+                                    })
+                                  ]
+                                })
+                              })
+                            ]
+                          }),
+                          new U2.AST_Return({
+                            value: new U2.AST_Conditional({
+                              condition: new U2.AST_SymbolRef({
+                                name: 'match'
+                              }),
+                              consequent: new U2.AST_Sub({
+                                expression: new U2.AST_SymbolRef({
+                                  name: 'match'
+                                }),
+                                property: new U2.AST_Number({
+                                  value: 1
+                                })
+                              }),
+                              alternative: new U2.AST_String({
+                                value: ''
+                              })
+                            })
+                          })
+                        ]
+                      })
+                    })
                   })
                 ]
               }), new U2.AST_Do({
@@ -180,6 +240,8 @@ export function script(options: OptionsMap, profile: string | Profile, args?: Pa
                                 name: 'url'
                               }), new U2.AST_SymbolRef({
                                 name: 'host'
+                              }), new U2.AST_SymbolRef({
+                                name: 'port'
                               }), new U2.AST_SymbolRef({
                                 name: 'scheme'
                               })

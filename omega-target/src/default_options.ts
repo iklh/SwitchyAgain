@@ -1,6 +1,6 @@
 export default function defaultOptions() {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     '-enableQuickSwitch': false,
     '-refreshOnProfileChange': false,
     '-startupProfileName': '',

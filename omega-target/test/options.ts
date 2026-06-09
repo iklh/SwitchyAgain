@@ -7,6 +7,99 @@ describe('Options', function() {
   let Options: any;
   Options = OptionsClass;
 
+  describe('#upgrade', function() {
+    it('should preserve loopback bypass behavior when upgrading <local> from schemaVersion 2', function() {
+      const options = Object.create(Options.prototype);
+      return options.upgrade({
+        schemaVersion: 2,
+        '+proxy': {
+          name: 'proxy',
+          profileType: 'FixedProfile',
+          bypassList: [
+            {
+              conditionType: 'BypassCondition',
+              pattern: '<local>'
+            }
+          ]
+        }
+      }).then(([upgraded, changes]: any[]) => {
+        assert.strictEqual(upgraded.schemaVersion, 3);
+        assert.strictEqual(changes.schemaVersion, 3);
+        assert.deepStrictEqual(upgraded['+proxy'].bypassList.map((condition: any) => condition.pattern), [
+          '<local>',
+          '127.0.0.1',
+          '[::1]',
+          'localhost'
+        ]);
+        assert.strictEqual(changes['+proxy'], upgraded['+proxy']);
+      });
+    });
+
+    it('should not duplicate explicit local bypass entries when upgrading schemaVersion 2', function() {
+      const options = Object.create(Options.prototype);
+      return options.upgrade({
+        schemaVersion: 2,
+        '+proxy': {
+          name: 'proxy',
+          profileType: 'FixedProfile',
+          bypassList: [
+            {
+              conditionType: 'BypassCondition',
+              pattern: '<local>'
+            },
+            {
+              conditionType: 'BypassCondition',
+              pattern: '127.0.0.1'
+            },
+            {
+              conditionType: 'BypassCondition',
+              pattern: '[::1]'
+            },
+            {
+              conditionType: 'BypassCondition',
+              pattern: 'localhost'
+            }
+          ]
+        }
+      }).then(([upgraded]: any[]) => {
+        assert.deepStrictEqual(upgraded['+proxy'].bypassList.map((condition: any) => condition.pattern), [
+          '<local>',
+          '127.0.0.1',
+          '[::1]',
+          'localhost'
+        ]);
+      });
+    });
+
+    it('should recognize unbracketed IPv6 loopback when upgrading schemaVersion 2', function() {
+      const options = Object.create(Options.prototype);
+      return options.upgrade({
+        schemaVersion: 2,
+        '+proxy': {
+          name: 'proxy',
+          profileType: 'FixedProfile',
+          bypassList: [
+            {
+              conditionType: 'BypassCondition',
+              pattern: '<local>'
+            },
+            {
+              conditionType: 'BypassCondition',
+              pattern: '::1'
+            }
+          ]
+        }
+      }).then(([upgraded]: any[]) => {
+        assert.deepStrictEqual(upgraded['+proxy'].bypassList.map((condition: any) => condition.pattern), [
+          '<local>',
+          '::1',
+          '127.0.0.1',
+          'localhost'
+        ]);
+      });
+    });
+  });
+
   describe('#setExternalProfile', function() {
     it('should revert to the current profile when no explicit revert target exists', function() {
       const options = Object.create(Options.prototype);

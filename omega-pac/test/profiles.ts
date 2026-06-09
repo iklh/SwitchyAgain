@@ -30,7 +30,7 @@ describe('Profiles', function() {
     compiled = Profiles.compile(profile);
     compileResult = eval('(' + compiled.print_to_string() + ')');
     if (typeof compileResult === 'function') {
-      compileResult = compileResult(request.url, request.host, request.scheme);
+      compileResult = compileResult(request.url, request.host, request.port || '', request.scheme);
     }
     if (expected != null) {
       matchResult = Profiles.match(profile, request);

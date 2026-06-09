@@ -78,6 +78,39 @@ type SetOptionsSyncArgs = {
   force?: boolean;
 };
 
+type BypassConditionLike = {
+  conditionType?: string;
+  pattern?: string;
+};
+
+function migrateLocalBypassList(profile: ProfileLike): boolean {
+  if (profile.profileType !== 'FixedProfile' || !Array.isArray(profile.bypassList)) {
+    return false;
+  }
+  const bypassList = profile.bypassList as BypassConditionLike[];
+  const bypassPatterns = new Set(bypassList.map((condition) => {
+    if (condition.conditionType === 'BypassCondition') {
+      return OmegaPac.Conditions.str(condition).replace(/^Bypass:\s*/, '');
+    }
+    return condition.pattern;
+  }));
+  if (!bypassPatterns.has('<local>')) {
+    return false;
+  }
+  let changed = false;
+  for (const pattern of OmegaPac.Conditions.localHosts) {
+    if (bypassPatterns.has(pattern)) {
+      continue;
+    }
+    bypassList.push({
+      conditionType: 'BypassCondition',
+      pattern
+    });
+    changed = true;
+  }
+  return changed;
+}
+
 type AvailableProfile = {
   builtin?: boolean;
   color?: unknown;
@@ -408,8 +441,8 @@ class Options {
 
   /**
    * Upgrade options from previous versions.
-   * For now, this method only supports schemaVersion 1 and 2. If so, it upgrades
-   * the options to version 2 (the latest version). Otherwise it rejects.
+   * For now, this method supports schemaVersion 1, 2, and 3. It upgrades older
+   * options to version 3 (the latest version). Otherwise it rejects.
    * It is recommended for the derived classes to call super() two times in the
    * beginning and in the end of the implementation to check the schemaVersion
    * and to apply future upgrades, respectively.
@@ -446,6 +479,15 @@ class Options {
       version = changes['schemaVersion'] = options['schemaVersion'] = 2;
     }
     if (version === 2) {
+      OmegaPac.Profiles.each(options, (key, profile) => {
+        if (migrateLocalBypassList(profile)) {
+          OmegaPac.Profiles.updateRevision(profile);
+          changes[key] = profile;
+        }
+      });
+      version = changes['schemaVersion'] = options['schemaVersion'] = 3;
+    }
+    if (version === 3) {
       return Promise.resolve([options, changes]);
     } else {
       return Promise.reject(new Error("Invalid schemaVerion " + version + "!"));

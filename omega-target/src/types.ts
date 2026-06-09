@@ -121,6 +121,8 @@ export type ProfileMatchResult = ProfileMatchTuple | (Record<string, unknown> & 
 
 export type OmegaPacModule = {
   Conditions: {
+    localHosts: string[];
+    str(condition: Record<string, unknown>): string;
     tag(condition: Record<string, unknown>): string;
   };
   PacGenerator: {

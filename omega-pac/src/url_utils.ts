@@ -1,6 +1,7 @@
 export type ParsedUrlCompat = {
   hostname: string;
   href: string;
+  port: string;
   protocol: string;
 };
 
@@ -43,6 +44,7 @@ export function parseUrlCompat(url: string): ParsedUrlCompat {
         return auth + rawHost.host;
       })
       : parsed.href,
+    port: parsed.port,
     protocol: parsed.protocol
   };
 }

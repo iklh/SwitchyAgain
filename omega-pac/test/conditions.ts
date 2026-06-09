@@ -23,6 +23,8 @@ describe('Conditions', function() {
         }), new U2.AST_SymbolFunarg({
           name: 'host'
         }), new U2.AST_SymbolFunarg({
+          name: 'port'
+        }), new U2.AST_SymbolFunarg({
           name: 'scheme'
         })
       ],
@@ -33,7 +35,7 @@ describe('Conditions', function() {
       ]
     });
     testFunc = eval('(' + testFunc.print_to_string() + ')');
-    compileResult = testFunc(request.url, request.host, request.scheme);
+    compileResult = testFunc(request.url, request.host, request.port || '', request.scheme);
     friendlyError = function(compiled?: any): any {
       let msg, printCompiled, printCond, printMatch;
       printCond = JSON.stringify(condition);
@@ -257,6 +259,76 @@ describe('Conditions', function() {
       testCond(cond, 'http://[::1]:8080/', true);
       return testCond(cond, 'http://[1::1]:8080/', false);
     });
+    it('should canonicalize IPv6 hosts on both condition and request sides', function() {
+      let cond;
+      cond = {
+        conditionType: 'BypassCondition',
+        pattern: '[2001:db8::ff00:42:8329]'
+      };
+      testCond(cond, 'http://[2001:0db8:0000:0000:0000:ff00:0042:8329]/', true);
+      testCond(cond, 'http://[2001:db8:0:0:0:ff00:42:8329]/', true);
+      return testCond(cond, 'http://[2001:db8::ff00:42:8330]/', false);
+    });
+    it('should match IPv4-embedded IPv6 forms by address semantics', function() {
+      let cond;
+      cond = {
+        conditionType: 'BypassCondition',
+        pattern: '[::ffff:192.0.2.128]'
+      };
+      testCond(cond, 'http://[::ffff:c000:280]/', true);
+      testCond(cond, 'http://[0:0:0:0:0:ffff:192.0.2.128]/', true);
+      return testCond(cond, 'http://[::ffff:192.0.2.129]/', false);
+    });
+    it('should require brackets to match IPv6 literals with ports', function() {
+      let cond;
+      cond = {
+        conditionType: 'BypassCondition',
+        pattern: '[::1]:8080'
+      };
+      testCond(cond, 'http://[0:0::1]:8080/', true);
+      testCond(cond, 'http://[::1]:80/', false);
+      cond = {
+        conditionType: 'BypassCondition',
+        pattern: '::1:8080'
+      };
+      return testCond(cond, 'http://[::1]:8080/', false);
+    });
+    it('should match IPv6 CIDR using address semantics', function() {
+      let cond;
+      cond = {
+        conditionType: 'BypassCondition',
+        pattern: '2001:db8::/32'
+      };
+      assert.strictEqual(Conditions.match(cond, Conditions.requestFromUrl('http://[2001:db8::1]/')), true);
+      assert.strictEqual(Conditions.match(cond, Conditions.requestFromUrl('http://[2001:0db8:0000:0000:0000:0000:0000:0001]/')), true);
+      assert.strictEqual(Conditions.match(cond, Conditions.requestFromUrl('http://[2001:db8:ffff::1]/')), true);
+      return assert.strictEqual(Conditions.match(cond, Conditions.requestFromUrl('http://[2001:db9::1]/')), false);
+    });
+    it('should parse bracketed IPv6 CIDR notation', function() {
+      let cond, result;
+      cond = {
+        conditionType: 'BypassCondition',
+        pattern: '[2001:db8::]/32'
+      };
+      result = Conditions.analyze(cond).analyzed;
+      assert.deepStrictEqual(result.ip, {
+        conditionType: 'IpCondition',
+        ip: '2001:db8::',
+        prefixLength: 32
+      });
+      assert.strictEqual(Conditions.match(cond, Conditions.requestFromUrl('http://[2001:db8::1]/')), true);
+      return assert.strictEqual(Conditions.match(cond, Conditions.requestFromUrl('http://[2001:db9::1]/')), false);
+    });
+    it('should keep IPv6 wildcard patterns as string host patterns', function() {
+      let cond;
+      cond = {
+        conditionType: 'BypassCondition',
+        pattern: '2001:db8::*'
+      };
+      testCond(cond, 'http://[2001:db8::1]/', true);
+      testCond(cond, 'http://[2001:0db8:0000:0000:0000:0000:0000:0001]/', true);
+      return testCond(cond, 'http://[2001:db8:1::1]/', false);
+    });
     it('should parse IPv4 CIDR notation', function() {
       let cond, result;
       cond = {
@@ -299,23 +371,23 @@ describe('Conditions', function() {
         prefixLength: 0
       });
     });
-    it('should match 127.0.0.1 when <local> is used', function() {
+    it('should not match 127.0.0.1 when <local> is used', function() {
       let cond;
       cond = {
         conditionType: 'BypassCondition',
         pattern: '<local>'
       };
-      return testCond(cond, 'http://127.0.0.1:8080/', true);
+      return testCond(cond, 'http://127.0.0.1:8080/', false);
     });
-    it('should match [::1] when <local> is used', function() {
+    it('should not match [::1] when <local> is used', function() {
       let cond;
       cond = {
         conditionType: 'BypassCondition',
         pattern: '<local>'
       };
-      return testCond(cond, 'http://[::1]:8080/', true);
+      return testCond(cond, 'http://[::1]:8080/', false);
     });
-    return it('should match any host without dots when <local> is used', function() {
+    return it('should match simple hostnames only when <local> is used', function() {
       let cond;
       cond = {
         conditionType: 'BypassCondition',
@@ -325,7 +397,7 @@ describe('Conditions', function() {
       testCond(cond, 'http://intranet:8080/', true);
       testCond(cond, 'http://foobar/', true);
       testCond(cond, 'http://example.com/', false);
-      testCond(cond, 'http://[::ffff:eeee]/', true);
+      testCond(cond, 'http://[::ffff:eeee]/', false);
       return testCond(cond, 'http://[::1.2.3.4]/', false);
     });
   });
@@ -401,6 +473,8 @@ describe('Conditions', function() {
             }), new U2.AST_SymbolFunarg({
               name: 'host'
             }), new U2.AST_SymbolFunarg({
+              name: 'port'
+            }), new U2.AST_SymbolFunarg({
               name: 'scheme'
             })
           ],
@@ -422,17 +496,17 @@ describe('Conditions', function() {
         return eval('(' + testFunc.print_to_string() + ')');
       };
       compiledFunc = ipToCompiledFunc('0.0.0.0', 0);
-      assert.strictEqual(compiledFunc(null, 'www.example.com'), false);
-      assert.strictEqual(compiledFunc(null, '127.0.0.1'), true);
+      assert.strictEqual(compiledFunc(null, 'www.example.com', ''), false);
+      assert.strictEqual(compiledFunc(null, '127.0.0.1', ''), true);
       compiledFunc = ipToCompiledFunc('0.0.0.0', 1);
-      assert.strictEqual(compiledFunc(null, 'www.example.com'), false);
-      assert.strictEqual(compiledFunc(null, '127.0.0.1'), true);
+      assert.strictEqual(compiledFunc(null, 'www.example.com', ''), false);
+      assert.strictEqual(compiledFunc(null, '127.0.0.1', ''), true);
       compiledFunc = ipToCompiledFunc('::', 0);
-      assert.strictEqual(compiledFunc(null, 'www.example.com'), false);
-      assert.strictEqual(compiledFunc(null, '::1'), true);
+      assert.strictEqual(compiledFunc(null, 'www.example.com', ''), false);
+      assert.strictEqual(compiledFunc(null, '::1', ''), true);
       compiledFunc = ipToCompiledFunc('::', 1);
-      assert.strictEqual(compiledFunc(null, 'www.example.com'), false);
-      assert.strictEqual(compiledFunc(null, '::1'), true);
+      assert.strictEqual(compiledFunc(null, 'www.example.com', ''), false);
+      assert.strictEqual(compiledFunc(null, '::1', ''), true);
     });
   });
   describe('KeywordCondition', function() {
@@ -697,6 +771,18 @@ describe('Conditions', function() {
       cond = Conditions.fromStr(result);
       assert.deepStrictEqual(cond, condition);
     });
+    it('should normalize BypassCondition hosts ending with colon', function() {
+      let cond, condition, result;
+      condition = {
+        conditionType: 'BypassCondition',
+        pattern: 'bogus:'
+      };
+      result = Conditions.str(condition);
+      assert.strictEqual(result, 'Bypass: bogus');
+      cond = Conditions.fromStr(result);
+      assert.strictEqual(cond.conditionType, 'BypassCondition');
+      assert.strictEqual(cond.pattern, 'bogus');
+    });
     it('should add brackets for IPv6 hosts in BypassCondition', function() {
       let cond, condition, result;
       condition = {
@@ -732,6 +818,21 @@ describe('Conditions', function() {
       assert.strictEqual(result, 'Ip: 127.0.0.1/16');
       cond = Conditions.fromStr(result);
       assert.deepStrictEqual(cond, condition);
+    });
+    it('should normalize IPv6 IpCondition input', function() {
+      let cond;
+      cond = Conditions.fromStr('Ip: 2001:0db8:0000:0000:0000:ff00:0042:8329/128');
+      assert.deepStrictEqual(cond, {
+        conditionType: 'IpCondition',
+        ip: '2001:db8::ff00:42:8329',
+        prefixLength: 128
+      });
+      cond = Conditions.fromStr('Ip: ::ffff:192.0.2.128/128');
+      assert.deepStrictEqual(cond, {
+        conditionType: 'IpCondition',
+        ip: '::ffff:c000:280',
+        prefixLength: 128
+      });
     });
     it('should provide sensible fallbacks for invalid IpCondition', function() {
       let cond;

@@ -554,6 +554,8 @@ const ProfilesApi: ProfilesApiType = {
             }), new U2.AST_SymbolFunarg({
               name: 'host'
             }), new U2.AST_SymbolFunarg({
+              name: 'port'
+            }), new U2.AST_SymbolFunarg({
               name: 'scheme'
             })
           ],
@@ -674,6 +676,8 @@ const ProfilesApi: ProfilesApiType = {
               name: 'url'
             }), new U2.AST_SymbolFunarg({
               name: 'host'
+            }), new U2.AST_SymbolFunarg({
+              name: 'port'
             }), new U2.AST_SymbolFunarg({
               name: 'scheme'
             })
