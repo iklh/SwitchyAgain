@@ -33,12 +33,19 @@ function isIpv4Address(addr: IpAddress): addr is Address4 {
 type ParsedBypassHostPort = {
   host: string;
   port: string | null;
+  valid: boolean;
 };
 
 type ParsedBypassPattern = {
   host: string;
   port: string | null;
   scheme: string | null;
+  valid: boolean;
+};
+
+type NormalizedDomainPattern = {
+  pattern: string;
+  valid: boolean;
 };
 
 type ConditionHandler = {
@@ -59,8 +66,12 @@ type ConditionsApiType = {
   _hostIsLocalAst(): UglifyNode;
   _hostPortMatches(pattern: ParsedBypassPattern, request: PacRequest): boolean;
   _hostRegex(pattern: string): RegExp;
+  _normalizeDomainHost(host: string): string | null;
+  _normalizeDomainPattern(pattern: string): NormalizedDomainPattern;
+  _normalizeIpWildcardPattern(pattern: string): string | null;
   _parseBypassHostPort(server: string): ParsedBypassHostPort;
   _parseBypassPattern(pattern: string): ParsedBypassPattern;
+  _portIsValid(port: string | null): boolean;
   _portEqualsAst(port: string): UglifyNode;
   _setProp(obj: Record<string, any>, prop: string, value: unknown): unknown;
   analyze(condition: Condition): ConditionCache;
@@ -90,9 +101,12 @@ const ConditionsApi: ConditionsApiType = {
   requestFromUrl(url: string | ParsedUrl): PacRequest {
     const parsedUrl = typeof url === 'string' ? parseUrlCompat(url) : url;
     const addr = ConditionsApi.parseIpHost(parsedUrl.hostname);
+    const host = addr != null
+      ? ConditionsApi.normalizeIp(addr)
+      : ConditionsApi._normalizeDomainHost(parsedUrl.hostname) || parsedUrl.hostname.toLowerCase();
     return {
       url: parsedUrl.href || String(url),
-      host: addr != null ? ConditionsApi.normalizeIp(addr) : parsedUrl.hostname,
+      host,
       port: parsedUrl.port || '',
       scheme: parsedUrl.protocol.replace(':', '')
     };
@@ -132,16 +146,16 @@ const ConditionsApi: ConditionsApiType = {
       abbr: -1
     }).abbr;
     const handler = ConditionsApi._handler(condition.conditionType);
+    const str = handler.str;
+    const part = str ? str.call(ConditionsApi, condition) : condition.pattern;
     if (handler.abbrs[0].length === 0) {
-      const endCode = condition.pattern.charCodeAt(condition.pattern.length - 1);
-      if (endCode !== ConditionsApi.colonCharCode && condition.pattern.indexOf(' ') < 0) {
-        return condition.pattern;
+      const endCode = part.charCodeAt(part.length - 1);
+      if (endCode !== ConditionsApi.colonCharCode && part.indexOf(' ') < 0) {
+        return part;
       }
     }
-    const str = handler.str;
     const typeStr = typeof abbr === 'number' ? handler.abbrs[(handler.abbrs.length + abbr) % handler.abbrs.length] : condition.conditionType;
     let result = typeStr + ':';
-    const part = str ? str.call(ConditionsApi, condition) : condition.pattern;
     if (part) {
       result += ' ' + part;
     }
@@ -340,6 +354,9 @@ const ConditionsApi: ConditionsApiType = {
   },
   parseIp(ip: string): IpAddress | null {
     if (ip.charCodeAt(0) === '['.charCodeAt(0)) {
+      if (ip.charCodeAt(ip.length - 1) !== ']'.charCodeAt(0)) {
+        return null;
+      }
       ip = ip.slice(1, -1);
     }
     if (Address4.isValid(ip)) {
@@ -371,26 +388,35 @@ const ConditionsApi: ConditionsApiType = {
         if (rest.charCodeAt(0) === ConditionsApi.colonCharCode && rest.length > 1) {
           return {
             host,
-            port: rest.slice(1)
+            port: rest.slice(1),
+            valid: true
           };
         }
         if (rest.charCodeAt(0) === '/'.charCodeAt(0)) {
           return {
             host: host + rest,
-            port: null
+            port: null,
+            valid: true
           };
         }
         return {
           host,
-          port: null
+          port: null,
+          valid: rest.length === 0
         };
       }
+      return {
+        host: server,
+        port: null,
+        valid: false
+      };
     }
     const addr = ConditionsApi.parseIp(server);
     if (addr != null && !isIpv4Address(addr)) {
       return {
         host: server,
-        port: null
+        port: null,
+        valid: true
       };
     }
     const pos = server.lastIndexOf(':');
@@ -398,34 +424,155 @@ const ConditionsApi: ConditionsApiType = {
       if (pos === server.length - 1) {
         return {
           host: server.substring(0, pos),
-          port: null
+          port: null,
+          valid: false
         };
       }
       return {
         host: server.substring(0, pos),
-        port: server.substring(pos + 1)
+        port: server.substring(pos + 1),
+        valid: true
       };
     }
     return {
       host: server,
-      port: null
+      port: null,
+      valid: true
     };
   },
   _parseBypassPattern(pattern: string): ParsedBypassPattern {
     const result: ParsedBypassPattern = {
       host: pattern,
       port: null,
-      scheme: null
+      scheme: null,
+      valid: true
     };
     const schemeIndex = pattern.indexOf('://');
     if (schemeIndex >= 0) {
-      result.scheme = pattern.slice(0, schemeIndex);
+      result.scheme = pattern.slice(0, schemeIndex).toLowerCase();
+      result.valid = /^[a-z][a-z0-9+.-]*$/i.test(result.scheme);
       pattern = pattern.slice(schemeIndex + 3);
     }
     const hostPort = ConditionsApi._parseBypassHostPort(pattern);
     result.host = hostPort.host;
     result.port = hostPort.port;
+    result.valid = result.valid && hostPort.valid && ConditionsApi._portIsValid(hostPort.port);
     return result;
+  },
+  _normalizeDomainHost(host: string): string | null {
+    if (!host || /[\s:/?#@\[\]]/.test(host)) {
+      return null;
+    }
+    try {
+      return new URL('http://' + host + '/').hostname.toLowerCase();
+    } catch (error) {
+      return null;
+    }
+  },
+  _normalizeDomainPattern(pattern: string): NormalizedDomainPattern {
+    if (!pattern || /\s/.test(pattern)) {
+      return {
+        pattern,
+        valid: false
+      };
+    }
+    let prefix = '';
+    if (pattern.charCodeAt(0) === '.'.charCodeAt(0)) {
+      prefix = '*';
+      pattern = prefix + pattern;
+    }
+    const wildcardMatch = /[?*]/.exec(pattern);
+    if (wildcardMatch == null) {
+      const host = ConditionsApi._normalizeDomainHost(pattern);
+      return {
+        pattern: host || pattern,
+        valid: host != null
+      };
+    }
+    if (pattern.indexOf('?') < 0) {
+      const leadingAsterisk = /^\*+/.exec(pattern);
+      const trailingAsterisk = /\*+$/.exec(pattern);
+      const leading = leadingAsterisk != null ? leadingAsterisk[0] : '';
+      const trailing = trailingAsterisk != null ? trailingAsterisk[0] : '';
+      const core = pattern.slice(leading.length, pattern.length - trailing.length);
+      if ((leading || trailing) && core.indexOf('*') < 0) {
+        if (!core) {
+          return {
+            pattern,
+            valid: true
+          };
+        }
+        if (core.charCodeAt(0) !== '.'.charCodeAt(0)) {
+          const host = ConditionsApi._normalizeDomainHost(core);
+          return {
+            pattern: host != null ? leading + host + trailing : pattern,
+            valid: host != null
+          };
+        }
+      }
+    }
+    const wildcardIndex = wildcardMatch.index;
+    const hostStart = pattern.slice(0, wildcardIndex).lastIndexOf('.') + 1;
+    const labelEndRelative = pattern.slice(wildcardIndex).indexOf('.');
+    const hostEnd = labelEndRelative < 0 ? pattern.length : wildcardIndex + labelEndRelative;
+    const wildcardLabel = pattern.slice(hostStart, hostEnd);
+    if (/[^\x00-\x7f]/.test(wildcardLabel)) {
+      return {
+        pattern,
+        valid: false
+      };
+    }
+    let normalized = pattern;
+    if (hostStart > 0) {
+      const host = ConditionsApi._normalizeDomainHost(pattern.slice(0, hostStart - 1));
+      if (host == null) {
+        return {
+          pattern,
+          valid: false
+        };
+      }
+      normalized = host + pattern.slice(hostStart - 1);
+    }
+    if (hostEnd < pattern.length - 1) {
+      const suffix = ConditionsApi._normalizeDomainHost(pattern.slice(hostEnd + 1));
+      if (suffix == null) {
+        return {
+          pattern,
+          valid: false
+        };
+      }
+      normalized = normalized.slice(0, hostEnd + 1) + suffix;
+    }
+    if (hostStart === 0 && hostEnd === pattern.length) {
+      return {
+        pattern,
+        valid: true
+      };
+    }
+    try {
+      new URL('http://' + normalized.replace(/[?*]+/g, 'a') + '/');
+    } catch (error) {
+      return {
+        pattern,
+        valid: false
+      };
+    }
+    return {
+      pattern: normalized.toLowerCase(),
+      valid: true
+    };
+  },
+  _normalizeIpWildcardPattern(pattern: string): string | null {
+    if (pattern.charCodeAt(0) === '['.charCodeAt(0) && pattern.charCodeAt(pattern.length - 1) === ']'.charCodeAt(0)) {
+      pattern = pattern.slice(1, -1);
+    }
+    if (pattern.indexOf(':') < 0 || !/[?*]/.test(pattern)) {
+      return null;
+    }
+    if (!/^[0-9a-f:.?*]+$/i.test(pattern)) {
+      return null;
+    }
+    return pattern.toLowerCase();
   },
   _hostRegex(pattern: string): RegExp {
     if (pattern.charCodeAt(0) === '.'.charCodeAt(0)) {
@@ -440,6 +587,16 @@ const ConditionsApi: ConditionsApiType = {
       return false;
     }
     return pattern.port == null || pattern.port === (request.port || '');
+  },
+  _portIsValid(port: string | null): boolean {
+    if (port == null) {
+      return true;
+    }
+    if (!/^\d+$/.test(port)) {
+      return false;
+    }
+    const value = Number(port);
+    return value > 0 && value <= 65535;
   },
   _portEqualsAst(port: string): UglifyNode {
     return new U2.AST_Binary({
@@ -625,8 +782,20 @@ const ConditionsApi: ConditionsApiType = {
           if (!(pattern)) {
             continue;
           }
-          if (pattern.charCodeAt(0) === '.'.charCodeAt(0)) {
-            pattern = '*' + pattern;
+          const addr = this.parseIpHost(pattern);
+          if (addr != null) {
+            pattern = this.normalizeIp(addr);
+          } else {
+            const ipWildcard = this._normalizeIpWildcardPattern(pattern);
+            if (ipWildcard != null) {
+              pattern = ipWildcard;
+            } else {
+              const normalized = this._normalizeDomainPattern(pattern);
+              if (!normalized.valid) {
+                continue;
+              }
+              pattern = normalized.pattern;
+            }
           }
           if (pattern.indexOf('**.') === 0) {
             parts.push(shExp2RegExp(pattern.substring(1), {
@@ -642,13 +811,34 @@ const ConditionsApi: ConditionsApiType = {
             }));
           }
         }
-        return this.safeRegex(parts.join('|'));
+        return this.safeRegex(parts.length > 0 ? parts.join('|') : '(?!)');
       },
       match(condition, request, cache) {
         return cache.analyzed.test(request.host);
       },
       compile(condition, cache) {
         return this.regTest('host', cache.analyzed);
+      },
+      str(condition) {
+        const patterns = [];
+        for (const pattern of condition.pattern.split('|')) {
+          if (!pattern) {
+            continue;
+          }
+          const addr = this.parseIpHost(pattern);
+          if (addr != null) {
+            patterns.push(this.normalizeIp(addr));
+          } else {
+            const ipWildcard = this._normalizeIpWildcardPattern(pattern);
+            if (ipWildcard != null) {
+              patterns.push(ipWildcard);
+            } else {
+              const normalized = this._normalizeDomainPattern(pattern);
+              patterns.push(normalized.valid ? normalized.pattern : pattern);
+            }
+          }
+        }
+        return patterns.join('|');
       }
     },
     'BypassCondition': {
@@ -661,34 +851,45 @@ const ConditionsApi: ConditionsApiType = {
           pattern: null,
           normalizedPattern: ''
         };
-        const originalPattern = condition.pattern || '';
+        const originalPattern = (condition.pattern || '').trim();
         if (originalPattern === '<local>') {
           cache.kind = 'local';
           cache.pattern = {
             host: originalPattern,
             port: null,
-            scheme: null
+            scheme: null,
+            valid: true
           };
           return cache;
         }
         const pattern = this._parseBypassPattern(originalPattern);
         cache.pattern = pattern;
-        cache.normalizedPattern = pattern.scheme != null ? pattern.scheme + '://' : '';
+        if (!pattern.valid) {
+          cache.kind = 'invalid';
+          return cache;
+        }
+        const normalizedPrefix = pattern.scheme != null ? pattern.scheme + '://' : '';
+        cache.normalizedPattern = normalizedPrefix;
         const slashIndex = pattern.host.lastIndexOf('/');
-        if (slashIndex > 0 && slashIndex < pattern.host.length - 1 && pattern.port == null) {
+        if (slashIndex >= 0 && pattern.port == null) {
           const host = pattern.host.slice(0, slashIndex);
-          const prefixLen = parseInt(pattern.host.slice(slashIndex + 1), 10);
-          const addr = this.parseIpHost(host);
-          if (addr && !isNaN(prefixLen)) {
+          const prefixText = pattern.host.slice(slashIndex + 1);
+          const prefixLen = parseInt(prefixText, 10);
+          const addr = /^\d+$/.test(prefixText) ? this.parseIpHost(host) : null;
+          if (addr && prefixLen >= 0 && prefixLen <= (isIpv4Address(addr) ? 32 : 128)) {
             cache.ip = {
               conditionType: 'IpCondition',
               ip: this.normalizeIp(addr),
               prefixLength: prefixLen
             };
-            cache.normalizedPattern += cache.ip.ip + '/' + cache.ip.prefixLength;
+            const normalizedHost = isIpv4Address(addr) ? cache.ip.ip : '[' + cache.ip.ip + ']';
+            cache.normalizedPattern += normalizedHost + '/' + cache.ip.prefixLength;
             cache.kind = isIpv4Address(addr) ? 'ipv4Cidr' : 'ipv6Cidr';
             return cache;
           }
+          cache.kind = 'invalid';
+          cache.normalizedPattern = '';
+          return cache;
         }
 
         const addr = this.parseIpHost(pattern.host);
@@ -706,10 +907,14 @@ const ConditionsApi: ConditionsApiType = {
             cache.normalizedPattern += ':' + pattern.port;
           }
         } else {
-          let host = pattern.host;
-          if (host.charCodeAt(0) === '.'.charCodeAt(0)) {
-            host = '*' + host;
+          const ipWildcard = this._normalizeIpWildcardPattern(pattern.host);
+          const normalized = ipWildcard == null ? this._normalizeDomainPattern(pattern.host) : null;
+          if (ipWildcard == null && !normalized.valid) {
+            cache.kind = 'invalid';
+            cache.normalizedPattern = '';
+            return cache;
           }
+          const host = ipWildcard != null ? ipWildcard : normalized.pattern;
           cache.kind = host.indexOf('*') >= 0 || host.indexOf('?') >= 0 ? 'domainWildcard' : 'domainExact';
           cache.hostRegex = this._hostRegex(host);
           cache.normalizedPattern += host;
@@ -722,6 +927,9 @@ const ConditionsApi: ConditionsApiType = {
       match(condition, request, cache) {
         cache = cache.analyzed;
         const pattern = cache.pattern;
+        if (cache.kind === 'invalid' || pattern == null || !pattern.valid) {
+          return false;
+        }
         if (!this._hostPortMatches(pattern, request)) {
           return false;
         }
@@ -737,7 +945,7 @@ const ConditionsApi: ConditionsApiType = {
           case 'domainWildcard':
             return cache.hostRegex.test(request.host);
           default:
-            return true;
+            return false;
         }
       },
       str(condition) {
@@ -752,6 +960,9 @@ const ConditionsApi: ConditionsApiType = {
       compile(condition, cache) {
         cache = cache.analyzed;
         const pattern = cache.pattern;
+        if (cache.kind === 'invalid' || pattern == null || !pattern.valid) {
+          return new U2.AST_False;
+        }
         const conditions = [];
         if (pattern.scheme != null) {
           conditions.push(new U2.AST_Binary({
@@ -853,17 +1064,23 @@ const ConditionsApi: ConditionsApiType = {
       analyze(condition) {
         const cache: ConditionCache = {
           addr: null,
+          invalid: false,
           mask: null,
           normalized: null
         };
         let ip = condition.ip;
-        if (ip.charCodeAt(0) === '['.charCodeAt(0)) {
+        if (typeof ip !== 'string') {
+          cache.invalid = true;
+          return cache;
+        }
+        if (ip.charCodeAt(0) === '['.charCodeAt(0) && ip.charCodeAt(ip.length - 1) === ']'.charCodeAt(0)) {
           ip = ip.slice(1, -1);
         }
         const addr = ip + '/' + condition.prefixLength;
         cache.addr = this.parseIp(addr);
         if (cache.addr == null) {
-          throw new Error("Invalid IP address " + addr);
+          cache.invalid = true;
+          return cache;
         }
         cache.normalized = this.normalizeIp(cache.addr);
         cache.mask = this.normalizeIp(cache.addr.subnetMaskAddress());
@@ -875,6 +1092,9 @@ const ConditionsApi: ConditionsApiType = {
           return false;
         }
         cache = cache.analyzed;
+        if (cache.invalid) {
+          return false;
+        }
         if (isIpv4Address(addr) !== isIpv4Address(cache.addr)) {
           return false;
         }
@@ -882,6 +1102,9 @@ const ConditionsApi: ConditionsApiType = {
       },
       compile(condition, cache) {
         cache = cache.analyzed;
+        if (cache.invalid) {
+          return new U2.AST_False;
+        }
         const hostLooksLikeIp = isIpv4Address(cache.addr) ? new U2.AST_Binary({
           left: new U2.AST_Sub({
             expression: new U2.AST_SymbolRef({
@@ -981,6 +1204,9 @@ const ConditionsApi: ConditionsApiType = {
         if (addr != null) {
           return this.normalizeIp(addr) + '/' + addr.subnetMask;
         }
+        if (condition.prefixLength === 128 && typeof condition.ip === 'string') {
+          return condition.ip;
+        }
         return condition.ip + '/' + condition.prefixLength;
       },
       fromStr(str, condition) {
@@ -989,8 +1215,8 @@ const ConditionsApi: ConditionsApiType = {
           condition.ip = this.normalizeIp(addr);
           condition.prefixLength = addr.subnetMask;
         } else {
-          condition.ip = '0.0.0.0';
-          condition.prefixLength = 0;
+          condition.ip = str;
+          condition.prefixLength = 128;
         }
         return condition;
       }

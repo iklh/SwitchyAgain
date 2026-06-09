@@ -182,7 +182,7 @@ describe('Conditions', function() {
     it('should not match URL parts other than the host', function() {
       assert.strictEqual(testCond(cond, 'http://example.net/www.example.com'), false);
     });
-    return it('should support multiple patterns in one condition', function() {
+    it('should support multiple patterns in one condition', function() {
       cond = {
         conditionType: 'HostWildcardCondition',
         pattern: '*.example.com|*.example.net'
@@ -190,6 +190,37 @@ describe('Conditions', function() {
       testCond(cond, 'http://a.example.com/abc', true);
       testCond(cond, 'http://example.net/def', true);
       return testCond(cond, 'http://c.example.org/ghi', false);
+    });
+    it('should normalize Unicode host wildcard patterns', function() {
+      let con;
+      con = {
+        conditionType: 'HostWildcardCondition',
+        pattern: '*.例子.测试|mañana.com'
+      };
+      assert.strictEqual(Conditions.str(con), '*.xn--fsqu00a.xn--0zwm56d|xn--maana-pta.com');
+      testCond(con, 'http://www.例子.测试/', true);
+      testCond(con, 'http://www.xn--fsqu00a.xn--0zwm56d/', true);
+      testCond(con, 'http://mañana.com/', true);
+      return testCond(con, 'http://www.example.com/', false);
+    });
+    it('should ignore invalid host wildcard patterns', function() {
+      let con;
+      con = {
+        conditionType: 'HostWildcardCondition',
+        pattern: 'not a host'
+      };
+      return testCond(con, 'http://example.com/', false);
+    });
+    it('should normalize IPv6 host wildcard literal patterns', function() {
+      let con;
+      con = {
+        conditionType: 'HostWildcardCondition',
+        pattern: '[0:0::1]|2001:db8::*'
+      };
+      assert.strictEqual(Conditions.str(con), '::1|2001:db8::*');
+      testCond(con, 'http://[::1]/', true);
+      testCond(con, 'http://[2001:db8::1]/', true);
+      return testCond(con, 'http://[2001:db9::1]/', false);
     });
   });
   describe('BypassCondition', function() {
@@ -229,6 +260,59 @@ describe('Conditions', function() {
       };
       testCond(cond, 'http://example.com:8080/', true);
       return testCond(cond, 'http://example.com:888/', false);
+    });
+    it('should normalize Unicode domain patterns', function() {
+      let cond, result;
+      cond = {
+        conditionType: 'BypassCondition',
+        pattern: '例子.测试'
+      };
+      result = Conditions.analyze(cond).analyzed;
+      assert.strictEqual(result.normalizedPattern, 'xn--fsqu00a.xn--0zwm56d');
+      testCond(cond, 'http://例子.测试/', true);
+      testCond(cond, 'http://xn--fsqu00a.xn--0zwm56d/', true);
+      return testCond(cond, 'http://www.例子.测试/', false);
+    });
+    it('should normalize Unicode domain patterns with scheme and port', function() {
+      let cond;
+      cond = {
+        conditionType: 'BypassCondition',
+        pattern: 'https://mañana.com:8443'
+      };
+      assert.strictEqual(Conditions.str(cond), 'Bypass: https://xn--maana-pta.com:8443');
+      testCond(cond, 'https://mañana.com:8443/', true);
+      testCond(cond, 'https://xn--maana-pta.com:8443/', true);
+      testCond(cond, 'http://mañana.com:8443/', false);
+      return testCond(cond, 'https://mañana.com:443/', false);
+    });
+    it('should normalize Unicode wildcard domain patterns', function() {
+      let cond;
+      cond = {
+        conditionType: 'BypassCondition',
+        pattern: '*.例子.测试'
+      };
+      assert.strictEqual(Conditions.str(cond), 'Bypass: *.xn--fsqu00a.xn--0zwm56d');
+      testCond(cond, 'http://www.例子.测试/', true);
+      testCond(cond, 'http://www.xn--fsqu00a.xn--0zwm56d/', true);
+      return testCond(cond, 'http://例子.测试/', false);
+    });
+    it('should preserve explicit leading and trailing wildcard semantics on Unicode domains', function() {
+      let cond;
+      cond = {
+        conditionType: 'BypassCondition',
+        pattern: '*例子.测试'
+      };
+      assert.strictEqual(Conditions.str(cond), 'Bypass: *xn--fsqu00a.xn--0zwm56d');
+      testCond(cond, 'http://例子.测试/', true);
+      return testCond(cond, 'http://www.例子.测试/', true);
+    });
+    it('should not treat wildcard inside Unicode labels as valid IDNA patterns', function() {
+      let cond;
+      cond = {
+        conditionType: 'BypassCondition',
+        pattern: '例*.测试'
+      };
+      return testCond(cond, 'http://例子.测试/', false);
     });
     it('should correctly support patterns using IPv4 literals', function() {
       let cond;
@@ -328,6 +412,18 @@ describe('Conditions', function() {
       testCond(cond, 'http://[2001:db8::1]/', true);
       testCond(cond, 'http://[2001:0db8:0000:0000:0000:0000:0000:0001]/', true);
       return testCond(cond, 'http://[2001:db8:1::1]/', false);
+    });
+    it('should fail closed for malformed bypass patterns', function() {
+      let cond;
+      for (const pattern of ['not a host', '[::1', 'example.com:', 'example.com:abc', 'example.com:70000', '192.168.0.0/33', '[2001:db8::]/129', 'http://[::1']) {
+        cond = {
+          conditionType: 'BypassCondition',
+          pattern
+        };
+        testCond(cond, 'http://example.com/', false);
+        testCond(cond, 'http://127.0.0.1/', false);
+        testCond(cond, 'http://[::1]/', false);
+      }
     });
     it('should parse IPv4 CIDR notation', function() {
       let cond, result;
@@ -771,17 +867,18 @@ describe('Conditions', function() {
       cond = Conditions.fromStr(result);
       assert.deepStrictEqual(cond, condition);
     });
-    it('should normalize BypassCondition hosts ending with colon', function() {
+    it('should fail closed for BypassCondition hosts ending with colon', function() {
       let cond, condition, result;
       condition = {
         conditionType: 'BypassCondition',
         pattern: 'bogus:'
       };
       result = Conditions.str(condition);
-      assert.strictEqual(result, 'Bypass: bogus');
+      assert.strictEqual(result, 'Bypass: bogus:');
       cond = Conditions.fromStr(result);
       assert.strictEqual(cond.conditionType, 'BypassCondition');
-      assert.strictEqual(cond.pattern, 'bogus');
+      assert.strictEqual(cond.pattern, 'bogus:');
+      return testCond(cond, 'http://bogus/', false);
     });
     it('should add brackets for IPv6 hosts in BypassCondition', function() {
       let cond, condition, result;
@@ -834,20 +931,22 @@ describe('Conditions', function() {
         prefixLength: 128
       });
     });
-    it('should provide sensible fallbacks for invalid IpCondition', function() {
+    it('should fail closed for invalid IpCondition', function() {
       let cond;
       cond = Conditions.fromStr('Ip: foo/-233');
       assert.deepStrictEqual(cond, {
         conditionType: 'IpCondition',
-        ip: '0.0.0.0',
-        prefixLength: 0
+        ip: 'foo/-233',
+        prefixLength: 128
       });
+      testCond(cond, 'http://127.0.0.1/', false);
       cond = Conditions.fromStr('Ip: nonsense stuff');
       assert.deepStrictEqual(cond, {
         conditionType: 'IpCondition',
-        ip: '0.0.0.0',
-        prefixLength: 0
+        ip: 'nonsense stuff',
+        prefixLength: 128
       });
+      return testCond(cond, 'http://127.0.0.1/', false);
     });
     it('should assume full match for IpCondition without prefixLength', function() {
       let cond;
@@ -864,14 +963,15 @@ describe('Conditions', function() {
         prefixLength: 128
       });
     });
-    it('should provide sensible fallbacks for invalid IpCondition', function() {
+    it('should preserve invalid IpCondition input without widening it', function() {
       let cond;
       cond = Conditions.fromStr('Ip: 0.0.0.0/-233');
       assert.deepStrictEqual(cond, {
         conditionType: 'IpCondition',
-        ip: '0.0.0.0',
-        prefixLength: 0
+        ip: '0.0.0.0/-233',
+        prefixLength: 128
       });
+      return testCond(cond, 'http://127.0.0.1/', false);
     });
     it('should encode & decode HostLevelsCondition correctly', function() {
       let cond, condition, result;
