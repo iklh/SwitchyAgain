@@ -1,7 +1,7 @@
 SwitchyAgain
 ============
 
-![Version](https://img.shields.io/github/v/tag/iklh/SwitchyAgain?label=version)
+![Version](https://img.shields.io/github/v/tag/iklh/SwitchyAgain?label=Version) ![License](https://img.shields.io/badge/License-GPL--3.0%2B-blue) ![Written in TypeScript](https://img.shields.io/badge/Written_in-TypeScript-3178C6?logo=typescript&logoColor=white) ![Built with React](https://img.shields.io/badge/Built_with-React-61DAFB?logo=react&logoColor=white) ![Manifest V3](https://img.shields.io/badge/Manifest-V3-34A853) ![Chrome Supported](https://img.shields.io/badge/Chrome-Supported-4285F4?logo=googlechrome&logoColor=white) ![Firefox Supported](https://img.shields.io/badge/Firefox-Supported-FF7139?logo=firefoxbrowser&logoColor=white)
 
 SwitchyAgain is a fork of [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega) focused on keeping the proxy switching
 workflow available on modern browsers.
@@ -14,6 +14,8 @@ Changes from SwitchyOmega
   background scripts.
 - Kept the classic profile switching workflow, including fixed, direct, system,
   and PAC/rule-based profiles.
+- Modernized the codebase around TypeScript workspace packages and React UI
+  entry points.
 - Renamed the extension to SwitchyAgain and maintains a separate version line
   for this fork.
 
@@ -23,21 +25,21 @@ Status
 This fork is intended as a compatibility-focused continuation. Most original
 documentation still applies unless noted otherwise.
 
+Development
+-----------
+This repository uses npm workspaces for the proxy engine, extension runtime,
+web UI, and browser extension packages.
+
+Common commands:
+
+- `npm install` installs workspace dependencies.
+- `npm run build` builds the browser extension.
+- `npm run typecheck` checks all workspace TypeScript projects.
+- `npm test` runs the proxy engine and extension runtime tests.
+- `npm run smoke` runs the local extension and UI smoke checks.
+- `npm run release` builds Chromium and Firefox release artifacts.
+- `npm run package:dist` copies versioned release archives to `dist/`.
+
 License
 -------
-![GPLv3](https://www.gnu.org/graphics/gplv3-127x51.png)
-
-SwitchyAgain is licensed under [GNU General Public License](https://www.gnu.org/licenses/gpl.html) Version 3 or later.
-
-SwitchyAgain is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-SwitchyAgain is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with SwitchyAgain.  If not, see <http://www.gnu.org/licenses/>.
+SwitchyAgain is licensed under the [GNU General Public License v3.0 or later](COPYING).

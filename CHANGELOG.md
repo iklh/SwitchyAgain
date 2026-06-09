@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.1.17
+
+Dependency, workspace, and proxy matching cleanup.
+
+- Modernized runtime dependencies and bundled Bootstrap assets while keeping the
+  extension build compatible with the updated toolchain.
+- Adapted options sync to the newer limiter runtime and upgraded the Bluebird
+  dependency.
+- Normalized bypass IP matching and IDN host conditions so proxy rules handle
+  encoded and canonical forms more consistently.
+- Renamed workspace packages and the web UI locale catalog to match the current
+  SwitchyAgain project layout.
+- Updated browser extension locale packaging and removed locales that are not
+  shipped by the extension build.
+- Added local smoke tests for extension packaging, library loading, and UI
+  entry points.
+
 ## v1.1.16
 
 Build modernization and options style cleanup.
