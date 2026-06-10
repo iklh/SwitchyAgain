@@ -110,6 +110,7 @@ type BackgroundOptions = BackgroundOptionMethods & {
   externalApi: BackgroundExternalApi;
   isCurrentProfileStatic(): boolean;
   matchProfile(request: unknown): OmegaPromise<BackgroundMatchResult>;
+  optionsLoaded: OmegaPromise<unknown> | null;
   printProfile(profile?: BackgroundProfile | null): unknown;
   profile(name?: unknown): BackgroundProfile;
   proxyNotControllable(): string | null;
@@ -724,12 +725,33 @@ type BackgroundOmegaTarget = {
     };
   }
 
+  function readinessForRequest(request: BackgroundRequest): OmegaPromise<unknown> {
+    switch (request.method) {
+      case 'getAll':
+      case 'getPageInfo':
+      case 'getState':
+        return options.optionsLoaded || options.ready;
+      default:
+        return options.ready;
+    }
+  }
+
   chrome.runtime.onMessage.addListener((request: unknown, _sender: unknown, respond: BackgroundRespond) => {
     if (!isRecord(request) || typeof request.method !== 'string') {
       return;
     }
     const backgroundRequest = request as RawBackgroundRequest;
-    options.ready.then(() => {
+    if (!isBackgroundMethod(backgroundRequest.method)) {
+      Log.error(`No such method ${backgroundRequest.method}!`);
+      respond({
+        error: {
+          reason: 'noSuchMethod'
+        }
+      });
+      return;
+    }
+    const typedRequest = backgroundRequest as BackgroundRequest;
+    readinessForRequest(typedRequest).then(() => {
       const dispatch = resolveBackgroundDispatch(backgroundRequest);
       if (!dispatch) {
         Log.error(`No such method ${backgroundRequest.method}!`);
@@ -775,6 +797,13 @@ type BackgroundOmegaTarget = {
           error: encodeError(error)
         });
       });
+    }, (error: unknown) => {
+      Log.error(backgroundRequest.method + ' ==>', error);
+      if (!backgroundRequest.noReply) {
+        respond({
+          error: encodeError(error)
+        });
+      }
     });
     if (!backgroundRequest.noReply) {
       return true;

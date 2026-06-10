@@ -71,7 +71,13 @@ function actionApi(): ChromeActionApi {
 
 interface ChromeOptions extends OmegaOptionsBase {}
 
-function defaultUiLocaleFromBrowser(language = chrome.i18n?.getUILanguage?.() || '') {
+function defaultUiLocaleFromBrowser(language?: string) {
+  if (language == null) {
+    const getUILanguage = chrome.i18n && chrome.i18n.getUILanguage;
+    language = typeof getUILanguage === 'function'
+      ? getUILanguage.call(chrome.i18n)
+      : '';
+  }
   const normalized = language.replace(/_/g, '-').toLowerCase();
   if (normalized === 'zh' || normalized.startsWith('zh-hans') || normalized.startsWith('zh-cn') || normalized.startsWith('zh-sg')) {
     return 'zh-Hans';
