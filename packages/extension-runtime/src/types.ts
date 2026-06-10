@@ -1,35 +1,41 @@
 export type StorageValue = unknown;
 
-export type BluebirdPromise<T> = {
-  catch<TResult = never>(
-    errorClass: new (...args: unknown[]) => Error,
-    onRejected: (reason: unknown) => TResult | PromiseLike<TResult>
-  ): BluebirdPromise<T | TResult>;
+export type RuntimePromise<T> = {
   catch<TResult = never>(
     onRejected?: ((reason: unknown) => TResult | PromiseLike<TResult>) | null
-  ): BluebirdPromise<T | TResult>;
-  return<TResult>(value: TResult): BluebirdPromise<TResult>;
-  tap<TResult = T>(
-    onFulfilled?: ((value: T) => TResult | PromiseLike<TResult>) | null
-  ): BluebirdPromise<T>;
+  ): RuntimePromise<T | TResult>;
+  finally(onFinally?: (() => void) | null): RuntimePromise<T>;
   then<TResult1 = T, TResult2 = never>(
     onFulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null,
     onRejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
-  ): BluebirdPromise<TResult1 | TResult2>;
+  ): RuntimePromise<TResult1 | TResult2>;
+  timeout(milliseconds: number): RuntimePromise<T>;
 };
 
-export type BluebirdStatic = {
-  all<T>(values: Array<T | PromiseLike<T>>): BluebirdPromise<T[]>;
+export type RuntimePromiseStatic = {
+  new <T = unknown>(
+    executor: (
+      resolve: (value?: T | PromiseLike<T>) => void,
+      reject: (reason?: unknown) => void
+    ) => void
+  ): RuntimePromise<T>;
+  all<T>(values: Array<T | PromiseLike<T>>): RuntimePromise<T[]>;
+  delay(milliseconds?: number): RuntimePromise<void>;
   join<T1, T2, TResult>(
     first: T1 | PromiseLike<T1>,
     second: T2 | PromiseLike<T2>,
     handler: (first: T1, second: T2) => TResult | PromiseLike<TResult>
-  ): BluebirdPromise<TResult>;
+  ): RuntimePromise<TResult>;
+  longStackTraces(): void;
+  onPossiblyUnhandledRejection(callback: (reason: unknown, promise: unknown) => unknown): void;
+  onUnhandledRejectionHandled(callback: (promise: unknown) => unknown): void;
+  promisify(fn: unknown): (...args: unknown[]) => RuntimePromise<unknown>;
   props<T extends Record<string, unknown>>(
     values: T
-  ): BluebirdPromise<Record<keyof T, unknown>>;
-  reject<T = never>(reason?: unknown): BluebirdPromise<T>;
-  resolve<T = void>(value?: T | PromiseLike<T>): BluebirdPromise<T>;
+  ): RuntimePromise<Record<keyof T, unknown>>;
+  reject<T = never>(reason?: unknown): RuntimePromise<T>;
+  resolve<T = void>(value?: T | PromiseLike<T>): RuntimePromise<T>;
+  try<T = unknown>(fn: () => T | PromiseLike<T>): RuntimePromise<T>;
 };
 
 export type LogLike = {
@@ -69,10 +75,10 @@ export type StorageWatchCallback = (changes: StorageChanges) => void;
 export type StopWatching = () => unknown;
 
 export type StorageLike = {
-  apply: (operations: StorageApplyOperations) => BluebirdPromise<StorageApplyOperations>;
-  get: (keys: StorageGetKeys) => BluebirdPromise<StorageItems>;
-  remove: (keys?: StorageRemoveKeys) => BluebirdPromise<unknown>;
-  set: (items: StorageItems) => BluebirdPromise<StorageItems>;
+  apply: (operations: StorageApplyOperations) => RuntimePromise<StorageApplyOperations>;
+  get: (keys: StorageGetKeys) => RuntimePromise<StorageItems>;
+  remove: (keys?: StorageRemoveKeys) => RuntimePromise<unknown>;
+  set: (items: StorageItems) => RuntimePromise<StorageItems>;
   watch: (keys: StorageRemoveKeys, callback: StorageWatchCallback) => StopWatching;
 };
 
@@ -155,7 +161,7 @@ export type OmegaPacModule = {
 };
 
 export type OptionsSyncLike = {
-  copyTo(storage: StorageLike): BluebirdPromise<unknown>;
+  copyTo(storage: StorageLike): RuntimePromise<unknown>;
   enabled: boolean;
   requestPush(changes: StorageChanges): unknown;
   storage: StorageLike;
@@ -164,7 +170,7 @@ export type OptionsSyncLike = {
 };
 
 export type ProxyImplLike = {
-  applyProfile(profile: ProfileLike, meta?: ProfileLike, options?: OptionsData): BluebirdPromise<unknown>;
+  applyProfile(profile: ProfileLike, meta?: ProfileLike, options?: OptionsData): RuntimePromise<unknown>;
 };
 
 export type SyncableProfileValue = {

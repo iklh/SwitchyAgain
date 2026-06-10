@@ -1,14 +1,13 @@
 /* @module @switchyagain/extension-runtime/options_sync */
 
-import PromiseImpl from 'bluebird';
 import {create as createJsonDiffPatch} from 'jsondiffpatch';
 import {TokenBucket} from 'limiter';
 import OmegaPac from '@switchyagain/proxy-engine';
 import Log from './log';
+import Promise from './promise';
 import StorageClass from './storage';
 import type {
-  BluebirdStatic,
-  BluebirdPromise,
+  RuntimePromise,
   StorageApplyOperations,
   StorageChanges,
   StorageItems,
@@ -49,7 +48,6 @@ type OmegaPacModule = {
 
 type TimerHandle = ReturnType<typeof setTimeout>;
 
-const Promise = PromiseImpl as BluebirdStatic;
 const Storage = StorageClass as unknown as StorageModule;
 const Revision = (OmegaPac as OmegaPacModule).Revision;
 
@@ -200,7 +198,7 @@ class OptionsSync {
       }).then(({set, remove}: StorageOperations) => {
         const doSet = Object.keys(set).length === 0
           ? Promise.resolve(0)
-          : (Log.log('OptionsSync::set', set), this.storage!.set(set).return(1));
+          : (Log.log('OptionsSync::set', set), this.storage!.set(set).then(() => 1));
         return doSet.then((cost: number) => {
           set = {};
           if (remove.length > 0) {
@@ -270,8 +268,11 @@ class OptionsSync {
    * @param {Storage} local The local storage to be written to
    * @returns {function} Calling the returned function will stop watching.
    */
-  copyTo(local: StorageLike): BluebirdPromise<unknown> {
-    return Promise.join(local.get(null), this.storage!.get(null), (base: StorageItems, changes: StorageChanges) => {
+  copyTo(local: StorageLike): RuntimePromise<unknown> {
+    return Promise.all([
+      local.get(null),
+      this.storage!.get(null)
+    ]).then(([base, changes]: [StorageItems, StorageChanges]) => {
       for (const key in base) {
         if (!Object.prototype.hasOwnProperty.call(base, key)) continue;
         if (!(key in changes)) {

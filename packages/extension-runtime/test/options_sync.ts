@@ -1,5 +1,5 @@
 import assert from 'assert';
-import Promise from 'bluebird';
+import Promise from '../src/promise';
 import LogClass from '../src/log';
 import OptionsSyncClass from '../src/options_sync';
 import StorageClass from '../src/storage';

@@ -1,10 +1,5 @@
 declare var OmegaPac: unknown;
 
-declare module 'bluebird' {
-  const value: any;
-  export default value;
-}
-
 declare module 'limiter' {
   type Interval = number | 'second' | 'sec' | 'minute' | 'min' | 'hour' | 'hr' | 'day';
   type TokenBucketOptions = {

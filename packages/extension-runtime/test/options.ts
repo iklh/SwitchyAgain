@@ -1,5 +1,5 @@
 import assert from 'assert';
-import Promise from 'bluebird';
+import Promise from '../src/promise';
 import OptionsClass from '../src/options';
 import {assertCalledOnce, assertCalledWith, stubReturns} from './helpers/test_helpers';
 

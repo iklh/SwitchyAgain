@@ -1,16 +1,15 @@
 /* @module @switchyagain/extension-runtime/options */
 declare const options: Record<string, unknown> | null | undefined;
 
-import PromiseImpl from 'bluebird';
 import {Buffer} from 'buffer';
 import {patch as patchJson} from 'jsondiffpatch';
 import OmegaPacImpl from '@switchyagain/proxy-engine';
 import defaultOptions from './default_options';
 import Log from './log';
+import Promise from './promise';
 import Storage from './storage';
 import type {
-  BluebirdPromise,
-  BluebirdStatic,
+  RuntimePromise,
   LogLike,
   OmegaPacModule,
   OptionsData,
@@ -43,7 +42,6 @@ class NoOptionsError extends Error {
   }
 }
 
-const Promise = PromiseImpl as BluebirdStatic;
 const OmegaPac = OmegaPacImpl as OmegaPacModule;
 
 const hasProp = Object.prototype.hasOwnProperty;
@@ -155,8 +153,8 @@ class Options {
   log: LogLike = Log;
   sync: OptionsSyncLike | null = null;
   proxyImpl: ProxyImplLike | null = null;
-  optionsLoaded: BluebirdPromise<unknown> | null = null;
-  ready: BluebirdPromise<unknown> | null = null;
+  optionsLoaded: RuntimePromise<unknown> | null = null;
+  ready: RuntimePromise<unknown> | null = null;
 
   /**
    * Transform options values (especially profiles) for syncing.
@@ -227,7 +225,7 @@ class Options {
    * @returns {Promise<OmegaOptions>} The loaded options
    */
 
-  loadOptions(arg?: LoadOptionsArgs): BluebirdPromise<unknown> {
+  loadOptions(arg?: LoadOptionsArgs): RuntimePromise<unknown> {
     let loadRaw;
     let retry = (arg != null ? arg : {}).retry;
     if (retry == null) {
@@ -256,16 +254,19 @@ class Options {
       });
       this._syncWatchStop = this.sync.watchAndPull(this._storage);
       loadRaw = this.sync.copyTo(this._storage)
-        .catch(Storage.StorageUnavailableError, () => {
-        console.error('Warning: Sync storage is not available in this ' + 'browser! Disabling options sync.');
-        if (typeof this._syncWatchStop === "function") {
-          this._syncWatchStop();
-        }
-        this._syncWatchStop = null;
-        this.sync = null;
-        return this._state.set({
-          'syncOptions': 'unsupported'
-        });
+        .catch((error: unknown) => {
+          if (!(error instanceof Storage.StorageUnavailableError)) {
+            return Promise.reject(error);
+          }
+          console.error('Warning: Sync storage is not available in this ' + 'browser! Disabling options sync.');
+          if (typeof this._syncWatchStop === "function") {
+            this._syncWatchStop();
+          }
+          this._syncWatchStop = null;
+          this.sync = null;
+          return this._state.set({
+            'syncOptions': 'unsupported'
+          });
         })
         .then(() => this._storage.get(null));
     }
@@ -276,8 +277,8 @@ class Options {
         const changes = arg1[1];
         return this._storage.apply({
           changes: changes
-        }).return(loadedOptions);
-    }).tap((loadedOptions: OptionsData) => {
+        }).then(() => loadedOptions);
+    }).then((loadedOptions: OptionsData) => {
         this._options = loadedOptions;
         this._watchStop = this._watch();
         return this._state.get({
@@ -298,7 +299,7 @@ class Options {
               });
             }
           });
-        });
+        }).then(() => loadedOptions);
     }).catch((e: unknown) => {
         if (!(retry > 0)) {
           return Promise.reject(e);
@@ -374,7 +375,7 @@ class Options {
    * @returns {Promise<OmegaOptions>} A promise that is fulfilled on ready.
    */
 
-  init(): BluebirdPromise<unknown> {
+  init(): RuntimePromise<unknown> {
     this.ready = this.loadOptions().then(() => {
         if (this._options['-startupProfileName']) {
           return this.applyProfile(this._options['-startupProfileName'] as string);
@@ -453,7 +454,7 @@ class Options {
    * @returns {Promise<[OmegaOptions, {}]>} The new options and the changes.
    */
 
-  upgrade(options: OptionsData | null | undefined, changes?: StorageChanges): BluebirdPromise<[OptionsData, StorageChanges]> {
+  upgrade(options: OptionsData | null | undefined, changes?: StorageChanges): RuntimePromise<[OptionsData, StorageChanges]> {
     if (changes == null) {
       changes = {};
     }
@@ -529,7 +530,7 @@ class Options {
    * @returns {Promise<OmegaOptions>} The options just applied
    */
 
-  reset(options?: OptionsData | string | null): BluebirdPromise<unknown> {
+  reset(options?: OptionsData | string | null): RuntimePromise<unknown> {
     this.log.method('Options#reset', this, arguments);
     const preserveProfileName = options != null ? this._currentProfileName : null;
     if (options == null) {
@@ -602,7 +603,7 @@ class Options {
    * @returns {Promise<OmegaOptions>} The updated options
    */
 
-  patch(patch: Record<string, any> | null | undefined): BluebirdPromise<unknown> | void {
+  patch(patch: Record<string, any> | null | undefined): RuntimePromise<unknown> | void {
     if (!patch) {
       return;
     }
@@ -621,7 +622,7 @@ class Options {
     return this._setOptions(changes);
   }
 
-  _setOptions = (changes: StorageChanges, args?: SetOptionsArgs): BluebirdPromise<unknown> | undefined => {
+  _setOptions = (changes: StorageChanges, args?: SetOptionsArgs): RuntimePromise<unknown> | undefined => {
     const removed: string[] = [];
     const checkRev = (args != null && args.checkRevision != null) ? args.checkRevision : false;
     let profilesChanged = false;
@@ -809,7 +810,7 @@ class Options {
    * @returns {Promise} A promise which is fulfilled when the settings apply
    */
 
-  setInspect(settings?: InspectSettings): BluebirdPromise<void> {
+  setInspect(settings?: InspectSettings): RuntimePromise<void> {
     return Promise.resolve();
   }
 
@@ -821,7 +822,7 @@ class Options {
    * @returns {Promise} A promise which is fulfilled when the settings apply
    */
 
-  setMonitorWebRequests(enabled?: unknown): BluebirdPromise<void> {
+  setMonitorWebRequests(enabled?: unknown): RuntimePromise<void> {
     return Promise.resolve();
   }
 
@@ -859,7 +860,7 @@ class Options {
    * @returns {string} The compiled
   */
 
-  pacForProfile(profile: string | ProfileLike, compress?: boolean): BluebirdPromise<string> {
+  pacForProfile(profile: string | ProfileLike, compress?: boolean): RuntimePromise<string> {
     if (compress == null) {
       compress = false;
     }
@@ -872,7 +873,7 @@ class Options {
     return Promise.resolve(OmegaPac.PacGenerator.ascii(ast.print_to_string()));
   }
 
-  _setAvailableProfiles(): BluebirdPromise<unknown> {
+  _setAvailableProfiles(): RuntimePromise<unknown> {
     const profile = this._currentProfileName ? this.currentProfile() : null;
     const profiles: Record<string, AvailableProfile> = {};
     const currentIncludable = profile && OmegaPac.Profiles.isIncludable(profile);
@@ -931,7 +932,7 @@ class Options {
    * @returns {Promise} A promise which is fulfilled when the profile is applied.
   */
 
-  applyProfile(name: string | null | undefined, options?: ApplyProfileOptions): BluebirdPromise<unknown> {
+  applyProfile(name: string | null | undefined, options?: ApplyProfileOptions): RuntimePromise<unknown> {
     this.log.method('Options#applyProfile', this, arguments);
     const profile = OmegaPac.Profiles.byName(name, this._options);
     if (!profile) {
@@ -1054,7 +1055,7 @@ class Options {
    * @returns {Promise} A promise which is fulfilled when the quick switch is set
    */
 
-  setQuickSwitch(quickSwitch: string[] | null, canEnable: boolean): BluebirdPromise<void> {
+  setQuickSwitch(quickSwitch: string[] | null, canEnable: boolean): RuntimePromise<void> {
     return Promise.resolve();
   }
 
@@ -1069,7 +1070,7 @@ class Options {
    * @returns {Promise} A promise which is fulfilled when the schedule is set
    */
 
-  schedule(name: string, periodInMinutes: unknown, callback: () => unknown): BluebirdPromise<void> {
+  schedule(name: string, periodInMinutes: unknown, callback: () => unknown): RuntimePromise<void> {
     return Promise.resolve();
   }
 
@@ -1105,9 +1106,9 @@ class Options {
    * updated profile.
   */
 
-  updateProfile(name?: string | string[] | null, opt_bypass_cache?: boolean): BluebirdPromise<Record<string, unknown>> {
+  updateProfile(name?: string | string[] | null, opt_bypass_cache?: boolean): RuntimePromise<Record<string, unknown>> {
     this.log.method('Options#updateProfile', this, arguments);
-    const results: Record<string, BluebirdPromise<unknown>> = {};
+    const results: Record<string, RuntimePromise<unknown>> = {};
     OmegaPac.Profiles.each(this._options, (key, profile) => {
         if (name != null) {
           if (Array.isArray(name)) {
@@ -1134,7 +1135,7 @@ class Options {
               OmegaPac.Profiles.dropCache(profile);
               const changes: StorageChanges = {};
               changes[key] = profile;
-              return this._setOptions(changes).return(profile);
+              return this._setOptions(changes)!.then(() => profile);
             } else {
               return profile;
             }
@@ -1147,7 +1148,14 @@ class Options {
           });
         }
     });
-    return Promise.props(results);
+    const keys = Object.keys(results);
+    return Promise.all(keys.map((key) => results[key])).then((values) => {
+      const resolved: Record<string, unknown> = {};
+      for (let i = 0; i < keys.length; i++) {
+        resolved[keys[i]] = values[i];
+      }
+      return resolved;
+    });
   }
 
 
@@ -1160,7 +1168,7 @@ class Options {
    * @returns {Promise<String>} The text content fetched from the url
    */
 
-  fetchUrl(url: string, opt_bypass_cache?: boolean, opt_type_hints?: string[]): BluebirdPromise<string> {
+  fetchUrl(url: string, opt_bypass_cache?: boolean, opt_type_hints?: string[]): RuntimePromise<string> {
     return Promise.reject(new Error('not implemented'));
   }
 
@@ -1200,7 +1208,7 @@ class Options {
    * @returns {Promise<OmegaOptions>} The updated options
   */
 
-  replaceRef(fromName: string, toName: string): BluebirdPromise<unknown> {
+  replaceRef(fromName: string, toName: string): RuntimePromise<unknown> {
     this.log.method('Options#replaceRef', this, arguments);
     const profile = OmegaPac.Profiles.byName(fromName, this._options);
     if (!profile) {
@@ -1230,7 +1238,7 @@ class Options {
    * @returns {Promise<OmegaOptions>} The updated options
   */
 
-  renameProfile(fromName: string, toName: string): BluebirdPromise<unknown> {
+  renameProfile(fromName: string, toName: string): RuntimePromise<unknown> {
     this.log.method('Options#renameProfile', this, arguments);
     if (OmegaPac.Profiles.byName(toName, this._options)) {
       return Promise.reject(new Error("Target name " + name + " already taken!"));
@@ -1268,7 +1276,7 @@ class Options {
    * @returns {Promise} A promise which is fulfilled when the rule is applied.
   */
 
-  addTempRule(domain: string, profileName: string): BluebirdPromise<unknown> {
+  addTempRule(domain: string, profileName: string): RuntimePromise<unknown> {
     this.log.method('Options#addTempRule', this, arguments);
     if (!this._currentProfileName) {
       return Promise.resolve();
@@ -1348,7 +1356,7 @@ class Options {
    * @returns {Promise} A promise which is fulfilled when the condition is saved.
   */
 
-  addCondition(condition: Record<string, unknown> | Array<Record<string, unknown>>, profileName: string, addToBottom?: boolean): BluebirdPromise<unknown> {
+  addCondition(condition: Record<string, unknown> | Array<Record<string, unknown>>, profileName: string, addToBottom?: boolean): RuntimePromise<unknown> {
     this.log.method('Options#addCondition', this, arguments);
     if (!this._currentProfileName) {
       return Promise.resolve();
@@ -1399,7 +1407,7 @@ class Options {
    * @returns {Promise} A promise which is fulfilled when the profile is saved.
   */
 
-  setDefaultProfile(profileName: string, defaultProfileName: string): BluebirdPromise<unknown> {
+  setDefaultProfile(profileName: string, defaultProfileName: string): RuntimePromise<unknown> {
     this.log.method('Options#setDefaultProfile', this, arguments);
     const profile = OmegaPac.Profiles.byName(profileName, this._options);
     if (profile == null) {
@@ -1425,7 +1433,7 @@ class Options {
    * @returns {Promise<{}>} The saved profile
   */
 
-  addProfile(profile: ProfileLike): BluebirdPromise<unknown> {
+  addProfile(profile: ProfileLike): RuntimePromise<unknown> {
     this.log.method('Options#addProfile', this, arguments);
     if (OmegaPac.Profiles.byName(profile.name, this._options)) {
       return Promise.reject(new Error("Target name " + profile.name + " already taken!"));
@@ -1444,7 +1452,7 @@ class Options {
    * and the matching details
   */
 
-  matchProfile(request: Record<string, unknown>): BluebirdPromise<Record<string, unknown>> {
+  matchProfile(request: Record<string, unknown>): RuntimePromise<Record<string, unknown>> {
     if (!this._currentProfileName) {
       return Promise.resolve({
         profile: this._externalProfile,
@@ -1488,7 +1496,7 @@ class Options {
    * @returns {Promise} A promise which is fulfilled when the profile is set
   */
 
-  setExternalProfile(profile: ProfileLike, args?: ExternalProfileArgs): BluebirdPromise<unknown> | void {
+  setExternalProfile(profile: ProfileLike, args?: ExternalProfileArgs): RuntimePromise<unknown> | void {
     if (this._options['-revertProxyChanges'] && !this._isSystem) {
       if (profile.name !== this._currentProfileName && this._currentProfileName) {
         if (!(args != null ? args.noRevert : void 0)) {
@@ -1542,7 +1550,7 @@ class Options {
    * @returns {Promise} A promise which is fulfilled when the syncing is switched
    */
 
-  setOptionsSync(enabled: boolean, args?: SetOptionsSyncArgs): BluebirdPromise<unknown> {
+  setOptionsSync(enabled: boolean, args?: SetOptionsSyncArgs): RuntimePromise<unknown> {
     this.log.method('Options#setOptionsSync', this, arguments);
     if (this.sync == null) {
       return Promise.reject(new Error('Options syncing is unsupported.'));

@@ -1,14 +1,11 @@
-import PromiseImpl from 'bluebird';
+import Promise from './promise';
 import Storage from './storage';
 import type {
-  BluebirdPromise,
-  BluebirdStatic,
+  RuntimePromise,
   StorageGetKeys,
   StorageItems,
   StorageRemoveKeys
 } from './types';
-
-const Promise = PromiseImpl as BluebirdStatic;
 
 type BrowserStorageBackend = {
   ready?: unknown;
@@ -35,11 +32,11 @@ class BrowserStorage extends Storage {
     this.proto = Object.getPrototypeOf(this.storage) as BrowserStorageProto;
   }
 
-  ready(): BluebirdPromise<unknown> {
+  ready(): RuntimePromise<unknown> {
     return Promise.resolve(this.storage.ready);
   }
 
-  get(keys: StorageGetKeys): BluebirdPromise<StorageItems> {
+  get(keys: StorageGetKeys): RuntimePromise<StorageItems> {
     return this.ready().then(() => {
       let map: StorageItems = {};
       if (typeof keys === 'string') {
@@ -68,7 +65,7 @@ class BrowserStorage extends Storage {
     });
   }
 
-  set(items: StorageItems): BluebirdPromise<StorageItems> {
+  set(items: StorageItems): RuntimePromise<StorageItems> {
     return this.ready().then(() => {
       for (const key in items) {
         if (!Object.prototype.hasOwnProperty.call(items, key)) continue;
@@ -80,7 +77,7 @@ class BrowserStorage extends Storage {
     });
   }
 
-  remove(keys?: StorageRemoveKeys): BluebirdPromise<void> {
+  remove(keys?: StorageRemoveKeys): RuntimePromise<void> {
     return this.ready().then(() => {
       if (keys == null) {
         if (!this.prefix) {

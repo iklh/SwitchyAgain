@@ -1,10 +1,9 @@
 /* @module @switchyagain/extension-runtime/storage */
 
-import PromiseImpl from 'bluebird';
 import Log from './log';
+import Promise from './promise';
 import type {
-  BluebirdPromise,
-  BluebirdStatic,
+  RuntimePromise,
   StorageApplyOperations,
   StorageChanges,
   StorageGetKeys,
@@ -14,8 +13,6 @@ import type {
   StorageWatchCallback,
   StopWatching
 } from './types';
-
-const Promise = PromiseImpl as BluebirdStatic;
 
 class RateLimitExceededError extends Error {
   constructor() {
@@ -86,7 +83,7 @@ class Storage {
    * or null for all.
    * @returns {Promise<(Object.<string, {}>)>} A map from keys to values
    */
-  get(keys: StorageGetKeys): BluebirdPromise<StorageItems> {
+  get(keys: StorageGetKeys): RuntimePromise<StorageItems> {
     Log.method('Storage#get', this, arguments);
     if (!this._items) {
       return Promise.resolve({});
@@ -115,7 +112,7 @@ class Storage {
    * @param {(string|Object.<string,{}>)} items A map from key to value to set.
    * @returns {Promise<(Object.<string, {}>)>} A map of key-value pairs just set.
    */
-  set(items: StorageItems): BluebirdPromise<StorageItems> {
+  set(items: StorageItems): RuntimePromise<StorageItems> {
     Log.method('Storage#set', this, arguments);
     if (this._items == null) {
       this._items = {};
@@ -132,7 +129,7 @@ class Storage {
    * @param {(string|string[]|null)} keys The keys to remove, or null for all.
    * @returns {Promise} A promise that fulfills on successful removal.
    */
-  remove(keys?: StorageRemoveKeys): BluebirdPromise<void> {
+  remove(keys?: StorageRemoveKeys): RuntimePromise<void> {
     Log.method('Storage#remove', this, arguments);
     if (this._items != null) {
       if (keys == null) {
@@ -167,7 +164,7 @@ class Storage {
    * fields passed through as the second argument.
    * @returns {Promise} A promise that fulfills on operation success.
    */
-  apply(operations: StorageApplyOperations): BluebirdPromise<StorageApplyOperations> {
+  apply(operations: StorageApplyOperations): RuntimePromise<StorageApplyOperations> {
     let writeOperations = operations as StorageApplyOperations & {
       remove: string[];
       set: StorageItems;
@@ -177,7 +174,7 @@ class Storage {
     }
     return this.set(writeOperations.set).then(() => {
       return this.remove(writeOperations.remove);
-    }).return(writeOperations);
+    }).then(() => writeOperations);
   }
 }
 

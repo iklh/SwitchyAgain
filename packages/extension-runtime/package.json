@@ -4,7 +4,6 @@
   "private": true,
   "main": "./index.js",
   "dependencies": {
-    "bluebird": "^3.7.2",
     "jsondiffpatch": "^0.7.6",
     "limiter": "^3.0.0",
     "@switchyagain/proxy-engine": "0.0.1"
@@ -13,7 +12,7 @@
     "@switchyagain/proxy-engine": "./build-ts/omega_pac_shim.js"
   },
   "scripts": {
-    "build": "npm run build:ts && node ../../scripts/bundle-esbuild.mjs --entry=src/index.ts --outfile=index.js --format=cjs --platform=node --target=es2015 --external=bluebird,buffer,jsondiffpatch,limiter,@switchyagain/proxy-engine && node ../../scripts/bundle-esbuild.mjs --entry=src/index.ts --outfile=omega_target.min.js --global-name=OmegaTarget --target=es2015 --minify",
+    "build": "npm run build:ts && node ../../scripts/bundle-esbuild.mjs --entry=src/index.ts --outfile=index.js --format=cjs --platform=node --target=es2015 --external=buffer,jsondiffpatch,limiter,@switchyagain/proxy-engine && node ../../scripts/bundle-esbuild.mjs --entry=src/index.ts --outfile=omega_target.min.js --global-name=OmegaTarget --target=es2015 --minify",
     "build:ts": "tsc -p tsconfig.build.json",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "dev": "npm link @switchyagain/proxy-engine && npm link",
