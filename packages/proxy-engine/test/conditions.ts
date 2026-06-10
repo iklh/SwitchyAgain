@@ -37,14 +37,14 @@ describe('Conditions', function() {
     return matchResult;
   };
   describe('TrueCondition', function() {
-    return it('should always return true', function() {
+    it('should always return true', function() {
       return testCond({
         conditionType: 'TrueCondition'
       }, {}, true);
     });
   });
   describe('FalseCondition', function() {
-    return it('should always return false', function() {
+    it('should always return false', function() {
       return testCond({
         conditionType: 'FalseCondition'
       }, {}, false);
@@ -70,7 +70,7 @@ describe('Conditions', function() {
       };
       return testCond(con, 'http://www.example.com/', true);
     });
-    return it('should fallback to not match if pattern is invalid', function() {
+    it('should fallback to not match if pattern is invalid', function() {
       let con;
       con = {
         conditionType: 'UrlRegexCondition',
@@ -105,7 +105,7 @@ describe('Conditions', function() {
       };
       return testCond(cond, 'http://example.com/', false);
     });
-    return it('should support multiple patterns in one condition', function() {
+    it('should support multiple patterns in one condition', function() {
       cond = {
         conditionType: 'UrlWildcardCondition',
         pattern: '*.example.com/*|*.example.net/*'
@@ -127,7 +127,7 @@ describe('Conditions', function() {
     it('should not match requests not matching the pattern', function() {
       return testCond(cond, 'http://example.com/', false);
     });
-    return it('should not match URL parts other than the host', function() {
+    it('should not match URL parts other than the host', function() {
       assert.strictEqual(testCond(cond, 'http://example.net/www.example.com'), false);
     });
   });
@@ -467,7 +467,7 @@ describe('Conditions', function() {
       };
       return testCond(cond, 'http://[::1]:8080/', false);
     });
-    return it('should match simple hostnames only when <local> is used', function() {
+    it('should match simple hostnames only when <local> is used', function() {
       let cond;
       cond = {
         conditionType: 'BypassCondition',
@@ -529,7 +529,7 @@ describe('Conditions', function() {
       request = Conditions.requestFromUrl('http://www.example.com/');
       assert.strictEqual(Conditions.match(cond, request), false);
     });
-    return it('should not pass domain name to isInNet function', function() {
+    it('should not pass domain name to isInNet function', function() {
       let compiledFunc, ipToCompiledFunc;
       ipToCompiledFunc = function(ip: string, prefixLen: number): any {
         let cond, dummyIsInNet, testFunc;
@@ -573,7 +573,7 @@ describe('Conditions', function() {
       testCond(cond, 'http://www.example.com/', true);
       return testCond(cond, 'http://www.example.net/', false);
     });
-    return it('should not match HTTPS requests', function() {
+    it('should not match HTTPS requests', function() {
       testCond(cond, 'https://example.com/', false);
       return testCond(cond, 'https://example.net/', false);
     });
@@ -581,10 +581,10 @@ describe('Conditions', function() {
   describe('WeekdayCondition', function() {
     let clock: any, testCondDay: (cond: any, day: number, match: boolean) => any;
     clock = null;
-    before(function() {
+    beforeAll(function() {
       return clock = useFakeDate(0);
     });
-    after(function() {
+    afterAll(function() {
       return clock.uninstall();
     });
     testCondDay = function(cond: any, day: number, match: boolean): any {
@@ -663,7 +663,7 @@ describe('Conditions', function() {
       testCondDay(cond, 5, true);
       return testCondDay(cond, 6, false);
     });
-    return it('should prefer .days to .startDay and .endDay', function() {
+    it('should prefer .days to .startDay and .endDay', function() {
       let cond;
       cond = {
         conditionType: 'WeekdayCondition',
@@ -683,10 +683,10 @@ describe('Conditions', function() {
   describe('TimeCondition', function() {
     let clock: any, testCondTime: (cond: any, time: string, match: boolean) => any;
     clock = null;
-    before(function() {
+    beforeAll(function() {
       return clock = useFakeDate(0);
     });
-    after(function() {
+    afterAll(function() {
       return clock.uninstall();
     });
     testCondTime = function(cond: any, time: string, match: boolean): any {
@@ -725,7 +725,7 @@ describe('Conditions', function() {
       testCondTime(cond, '08:00:00', false);
       return testCondTime(cond, '19:00:00', false);
     });
-    return it('should not match anything if startHour > endHour', function() {
+    it('should not match anything if startHour > endHour', function() {
       let cond;
       cond = {
         conditionType: 'TimeCondition',
@@ -744,12 +744,12 @@ describe('Conditions', function() {
     });
   });
   describe('#typeFromAbbr', function() {
-    return it('should get condition types by abbrs', function() {
+    it('should get condition types by abbrs', function() {
       assert.strictEqual(Conditions.typeFromAbbr('True'), 'TrueCondition');
       assert.strictEqual(Conditions.typeFromAbbr('HR'), 'HostRegexCondition');
     });
   });
-  return describe('#str and #fromStr', function() {
+  describe('#str and #fromStr', function() {
     it('should encode & decode TrueCondition correctly', function() {
       let cond, condition, result;
       condition = {
@@ -1043,7 +1043,7 @@ describe('Conditions', function() {
         pattern: '*://*.example.com/*'
       });
     });
-    return it('should parse escaped HostWildcardCondition starting with colon', function() {
+    it('should parse escaped HostWildcardCondition starting with colon', function() {
       assert.deepStrictEqual(Conditions.fromStr(': :bogus:'), {
         conditionType: 'HostWildcardCondition',
         pattern: ':bogus:'

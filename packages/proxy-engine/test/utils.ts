@@ -21,7 +21,7 @@ describe('getBaseDomain', function() {
     assert.strictEqual(getBaseDomain('a.bc.com'), 'bc.com');
     return assert.strictEqual(getBaseDomain('i.t.co'), 't.co');
   });
-  return it('should not try to modify IP address literals', function() {
+  it('should not try to modify IP address literals', function() {
     assert.strictEqual(getBaseDomain('127.0.0.1'), '127.0.0.1');
     assert.strictEqual(getBaseDomain('[::1]'), '[::1]');
     return assert.strictEqual(getBaseDomain('::f'), '::f');

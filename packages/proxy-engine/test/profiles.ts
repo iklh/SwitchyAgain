@@ -64,7 +64,7 @@ describe('Profiles', function() {
       };
       assert.strictEqual(Profiles.pacResult(proxy), "PROXY 127.0.0.1:8888");
     });
-    return it('should return special compatible result for SOCKS5', function() {
+    it('should return special compatible result for SOCKS5', function() {
       let compatibleResult, proxy;
       proxy = {
         scheme: "socks5",
@@ -82,7 +82,7 @@ describe('Profiles', function() {
       assert.strictEqual(typeof profile, 'object');
       assert.strictEqual(profile.profileType, 'DirectProfile');
     });
-    return it('should get profiles from given options', function() {
+    it('should get profiles from given options', function() {
       let profile;
       profile = {};
       profile = Profiles.byName('profile', {
@@ -102,7 +102,7 @@ describe('Profiles', function() {
       };
       assert.throws(getAllReferenceSet, Error);
     });
-    return it('should process a dumb profile for each missing profile if requested', function() {
+    it('should process a dumb profile for each missing profile if requested', function() {
       let refs;
       profile.defaultProfileName = 'bogus';
       refs = Profiles.allReferenceSet(profile, {}, {
@@ -123,7 +123,7 @@ describe('Profiles', function() {
       profile = Profiles.byName('system');
       assert.equal(Profiles.match(profile, {}), null);
     });
-    return it('should throw when trying to compile', function() {
+    it('should throw when trying to compile', function() {
       let profile;
       profile = Profiles.byName('system');
       assert.throws(function() {
@@ -138,7 +138,7 @@ describe('Profiles', function() {
       assert.strictEqual(typeof profile, 'object');
       assert.strictEqual(profile.profileType, 'DirectProfile');
     });
-    return it('should return "DIRECT" when compiled', function() {
+    it('should return "DIRECT" when compiled', function() {
       let profile;
       profile = Profiles.byName('direct');
       return testProfile(profile, {}, null, 'DIRECT');
@@ -185,7 +185,7 @@ describe('Profiles', function() {
     it('should not return authentication if not provided for protocol', function() {
       return testProfile(profile, 'http://www.example.com/', ['SOCKS 127.0.0.1:1234', 'http', profile.proxyForHttp, void 0]);
     });
-    return it('should not use any proxy for requests matching the bypassList', function() {
+    it('should not use any proxy for requests matching the bypassList', function() {
       return testProfile(profile, 'ftp://localhost/', [
         'DIRECT', profile.bypassList[0], {
           scheme: 'direct'
@@ -212,7 +212,7 @@ describe('Profiles', function() {
     it('should return includable for non-file pacUrl', function() {
       assert.strictEqual(Profiles.isIncludable(profile), true);
     });
-    return it('should return not includable for file: pacUrl', function() {
+    it('should return not includable for file: pacUrl', function() {
       let p;
       p = Profiles.create('test', 'PacProfile');
       p.pacUrl = 'file:///proxy.pac';
@@ -277,7 +277,7 @@ describe('Profiles', function() {
         '+abc': 'abc'
       });
     });
-    return it('should clear the reference cache if explicitly requested', function() {
+    it('should clear the reference cache if explicitly requested', function() {
       let newSet, set;
       profile.revision = 'a';
       set = Profiles.directReferenceSet(profile);
@@ -295,11 +295,11 @@ describe('Profiles', function() {
     let profile: any;
     profile = Profiles.create('test', 'VirtualProfile');
     profile.defaultProfileName = 'default';
-    return it('should always return defaultProfileName', function() {
+    it('should always return defaultProfileName', function() {
       return testProfile(profile, 'http://www.example.com/abc', ['+default', null]);
     });
   });
-  return describe('RulelistProfile', function() {
+  describe('RulelistProfile', function() {
     let profile: any;
     profile = Profiles.create('test', 'AutoProxyRuleListProfile');
     profile.defaultProfileName = 'default';
@@ -349,7 +349,7 @@ describe('Profiles', function() {
       assert.strictEqual(typeof Profiles.directReferenceSet(p), 'object');
       return testProfile(p, 'http://localhost/example.com', ['+default', null]);
     });
-    return it('should switch to AutoProxy format on update if detected', function() {
+    it('should switch to AutoProxy format on update if detected', function() {
       profile = Profiles.create('test2', 'RuleListProfile');
       profile.format = 'Switchy';
       profile.defaultProfileName = 'default';

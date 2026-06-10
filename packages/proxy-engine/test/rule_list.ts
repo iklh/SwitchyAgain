@@ -116,7 +116,7 @@ describe('RuleList', function() {
         }
       });
     });
-    return it('should put exclusive rules first', function() {
+    it('should put exclusive rules first', function() {
       let result;
       result = parse('example.com\n@@||example.com', 'match', 'notmatch');
       assert.strictEqual(result.length, 2);
@@ -258,7 +258,7 @@ describe('RuleList', function() {
         }
       });
     });
-    return it('should put exclusive rules first', function() {
+    it('should put exclusive rules first', function() {
       let list, result;
       list = compose({
         'Wildcard': ['http://www\.example\.com/*'],
@@ -284,7 +284,7 @@ describe('RuleList', function() {
       });
     });
   });
-  return describe('Switchy (omega format)', function() {
+  describe('Switchy (omega format)', function() {
     let compose, parse;
     parse = RuleList['Switchy'].parse;
     compose = RuleList['Switchy'].compose;
@@ -503,7 +503,7 @@ describe('RuleList', function() {
       });
       return assert.deepStrictEqual(result, rules);
     });
-    return it('should compose and parse exclusive conditions with results', function() {
+    it('should compose and parse exclusive conditions with results', function() {
       let list, result, rules;
       rules = [
         {

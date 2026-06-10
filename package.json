@@ -30,22 +30,14 @@
     "typecheck": "npm run typecheck --workspace @switchyagain/proxy-engine && npm run typecheck --workspace @switchyagain/extension-runtime && npm run typecheck --workspace @switchyagain/web-ui && npm run typecheck --workspace @switchyagain/browser-extension"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.10",
     "@types/node": "^25.9.2",
     "archiver": "^8.0.0",
     "autoprefixer": "^10.4.23",
     "buffer": "^6.0.3",
     "esbuild": "^0.28.0",
-    "mocha": "^11.7.6",
     "postcss": "^8.5.6",
     "process": "^0.11.10",
-    "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
-  },
-  "overrides": {
-    "mocha": {
-      "diff": "^8.0.3",
-      "serialize-javascript": "^7.0.5"
-    }
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
   }
 }

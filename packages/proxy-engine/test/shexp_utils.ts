@@ -13,14 +13,14 @@ describe('ShexpUtils', function() {
       regex = ShexpUtils.escapeSlash('\\/test\\/');
       return assert.strictEqual(regex, '\\/test\\/');
     });
-    return it('should know the difference between escaped and unescaped slashes', function() {
+    it('should know the difference between escaped and unescaped slashes', function() {
       let regex;
       regex = ShexpUtils.escapeSlash('\\\\/\\/test\\/');
       return assert.strictEqual(regex, '\\\\\\/\\/test\\/');
     });
   });
-  return describe('#shExp2RegExp', function() {
-    return it('should escape regex meta chars and back slashes', function() {
+  describe('#shExp2RegExp', function() {
+    it('should escape regex meta chars and back slashes', function() {
       let regex;
       regex = ShexpUtils.shExp2RegExp('this.is|a\\test+');
       return assert.strictEqual(regex, '^this\\.is\\|a\\\\test\\+$');

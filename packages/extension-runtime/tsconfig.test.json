@@ -16,7 +16,7 @@
     "target": "es2015",
     "types": [
       "node",
-      "mocha"
+      "vitest/globals"
     ]
   },
   "include": [

@@ -73,7 +73,7 @@ describe('PacGenerator', function() {
     result = func('http://www.example.com/', 'www.example.com');
     return assert.strictEqual(result, 'PROXY 127.0.0.1:8888');
   });
-  return it('should be able to compress pac scripts', function() {
+  it('should be able to compress pac scripts', function() {
     let ast, func, pac, result;
     ast = PacGenerator.script(options, 'auto');
     pac = (PacGenerator.compress(ast) as any).print_to_string();

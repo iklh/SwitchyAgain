@@ -12,7 +12,7 @@
     "build:ts": "tsc -p tsconfig.build.json",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "dev": "npm link",
-    "test": "npm run typecheck:test && TZ=UTC mocha",
+    "test": "npm run typecheck:test && TZ=UTC vitest run",
     "typecheck": "tsc -p tsconfig.build.json --noEmit && tsc -p tsconfig.json --noEmit && npm run typecheck:test"
   }
 }

@@ -16,7 +16,7 @@
     "build:ts": "tsc -p tsconfig.build.json",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "dev": "npm link @switchyagain/proxy-engine && npm link",
-    "test": "npm run typecheck:test && TSX_TSCONFIG_PATH=tsconfig.test.json TZ=UTC mocha",
+    "test": "npm run typecheck:test && TZ=UTC vitest run",
     "typecheck": "tsc -p tsconfig.build.json --noEmit && tsc -p tsconfig.json --noEmit && npm run typecheck:test"
   }
 }
