@@ -76,6 +76,12 @@ declare const chrome: {
   };
 };
 
+declare const browser: {
+  commands?: {
+    openShortcutSettings?: () => Promise<void> | void;
+  };
+} | undefined;
+
 export type UiLocale = 'en' | 'zh-Hans' | 'zh-Hant' | 'es' | 'ru' | 'cs' | 'fa';
 
 export type UiLocaleOption = {
@@ -418,8 +424,16 @@ export function updateProfile(name?: string, bypassCache = 'bypass_cache') {
 }
 
 export function openShortcutConfig() {
+  if (typeof browser !== 'undefined' && typeof browser.commands?.openShortcutSettings === 'function') {
+    void Promise.resolve(browser.commands.openShortcutSettings()).catch(() => {
+      chrome?.tabs?.create?.({
+        url: 'about:addons'
+      });
+    });
+    return;
+  }
   chrome?.tabs?.create?.({
-    url: 'chrome://extensions/configureCommands'
+    url: typeof browser !== 'undefined' ? 'about:addons' : 'chrome://extensions/configureCommands'
   });
 }
 

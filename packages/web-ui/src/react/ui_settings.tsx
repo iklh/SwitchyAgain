@@ -346,7 +346,7 @@ export function UiSettings({embedded = false, options, onOptionsChange, onOpenSh
       <section className="settings-group">
         <h3>{message('options_group_language', 'Language')}</h3>
         <div className="form-group">
-          <label htmlFor="react-ui-locale">{message('options_interfaceLanguage', 'Interface language')}</label>{' '}
+          <label>{message('options_interfaceLanguage', 'Interface language')}</label>{' '}
           <UiLocaleSelect
             value={String(draftOptions['-uiLocale'] || uiLocaleForOptions(draftOptions))}
             onChange={(value) => updateOption('-uiLocale', value)}
