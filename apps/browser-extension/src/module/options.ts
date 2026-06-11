@@ -1,7 +1,6 @@
 import OmegaTarget from '@switchyagain/extension-runtime';
 import ChromePort from './chrome_port';
 import fetchUrl from './fetch_url';
-import upgradeSwitchyOptions from './upgrade';
 import WebRequestMonitor from './web_request_monitor';
 import type {ProxyImplInstance, ProxyProfile} from './proxy/proxy_types';
 
@@ -70,14 +69,7 @@ type RequestMonitorLike = {
 
 type ChromePortLike = InstanceType<typeof ChromePort>;
 
-type SwitchySharpLike = {
-  getOptions(): {
-    timeout(milliseconds: number): Promise<Record<string, string>>;
-  };
-};
-
 type UpgradeOptions = Record<string, unknown> & {
-  config?: string;
   schemaVersion?: unknown;
 };
 
@@ -177,7 +169,6 @@ class ChromeOptions extends OmegaTarget.Options {
   externalApi: ExternalApiLike;
   fetchUrl: typeof fetchUrl;
   declare proxyImpl: ProxyImplInstance;
-  switchySharp: SwitchySharpLike | null;
   private _alarms: Record<string, () => void> | null;
   private _badgeTitle: string | null;
   private _inspect: InspectLike | null;
@@ -500,42 +491,10 @@ class ChromeOptions extends OmegaTarget.Options {
   }
 
   upgrade(options: UpgradeOptions | null | undefined, changes?: Record<string, unknown>) {
-    return super.upgrade(options).catch((err: unknown) => {
-      if (options?.schemaVersion) {
-        return OmegaPromise.reject(err);
-      }
-      let getOldOptions: Promise<Record<string, string> | UpgradeOptions> = this.switchySharp
-        ? this.switchySharp.getOptions().timeout(1000)
-        : OmegaPromise.reject();
-      getOldOptions = getOldOptions.catch(() => {
-        if (options?.config) {
-          return OmegaPromise.resolve(options);
-        }
-        if (localStorage.config) {
-          return OmegaPromise.resolve(localStorage as unknown as Record<string, string>);
-        }
-        return OmegaPromise.reject(new OmegaTarget.Options.NoOptionsError());
-      });
-      return getOldOptions.then((oldOptions) => {
-        const i18n = {
-          upgrade_profile_auto: chrome.i18n.getMessage('upgrade_profile_auto')
-        };
-        let upgraded;
-        try {
-          upgraded = upgradeSwitchyOptions(oldOptions as Record<string, string>, i18n);
-        } catch (error) {
-          this.log.error(error);
-          return OmegaPromise.reject(error);
-        }
-        if (localStorage.config) {
-          Object.getPrototypeOf(localStorage).clear.call(localStorage);
-        }
-        this._state.set({
-          firstRun: 'upgrade'
-        });
-        return super.upgrade(upgraded, upgraded);
-      });
-    });
+    if (options == null || Object.keys(options).length === 0 || options.schemaVersion == null) {
+      return OmegaPromise.reject(new OmegaTarget.Options.NoOptionsError());
+    }
+    return super.upgrade(options, changes);
   }
 
   onFirstRun(_reason: string) {

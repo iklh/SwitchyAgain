@@ -571,7 +571,7 @@ class Options {
       }
       return Promise.resolve([options, changes]);
     } else {
-      return Promise.reject(new Error("Invalid schemaVerion " + version + "!"));
+      return Promise.reject(new Error("Invalid schemaVersion " + version + "!"));
     }
   }
 

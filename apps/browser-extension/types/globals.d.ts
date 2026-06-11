@@ -366,14 +366,6 @@ interface OmegaTargetModule extends Record<string, unknown> {
   Storage: OmegaStorageConstructor;
 }
 
-interface OmegaDebugApi {
-  downloadLog(): unknown;
-  getExtensionVersion(): string;
-  getProjectVersion(): string;
-  reportIssue(): unknown;
-  resetOptions(): unknown;
-}
-
 type PopupApiCallback<T = unknown> = (error?: unknown, result?: T) => void;
 
 type PopupApiProfileKey = `+${string}`;
@@ -488,7 +480,6 @@ type ProxyFindFunction = (url: string, host: string, details?: unknown) => unkno
 declare var chrome: ChromeGlobal;
 declare var browser: BrowserGlobal;
 declare var FindProxyForURL: ProxyFindFunction;
-declare var OmegaDebug: OmegaDebugApi;
 declare var OmegaPac: OmegaPacApi;
 declare var OmegaTarget: OmegaTargetModule;
 declare var OmegaTargetChromium: DynamicGlobalValue;
@@ -517,6 +508,5 @@ interface Window {
   FindProxyForURL: ProxyFindFunction;
   OmegaContextMenuClickHandlers: Record<string, (info: unknown, tab: ChromeTab) => unknown>;
   OmegaContextMenuQuickSwitchHandler: (info: {checked: boolean}) => unknown;
-  OmegaDebug: OmegaDebugApi;
   OmegaTargetPopup: OmegaTargetPopupApi;
 }

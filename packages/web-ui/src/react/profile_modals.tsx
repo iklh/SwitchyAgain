@@ -398,7 +398,7 @@ export function ProxyAuthModal({
               <span className="glyphicon glyphicon-warning-sign" />{' '}
               {message(
                 'options_proxy_authNotSupported',
-                `Your browser DOES NOT support ${protocolDisp} proxy authentication! Please do not report this issue to SwitchyOmega. Contact the support for your browser instead.`,
+                `Your browser DOES NOT support ${protocolDisp} proxy authentication! Please do not report this issue to SwitchyAgain. Contact the support for your browser instead.`,
                 protocolDisp
               )}
             </div>

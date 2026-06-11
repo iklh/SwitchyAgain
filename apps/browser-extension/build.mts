@@ -309,8 +309,8 @@ async function main() {
   await copyFile(path.join(workspaceRoot, 'packages/extension-runtime/omega_target.min.js'), path.join(root, 'build/js/omega_target.min.js'));
   await copyFile(path.join(root, 'omega_target_chromium_extension.min.js'), path.join(root, 'build/js/omega_target_chromium_extension.min.js'));
   await copyFile(path.join(root, 'build-ts/js/omega_target_popup.js'), path.join(root, 'build/js/omega_target_popup.js'));
-  await copyFile(path.join(root, 'build-ts/js/mv3_compat.js'), path.join(root, 'build/js/mv3_compat.js'));
-  for (const script of ['background.js', 'background_preload.js', 'omega_debug.js']) {
+  await copyFile(path.join(root, 'build-ts/js/runtime_preload.js'), path.join(root, 'build/js/runtime_preload.js'));
+  for (const script of ['background.js', 'background_preload.js']) {
     await copyFile(path.join(root, 'build-ts/js', script), path.join(root, 'build/js', script));
   }
   await writeServiceWorker(path.join(root, 'build/service_worker.js'), browserEntrypoints.background.serviceWorkerScripts);

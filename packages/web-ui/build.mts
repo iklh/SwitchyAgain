@@ -140,7 +140,6 @@ async function main() {
   await copyFile('build-ts/js/draw_omega.js', 'build/img/icons/draw_omega.js');
 
   await writeRootReactHtml('build/options.html', 'SwitchyAgain Options', 'react/options_app.js', [
-    'js/omega_debug.js',
     'js/log_error.js',
     'js/omega_pac.min.js'
   ]);
