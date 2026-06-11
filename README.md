@@ -1,7 +1,11 @@
 SwitchyAgain
 ============
 
-![Version](https://img.shields.io/github/v/tag/iklh/SwitchyAgain?label=Version) ![License](https://img.shields.io/badge/License-GPL--3.0%2B-A42E2B) ![Chrome Supported](https://img.shields.io/badge/Chrome-Supported-4285F4?logo=googlechrome&logoColor=white) ![Firefox Supported](https://img.shields.io/badge/Firefox-Supported-FF7139?logo=firefoxbrowser&logoColor=white)
+![Version](https://img.shields.io/github/v/tag/iklh/SwitchyAgain?label=Version)
+![License](https://img.shields.io/badge/License-GPL--3.0%2B-A42E2B)
+![TypeScript](https://img.shields.io/github/languages/top/iklh/SwitchyAgain?label=TypeScript)
+![Chrome Supported](https://img.shields.io/badge/Chrome-Supported-4285F4?logo=googlechrome&logoColor=white)
+![Firefox Supported](https://img.shields.io/badge/Firefox-Supported-FF7139?logo=firefoxbrowser&logoColor=white)
 <br>
 ![Languages](https://img.shields.io/badge/Languages-English%20%E4%B8%AD%E6%96%87%20Espa%C3%B1ol%20%D0%A0%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9%20%C4%8Ce%C5%A1tina%20%D9%81%D8%A7%D8%B1%D8%B3%DB%8C-6F42C1)
 
@@ -57,7 +61,9 @@ Development and debugging commands:
 
 License
 -------
-SwitchyAgain is licensed under the [GNU General Public License v3.0 or later](COPYING).
+SwitchyAgain is a fork of [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega).
+The original project and this fork are licensed under the
+[GNU General Public License v3.0 or later](COPYING).
 
-Bundled Bootstrap 3.3.7 assets are licensed under the MIT License; see the
-[LICENSE](packages/web-ui/vendor/bootstrap/3.3.7/LICENSE).
+Bundled Bootstrap 3.3.7 assets are licensed under the
+[MIT License](packages/web-ui/vendor/bootstrap/3.3.7/LICENSE).

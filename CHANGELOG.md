@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.1.19
+
+Route diagnostics and build target modernization.
+
+- Added route trace diagnostics for inspecting how profile decisions resolve
+  across direct, default, virtual, and rule-list profile flows.
+- Migrated package tests from Mocha to Vitest while keeping tests running
+  directly against TypeScript sources.
+- Centralized browser entrypoint script ordering in generated sources and added
+  build assumption checks for entrypoint and JavaScript target consistency.
+- Raised TypeScript and esbuild JavaScript output targets to ES2022 across the
+  workspace build.
+- Removed remaining React migration leftovers and aligned route information
+  naming.
+
 ## v1.1.18
 
 Localization cleanup and extension startup fixes.
