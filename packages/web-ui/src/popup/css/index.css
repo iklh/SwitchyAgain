@@ -456,8 +456,8 @@ body {
   white-space: nowrap;
 }
 
-.om-decision-muted,
-.om-decision-pac {
+.om-route-info-muted,
+.om-route-info-pac {
   color: #777;
   margin-left: 6px;
 }

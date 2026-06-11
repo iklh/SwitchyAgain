@@ -51,7 +51,7 @@ export type PopupState = {
 
 export type PopupStateKey = keyof PopupState;
 export type PopupWritableStateKey = 'lastProfileNameForCondition';
-export type PopupMode = 'condition' | 'external' | 'menu' | 'requestInfo';
+export type PopupMode = 'condition' | 'external' | 'menu' | 'routeInfo';
 
 export type PopupConditionType =
   | 'HostRegexCondition'

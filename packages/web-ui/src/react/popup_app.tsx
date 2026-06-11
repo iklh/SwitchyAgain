@@ -67,8 +67,8 @@ function popupErrorMessage(error: unknown) {
 }
 
 function modeFromHash(): PopupMode {
-  if (location.hash === '#!requestInfo') {
-    return 'requestInfo';
+  if (location.hash === '#!routeInfo') {
+    return 'routeInfo';
   }
   if (location.hash === '#!external') {
     return 'external';
@@ -167,7 +167,7 @@ function finalLabel(explanation: RequestExplanation, state: PopupState, {showPac
     return (
       <>
         {profile && <ProfileInline profile={profile} availableProfiles={state.availableProfiles} />}
-        <span className="om-decision-muted">{popupMessage('popup_routeInfoSystem', 'System proxy')}</span>
+        <span className="om-route-info-muted">{popupMessage('popup_routeInfoSystem', 'System proxy')}</span>
       </>
     );
   }
@@ -175,7 +175,7 @@ function finalLabel(explanation: RequestExplanation, state: PopupState, {showPac
     return (
       <>
         {profile && <ProfileInline profile={profile} availableProfiles={state.availableProfiles} />}
-        <span className="om-decision-muted">{popupMessage('popup_routeInfoPac', 'PAC script')}</span>
+        <span className="om-route-info-muted">{popupMessage('popup_routeInfoPac', 'PAC script')}</span>
       </>
     );
   }
@@ -183,7 +183,7 @@ function finalLabel(explanation: RequestExplanation, state: PopupState, {showPac
     return (
       <>
         <ProfileInline profile={profile} availableProfiles={state.availableProfiles} />
-        {showPacResult && final.pacResult && <span className="om-decision-pac">{final.pacResult}</span>}
+        {showPacResult && final.pacResult && <span className="om-route-info-pac">{final.pacResult}</span>}
       </>
     );
   }
@@ -223,7 +223,7 @@ function requestHasError(request?: PageRequest) {
   return !!request?.error || request?.status === 'error' || request?.status === 'timeout' || request?.status === 'timeoutAbort';
 }
 
-function finalDecisionKey(explanation: RequestExplanation) {
+function finalRouteKey(explanation: RequestExplanation) {
   const final = explanation.final || {kind: 'profile'};
   const profile = final.profile || explanation.finalProfile;
   const profileName = typeof profile?.name === 'string' ? profile.name : '';
@@ -255,7 +255,7 @@ function aggregateRouteInfo(explanations: RequestExplanation[], requests: NonNul
     if (explanation.warnings?.includes('pacProfileLimited')) {
       group.pacLimited = true;
     }
-    const resultKey = finalDecisionKey(explanation);
+    const resultKey = finalRouteKey(explanation);
     if (!group.results[resultKey]) {
       group.results[resultKey] = explanation;
     }
@@ -296,7 +296,7 @@ function RouteInfoGroupResult({group, loading, state}: {group: RouteInfoGroup; l
   return (
     <>
       <span className="label label-default om-route-info-mixed">{popupMessage('popup_routeInfoMixed', 'Mixed')}</span>
-      <span className="om-decision-muted">
+      <span className="om-route-info-muted">
         {resultKeys.length} {popupMessage('popup_routeInfoResults', 'results')}
       </span>
     </>
@@ -458,7 +458,7 @@ function PopupApp() {
   const resultProfiles = useMemo(() => visibleResultProfiles(state), [state]);
   const hasResultProfiles = resultProfiles.length > 0;
   const hasPageDomain = !!pageInfo?.domain;
-  const showRequestInfo = !!(pageInfo && ((pageInfo.errorCount || 0) > 0 || (pageInfo.requestExplanations?.length || pageInfo.requests?.length || 0) > 0));
+  const showRouteInfo = !!(pageInfo && ((pageInfo.errorCount || 0) > 0 || (pageInfo.requestExplanations?.length || pageInfo.requests?.length || 0) > 0));
   const showExternal = !!(state?.showExternalProfile && state.externalProfile);
   const showAddCondition = !!(state?.currentProfileCanAddRule && hasPageDomain && hasResultProfiles);
   const showTempRule = !!(hasPageDomain && hasResultProfiles);
@@ -599,7 +599,7 @@ function PopupApp() {
           event.preventDefault();
           return;
         case 82:
-          clickById('js-reqinfo');
+          clickById('js-routeinfo');
           event.preventDefault();
           return;
         default:
@@ -633,8 +633,8 @@ function PopupApp() {
   if (mode === 'condition') {
     return <ConditionForm pageInfo={pageInfo} state={state} onClose={closeToMenu} />;
   }
-  if (mode === 'requestInfo') {
-    return <RequestInfoForm pageInfo={pageInfo} state={state} onClose={closeToMenu} />;
+  if (mode === 'routeInfo') {
+    return <RouteInfoForm pageInfo={pageInfo} state={state} onClose={closeToMenu} />;
   }
   if (mode === 'external') {
     return <ExternalProfileForm state={state} onClose={closeToMenu} />;
@@ -750,11 +750,11 @@ function PopupApp() {
           )}
         </li>
       )}
-      {showRequestInfo && (
+      {showRouteInfo && (
         <li className="om-nav-item">
-          <a href="#!requestInfo" id="js-reqinfo" role="button" onClick={(event) => {
+          <a href="#!routeInfo" id="js-routeinfo" role="button" onClick={(event) => {
             event.preventDefault();
-            showMode('requestInfo');
+            showMode('routeInfo');
           }}>
             <span className="glyphicon glyphicon-road" />{' '}
             {keyboardHelp && <span className="om-keyboard-help">R</span>}
@@ -942,7 +942,7 @@ function ConditionForm({pageInfo, state, onClose}: {pageInfo?: PageInfo; state: 
   );
 }
 
-function RequestInfoForm({pageInfo, state, onClose}: {pageInfo?: PageInfo; state: PopupState; onClose: () => void}) {
+function RouteInfoForm({pageInfo, state, onClose}: {pageInfo?: PageInfo; state: PopupState; onClose: () => void}) {
   const profiles = useMemo(() => visibleResultProfiles(state), [state]);
   const selectedProfile = lastResultProfile(state, pageInfo);
   const [profile, setProfile] = useState(selectedProfile);
@@ -988,7 +988,7 @@ function RequestInfoForm({pageInfo, state, onClose}: {pageInfo?: PageInfo; state
     });
   }, [domains]);
 
-  async function submitRequestInfo(event: React.FormEvent) {
+  async function submitRouteInfo(event: React.FormEvent) {
     event.preventDefault();
     const conditions: PopupCondition[] = domains
       .filter((domain) => checkedDomains[domain.domain])
@@ -1013,7 +1013,7 @@ function RequestInfoForm({pageInfo, state, onClose}: {pageInfo?: PageInfo; state
   }
 
   return (
-    <form className="route-info-details om-popup-form" onSubmit={submitRequestInfo}>
+    <form className="route-info-details om-popup-form" onSubmit={submitRouteInfo}>
       <fieldset>
         <legend>{popupMessage('popup_routeInfoHeading', 'Route Info')}</legend>
         {error && <p className="om-alert">{error}</p>}

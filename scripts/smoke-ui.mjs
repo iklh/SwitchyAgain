@@ -297,8 +297,8 @@ const pages = [
     label: 'popup route info page',
     popup: true,
     url: extensionFileUrl('popup/index.html'),
-    selector: '#js-reqinfo',
-    click: '#js-reqinfo',
+    selector: '#js-routeinfo',
+    click: '#js-routeinfo',
     afterClickSelector: '.om-route-info'
   },
   {
