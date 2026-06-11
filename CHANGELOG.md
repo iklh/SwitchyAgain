@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.1.20
+
+Legacy cleanup and startup fallback fixes.
+
+- Removed the old SwitchySharp/SwitchyOptions migration path so startup no
+  longer attempts to import pre-SwitchyAgain localStorage config.
+- Removed the background OmegaDebug entrypoint and issue-template flow, and
+  renamed the MV3 compatibility preload to the runtime preload while keeping
+  the required MV3 storage and action shims.
+- Cleaned remaining user-facing SwitchyOmega wording from bundled locales and
+  removed unused About/debug locale messages.
+- Treated option records missing schemaVersion as unavailable config so
+  installs with storage leftovers reset to default options instead of failing
+  startup.
+
 ## v1.1.19
 
 Route diagnostics and build target modernization.
