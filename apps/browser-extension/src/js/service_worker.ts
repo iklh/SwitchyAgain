@@ -1,3 +1,4 @@
+// Generated from apps/browser-extension/browser-entrypoints.json. Do not edit directly.
 importScripts(
   'js/mv3_compat.js',
   'js/log_error.js',
