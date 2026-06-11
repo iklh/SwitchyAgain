@@ -8,7 +8,7 @@
     "outDir": "build-ts/module",
     "rootDir": "src/module",
     "sourceMap": false,
-    "target": "es5"
+    "target": "es2020"
   },
   "include": [
     "src/module/**/*.ts",

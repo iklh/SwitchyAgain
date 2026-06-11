@@ -7,7 +7,7 @@ import autoprefixer from 'autoprefixer';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const workspaceRoot = path.join(root, '../..');
-const autoprefixerTargets = ['chrome >= 121', 'firefox >= 140'];
+const autoprefixerTargets = ['chrome >= 131', 'firefox >= 140'];
 
 type StaticCopy = [src: string, dest: string];
 

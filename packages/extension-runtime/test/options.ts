@@ -205,6 +205,7 @@ describe('Options', function() {
           name: '__ruleListOf_auto switch',
           profileType: 'RuleListProfile',
           color: '#99ccff',
+          format: 'Switchy',
           defaultProfileName: 'direct',
           matchProfileName: 'direct',
           ruleList: ''

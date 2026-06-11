@@ -10,7 +10,7 @@
     "outDir": "build-ts/js",
     "rootDir": "src/js",
     "sourceMap": false,
-    "target": "es5"
+    "target": "es2020"
   },
   "include": [
     "src/js/**/*.ts",

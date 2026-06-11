@@ -7,7 +7,7 @@
     "moduleDetection": "force",
     "noImplicitAny": true,
     "noEmit": true,
-    "target": "es2015",
+    "target": "es2020",
     "types": [
       "node",
       "vitest/globals"

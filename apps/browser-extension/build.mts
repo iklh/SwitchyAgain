@@ -74,7 +74,7 @@ async function writeBundle(dest: string, options: BundleOptions) {
     minify: isRelease && !!options.minify,
     outfile: dest,
     platform: 'browser',
-    target: 'es2015'
+    target: 'es2020'
   });
 }
 

@@ -13,7 +13,7 @@
         "../proxy-engine/src/index.ts"
       ]
     },
-    "target": "es2015",
+    "target": "es2020",
     "types": [
       "node",
       "vitest/globals"
