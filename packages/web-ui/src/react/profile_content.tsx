@@ -14,7 +14,6 @@ import {
 } from './profile_widgets';
 import {
   conditionHasWarning,
-  conditionTypesForMode as switchConditionTypesForMode,
   composeSource,
   getAdvancedConditionGroups,
   getBasicConditionGroups,
@@ -31,14 +30,32 @@ import type {
   SwitchRuleEditableConditionValue,
   SwitchRuleSourceState
 } from './switch_profile_runtime';
+import {
+  FIXED_PROFILE_DEFAULT_PORT,
+  FIXED_PROFILE_PROTOCOLS,
+  FIXED_PROFILE_PROXY_FIELDS,
+  FIXED_PROFILE_SCHEME_DISP,
+  FIXED_PROFILE_SCHEMES,
+  cloneProxyEditors,
+  conditionTypeFromSelectValue,
+  conditionTypesForMode,
+  fixedProfileAuthActive,
+  fixedProfileBypassList,
+  fixedProfileBypassText,
+  fixedProfileEditors,
+  fixedProfileHasAdvancedProxy,
+  groupedConditionTypes,
+  isFileUrl,
+  isFixedProfileProxyProtocol,
+  moveIndex,
+  normalizeColor
+} from './profile_content_logic';
 import type {
   FixedProfileBypassCondition,
-  FixedProfileModel,
   FixedProfileProxyChangeOptions,
   FixedProfileProxyEditorField,
   FixedProfileProxyEditors,
   FixedProfileProxyField,
-  FixedProfileProxyProtocol,
   FixedProfileScheme,
   NamedFixedProfileModel,
   NamedPacProfileModel,
@@ -233,19 +250,6 @@ export type ProfileShellProps = {
   scriptable?: boolean;
 };
 
-function normalizeColor(color?: string) {
-  if (!color) {
-    return '#000000';
-  }
-  if (/^#[0-9a-f]{3}$/i.test(color)) {
-    return '#' + color.charAt(1) + color.charAt(1) + color.charAt(2) + color.charAt(2) + color.charAt(3) + color.charAt(3);
-  }
-  if (/^#[0-9a-f]{6}$/i.test(color)) {
-    return color;
-  }
-  return '#000000';
-}
-
 export function ProfileShell({
   exportRuleListAvailable = false,
   exportRuleListWarning = false,
@@ -323,40 +327,6 @@ export function ProfileShell({
       )}
     </>
   );
-}
-
-function groupedConditionTypes(conditionTypes: ConditionTypeOption[] = []) {
-  const groups: Record<string, ConditionTypeOption[]> = {};
-  const order: string[] = [];
-  for (const conditionType of conditionTypes) {
-    if (!groups[conditionType.group]) {
-      groups[conditionType.group] = [];
-      order.push(conditionType.group);
-    }
-    groups[conditionType.group].push(conditionType);
-  }
-  return order.map((group) => ({group, types: groups[group]}));
-}
-
-function conditionTypesForMode(showConditionTypes = 0): ConditionTypeOption[] {
-  return switchConditionTypesForMode(showConditionTypes);
-}
-
-function conditionTypeFromSelectValue(conditionTypes: ConditionTypeOption[], value: string) {
-  return conditionTypes.find((conditionType) => conditionType.type === value)?.type;
-}
-
-function moveIndex(indices: number[], fromIndex: number, toIndex: number) {
-  if (fromIndex === toIndex) {
-    return indices;
-  }
-  const next = indices.slice();
-  const [item] = next.splice(fromIndex, 1);
-  if (item == null) {
-    return indices;
-  }
-  next.splice(toIndex, 0, item);
-  return next;
 }
 
 type WindowWithBrowserProxy = Window & {
@@ -907,10 +877,6 @@ export function UnsupportedProfile({profile}: UnsupportedProfileProps) {
 const PAC_URL_REGEX = /^(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?$/;
 const PAC_URL_WITH_FILE_REGEX = /^(ftp|http|https|file):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?$/;
 
-function isFileUrl(url: string) {
-  return /^file:\/\//i.test(url || '');
-}
-
 function formatMediumDate(value?: string | number | null) {
   if (!value) {
     return '';
@@ -1067,29 +1033,6 @@ export function PacProfile({
   );
 }
 
-const FIXED_PROFILE_SCHEMES: FixedProfileScheme[] = ['', 'http', 'https'];
-const FIXED_PROFILE_PROXY_FIELDS: Record<FixedProfileScheme, FixedProfileProxyField> = {
-  '': 'fallbackProxy',
-  http: 'proxyForHttp',
-  https: 'proxyForHttps'
-};
-const FIXED_PROFILE_SCHEME_DISP: Record<FixedProfileScheme, string | null> = {
-  '': null,
-  http: 'http://',
-  https: 'https://'
-};
-const FIXED_PROFILE_DEFAULT_PORT: Record<FixedProfileProxyProtocol, number> = {
-  http: 80,
-  https: 443,
-  socks4: 1080,
-  socks5: 1080
-};
-const FIXED_PROFILE_PROTOCOLS: FixedProfileProxyProtocol[] = ['http', 'https', 'socks4', 'socks5'];
-
-function isFixedProfileProxyProtocol(value?: string): value is FixedProfileProxyProtocol {
-  return FIXED_PROFILE_PROTOCOLS.includes(value as FixedProfileProxyProtocol);
-}
-
 function fixedProfileOptionsForScheme(scheme: FixedProfileScheme) {
   const defaultLabel = scheme
     ? message('options_protocol_useDefault', 'Use default')
@@ -1106,42 +1049,6 @@ function fixedProfileOptionsForScheme(scheme: FixedProfileScheme) {
   ];
 }
 
-function cloneProxyEditors(proxyEditors?: Partial<FixedProfileProxyEditors>): FixedProfileProxyEditors {
-  const cloned: FixedProfileProxyEditors = {
-    '': {},
-    http: {},
-    https: {}
-  };
-  for (const scheme of FIXED_PROFILE_SCHEMES) {
-    cloned[scheme] = {...(proxyEditors?.[scheme] || {})};
-  }
-  return cloned;
-}
-
-function fixedProfileEditors(profile: FixedProfileModel) {
-  const editors = cloneProxyEditors();
-  for (const scheme of FIXED_PROFILE_SCHEMES) {
-    const field = FIXED_PROFILE_PROXY_FIELDS[scheme];
-    editors[scheme] = {...(profile[field] || {})};
-  }
-  return editors;
-}
-
-function fixedProfileBypassText(profile: FixedProfileModel) {
-  return (profile.bypassList || []).map((item) => item.pattern).join('\n');
-}
-
-function fixedProfileBypassList(value: string): FixedProfileBypassCondition[] {
-  return value.split(/\r?\n/).filter(Boolean).map((pattern) => ({
-    conditionType: 'BypassCondition',
-    pattern
-  }));
-}
-
-function fixedProfileHasAdvancedProxy(editors: FixedProfileProxyEditors) {
-  return !!(editors.http?.scheme || editors.https?.scheme);
-}
-
 function fixedProfileAuthSupported(protocol?: string) {
   if (protocol === 'http' || protocol === 'https') {
     return true;
@@ -1150,10 +1057,6 @@ function fixedProfileAuthSupported(protocol?: string) {
     return !!((window as WindowWithBrowserProxy).browser?.proxy?.register);
   }
   return false;
-}
-
-function fixedProfileAuthActive(profile: FixedProfileModel, scheme: FixedProfileScheme) {
-  return !!profile.auth?.[FIXED_PROFILE_PROXY_FIELDS[scheme]];
 }
 
 export function FixedProfileContent({
