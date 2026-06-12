@@ -207,6 +207,9 @@ body {
 .glyphicon-warning-sign:before {
     content: "\e107";
 }
+.glyphicon-eye-close:before {
+  content: "\e106";
+}
 .glyphicon-file:before {
     content: "\e022"
 }

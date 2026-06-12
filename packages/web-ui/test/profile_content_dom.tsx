@@ -37,9 +37,7 @@ describe('profile content components', () => {
 
     expect(screen.getByRole('heading', {name: 'Profile Options'})).toBeTruthy();
     expect(
-      screen.getByText(
-        'When enabled, this profile is hidden from the popup profile list but remains available in options and rule targets.'
-      )
+      screen.getByText('When enabled, this profile is moved to the hidden profiles section in the popup menu.')
     ).toBeTruthy();
 
     const switchInput = screen.getByRole('switch', {name: 'Hide from popup menu'}) as HTMLInputElement;

@@ -87,6 +87,17 @@ export function visibleMenuProfiles(state?: PopupState) {
     .sort(compareProfile);
 }
 
+export function hiddenMenuProfiles(state?: PopupState) {
+  return Object.values(state?.availableProfiles || {})
+    .filter((profile): profile is Profile => {
+      if (!profile || profile.builtin || profile.name.charAt(0) === '_') {
+        return false;
+      }
+      return !!profile.hiddenInPopup && profile.name !== state?.currentProfileName;
+    })
+    .sort(compareProfile);
+}
+
 export function isVisibleResultProfileName(name: string) {
   return name.charAt(0) !== '_' || name.charAt(1) !== '_';
 }

@@ -4,6 +4,7 @@ import {
   conditionTypes,
   defaultConditionType,
   finalRouteKey,
+  hiddenMenuProfiles,
   iconForProfileType,
   isPopupConditionType,
   isVisibleResultProfileName,
@@ -83,6 +84,7 @@ describe('popup logic', () => {
     };
 
     expect(visibleMenuProfiles(state).map((item) => item.name)).toEqual(['current-hidden-popup', 'proxy-z', 'pac-a', 'virtual']);
+    expect(hiddenMenuProfiles(state).map((item) => item.name)).toEqual(['hidden-popup']);
     expect(visibleResultProfiles(state).map((item) => item.name)).toEqual(['_temporary', 'proxy-z', 'pac-a', 'virtual']);
     expect(isVisibleResultProfileName('__attached')).toBe(false);
     expect(isVisibleResultProfileName('_temporary')).toBe(true);

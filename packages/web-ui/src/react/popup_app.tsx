@@ -22,6 +22,7 @@ import {
   compareProfile,
   conditionTypes,
   defaultConditionType,
+  hiddenMenuProfiles,
   iconForProfileType,
   isPopupConditionType,
   isVisibleResultProfileName,
@@ -178,6 +179,7 @@ function PopupApp() {
   const [pageInfo, setPageInfo] = useState<PageInfo>();
   const [error, setError] = useState('');
   const [defaultMenuOpen, setDefaultMenuOpen] = useState('');
+  const [hiddenMenuOpen, setHiddenMenuOpen] = useState(false);
   const [tempMenuOpen, setTempMenuOpen] = useState(false);
   const [keyboardHelp, setKeyboardHelp] = useState(false);
 
@@ -223,6 +225,7 @@ function PopupApp() {
   }, []);
 
   const customProfiles = useMemo(() => visibleMenuProfiles(state), [state]);
+  const hiddenProfiles = useMemo(() => hiddenMenuProfiles(state), [state]);
   const resultProfiles = useMemo(() => visibleResultProfiles(state), [state]);
   const hasResultProfiles = resultProfiles.length > 0;
   const hasPageDomain = !!pageInfo?.domain;
@@ -238,6 +241,7 @@ function PopupApp() {
     location.hash = nextMode === 'condition' ? '#!addRule' : `#!${nextMode}`;
     setMode(nextMode);
     setDefaultMenuOpen('');
+    setHiddenMenuOpen(false);
     setTempMenuOpen(false);
   }
 
@@ -286,8 +290,9 @@ function PopupApp() {
     }
 
     function closeDropdown() {
-      if (defaultMenuOpen || tempMenuOpen) {
+      if (defaultMenuOpen || hiddenMenuOpen || tempMenuOpen) {
         setDefaultMenuOpen('');
+        setHiddenMenuOpen(false);
         setTempMenuOpen(false);
       }
     }
@@ -298,6 +303,8 @@ function PopupApp() {
       const profileName = item?.dataset.defaultProfileName;
       if (profileName) {
         setDefaultMenuOpen(profileName);
+      } else if (item?.classList.contains('om-nav-hidden-profiles')) {
+        setHiddenMenuOpen(true);
       } else if (item?.classList.contains('om-nav-temprule')) {
         setTempMenuOpen(true);
       }
@@ -380,7 +387,7 @@ function PopupApp() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [customProfiles, defaultMenuOpen, mode, tempMenuOpen]);
+  }, [customProfiles, defaultMenuOpen, hiddenMenuOpen, mode, tempMenuOpen]);
 
   useEffect(() => {
     if (mode !== 'menu') {
@@ -482,6 +489,45 @@ function PopupApp() {
           onDefaultProfileChange={(defaultProfileName) => setDefaultProfile(profile.name, defaultProfileName)}
         />
       ))}
+      {hiddenProfiles.length > 0 && (
+        <li className={`om-nav-item om-nav-hidden-profiles om-has-dropdown ${hiddenMenuOpen ? 'om-open' : ''}`}>
+          <a
+            aria-expanded={hiddenMenuOpen}
+            href="#"
+            id="js-hidden-profiles"
+            role="button"
+            onClick={(event) => {
+              event.preventDefault();
+              setHiddenMenuOpen(!hiddenMenuOpen);
+            }}
+          >
+            <span className="glyphicon glyphicon-eye-close" />
+            <span>
+              <span>{popupMessage('popup_hiddenProfilesMenu', 'Hidden')}</span>
+              <span className="om-caret" />
+            </span>
+          </a>
+          {hiddenMenuOpen && (
+            <ul className="om-dropdown">
+              {hiddenProfiles.map((profile, index) => (
+                <MenuProfileItem
+                  id={`js-hidden-profile-${index + 1}`}
+                  key={profile.name}
+                  active={!state.isSystemProfile && profile.name === state.currentProfileName}
+                  effective={state.isSystemProfile && profile.name === state.currentProfileName}
+                  profile={profile}
+                  state={state}
+                  currentProfileClass={currentProfileClass}
+                  defaultMenuOpen={defaultMenuOpen === profile.name}
+                  onClick={() => applyProfile(profile.name)}
+                  onDefaultMenuToggle={() => setDefaultMenuOpen(defaultMenuOpen === profile.name ? '' : profile.name)}
+                  onDefaultProfileChange={(defaultProfileName) => setDefaultProfile(profile.name, defaultProfileName)}
+                />
+              ))}
+            </ul>
+          )}
+        </li>
+      )}
       <li className="om-divider" />
       {showAddCondition && (
         <li className="om-nav-item om-nav-addrule">

@@ -338,7 +338,7 @@ export function ProfileShell({
           <p className="help-block profile-switch-help">
             {message(
               'options_hideFromPopupMenuHelp',
-              'When enabled, this profile is hidden from the popup profile list but remains available in options and rule targets.'
+              'When enabled, this profile is moved to the hidden profiles section in the popup menu.'
             )}
           </p>
         </section>
