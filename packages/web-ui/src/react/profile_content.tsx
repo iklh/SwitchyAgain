@@ -46,6 +46,8 @@ import {
   fixedProfileBypassText,
   fixedProfileEditors,
   fixedProfileHasAdvancedProxy,
+  formatMediumDate,
+  getRuleListFormats,
   groupedConditionTypes,
   isFixedProfileProxyProtocol,
   moveIndex,
@@ -866,28 +868,6 @@ export function UnsupportedProfile({profile}: UnsupportedProfileProps) {
       <p>{message('options_profileUnsupportedHelp', 'The options could be broken, or from a newer version of this program.')}</p>
     </>
   );
-}
-
-function formatMediumDate(value?: string | number | null) {
-  if (!value) {
-    return '';
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return String(value);
-  }
-  return new Intl.DateTimeFormat(undefined, {
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    month: 'short',
-    second: '2-digit',
-    year: 'numeric'
-  }).format(date);
-}
-
-function getRuleListFormats(): string[] {
-  return OmegaPac.Profiles.ruleListFormats || [];
 }
 
 type PacProfileDraft = Record<PacProfileField, string>;

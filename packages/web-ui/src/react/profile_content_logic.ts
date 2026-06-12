@@ -104,6 +104,28 @@ export function pacProfileUrlState(url: string, referenced = false) {
   };
 }
 
+export function formatMediumDate(value?: string | number | null) {
+  if (!value) {
+    return '';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+  return new Intl.DateTimeFormat(undefined, {
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    month: 'short',
+    second: '2-digit',
+    year: 'numeric'
+  }).format(date);
+}
+
+export function getRuleListFormats(): string[] {
+  return OmegaPac.Profiles.ruleListFormats || [];
+}
+
 export function isFixedProfileProxyProtocol(value?: string): value is FixedProfileProxyProtocol {
   return FIXED_PROFILE_PROTOCOLS.includes(value as FixedProfileProxyProtocol);
 }

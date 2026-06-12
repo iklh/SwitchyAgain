@@ -12,6 +12,8 @@ import {
   fixedProfileBypassText,
   fixedProfileEditors,
   fixedProfileHasAdvancedProxy,
+  formatMediumDate,
+  getRuleListFormats,
   groupedConditionTypes,
   isFileUrl,
   isFixedProfileProxyProtocol,
@@ -24,6 +26,7 @@ import type {FixedProfileModel, FixedProfileProxyEditors} from '../src/react/pro
 
 beforeEach(() => {
   delete (globalThis as any).browser;
+  delete (globalThis as any).OmegaPac;
 });
 
 describe('profile content logic', () => {
@@ -119,6 +122,36 @@ describe('profile content logic', () => {
       invalid: true,
       isFile: false
     });
+  });
+
+  it('formats medium dates and falls back for invalid values', () => {
+    const timestamp = Date.UTC(2020, 0, 2, 3, 4, 5);
+
+    expect(formatMediumDate()).toBe('');
+    expect(formatMediumDate(null)).toBe('');
+    expect(formatMediumDate('not-a-date')).toBe('not-a-date');
+    expect(formatMediumDate(timestamp)).toBe(new Intl.DateTimeFormat(undefined, {
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      month: 'short',
+      second: '2-digit',
+      year: 'numeric'
+    }).format(new Date(timestamp)));
+  });
+
+  it('reads available rule-list formats from OmegaPac', () => {
+    (globalThis as any).OmegaPac = {
+      Profiles: {
+        ruleListFormats: ['AutoProxy', 'Switchy']
+      }
+    };
+    expect(getRuleListFormats()).toEqual(['AutoProxy', 'Switchy']);
+
+    (globalThis as any).OmegaPac = {
+      Profiles: {}
+    };
+    expect(getRuleListFormats()).toEqual([]);
   });
 
   it('defines fixed profile proxy schemes and defaults', () => {
