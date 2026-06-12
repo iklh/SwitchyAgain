@@ -2,43 +2,23 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {
   Options,
   RequestExplanation,
-  RequestExplainProfile,
   RequestExplainStep,
   explainRequest,
   getState,
   message
 } from './options_client';
-import {Profile, ProfileInline, ProfileSelect, allProfilesFromOptions, profileByName} from './profile_widgets';
+import {ProfileInline, ProfileSelect, allProfilesFromOptions, profileByName} from './profile_widgets';
+import {
+  formatRequestUrl,
+  profileFromExplanation,
+  routeTraceStepCondition,
+  routeTraceSteps
+} from './route_trace_logic';
 
 export type RouteTraceProps = {
   embedded?: boolean;
   options?: Options | null;
 };
-
-function profileFromExplanation(options: Options | null | undefined, profile?: RequestExplainProfile): Profile | null {
-  const profileName = typeof profile?.name === 'string' ? profile.name : '';
-  if (!profileName) {
-    return null;
-  }
-  return profileByName(options, profileName) || {
-    attachedToProfileName: profile?.attachedToProfileName,
-    builtin: !!profile?.builtin,
-    color: typeof profile?.color === 'string' ? profile.color : undefined,
-    name: profileName,
-    profileType: typeof profile?.profileType === 'string' ? profile.profileType : 'VirtualProfile',
-    role: profile?.role
-  };
-}
-
-function formatRequestUrl(url: unknown) {
-  const rawUrl = String(url || '');
-  try {
-    const parsed = new URL(rawUrl);
-    return `${parsed.protocol}//${parsed.host}${parsed.pathname}${parsed.search}`;
-  } catch (_error) {
-    return rawUrl;
-  }
-}
 
 function FinalResult({explanation, options}: {explanation: RequestExplanation; options?: Options | null}) {
   const final = explanation.final;
@@ -67,28 +47,6 @@ function StepTarget({options, step}: {options?: Options | null; step: RequestExp
   return <span className="text-muted">{message('routeTrace_stop', 'Stop')}</span>;
 }
 
-function isAttachedRuleListProfile(profile?: RequestExplainProfile) {
-  return profile?.role === 'attachedRuleList';
-}
-
-function routeTraceSteps(steps: RequestExplainStep[]) {
-  const visibleSteps: RequestExplainStep[] = [];
-  for (let index = 0; index < steps.length; index++) {
-    const step = steps[index];
-    const nextStep = steps[index + 1];
-    if (step.kind === 'default' && isAttachedRuleListProfile(step.targetProfile) && nextStep) {
-      visibleSteps.push({
-        ...nextStep,
-        kind: 'attachedRuleList'
-      });
-      index++;
-      continue;
-    }
-    visibleSteps.push(step);
-  }
-  return visibleSteps;
-}
-
 function StepRow({options, step}: {options?: Options | null; step: RequestExplainStep}) {
   const labels: Record<string, string> = {
     attachedRuleList: message('routeTrace_step_attachedRuleList', 'Rule list rules'),
@@ -100,7 +58,7 @@ function StepRow({options, step}: {options?: Options | null; step: RequestExplai
     rule: message('routeTrace_step_rule', 'Rule'),
     temporaryRule: message('routeTrace_step_temporaryRule', 'Temporary rule')
   };
-  const condition = step.source || step.condition || step.scheme || '';
+  const condition = routeTraceStepCondition(step);
   return (
     <tr>
       <td className="route-trace-step-kind">{labels[step.kind] || step.kind}</td>
