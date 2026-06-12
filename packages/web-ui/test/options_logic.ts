@@ -1,6 +1,7 @@
 import {
   cloneOptions,
   cloneAuth,
+  createPacExport,
   deleteAttachedProfileOption,
   deleteProfileOption,
   exportRuleListOptions,
@@ -150,6 +151,40 @@ describe('options logic', () => {
       name: 'UnknownError',
       statusCode: 404
     })).toBe('Profile download failed.');
+  });
+
+  it('creates PAC export blobs and sanitized filenames', async () => {
+    const printSettings: unknown[] = [];
+    (globalThis as any).OmegaPac = {
+      PacGenerator: {
+        ascii(value: string) {
+          return `ascii:${value}`;
+        },
+        script(_options: Options, profileName: string, hooks: {profileNotFound: (name: string) => string}) {
+          expect(profileName).toBe('work/proxy 1');
+          expect(hooks.profileNotFound('missing')).toBe('dumb');
+          return {
+            print_to_string(settings: unknown) {
+              printSettings.push(settings);
+              return 'function FindProxyForURL() {}';
+            }
+          };
+        }
+      }
+    };
+
+    const exported = createPacExport({}, 'work/proxy 1');
+
+    expect(exported.fileName).toBe('OmegaProfile_work_proxy_1.pac');
+    expect(exported.missingProfile).toBe('missing');
+    expect(exported.blob.type).toBe('text/plain;charset=utf-8');
+    expect(await exported.blob.text()).toBe('ascii:function FindProxyForURL() {}');
+    expect(printSettings).toEqual([
+      {
+        beautify: true,
+        comments: true
+      }
+    ]);
   });
 
   it('detects proxy authentication and proxy script API support', () => {

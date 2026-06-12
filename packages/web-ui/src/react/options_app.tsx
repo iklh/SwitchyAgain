@@ -22,6 +22,7 @@ import {OptionsAlert, OptionsShell} from './options_shell';
 import {
   cloneOptions,
   cloneAuth,
+  createPacExport,
   deleteAttachedProfileOption,
   deleteProfileOption,
   exportRuleListOptions,
@@ -178,29 +179,6 @@ const FIXED_PROXY_AUTH_KEYS: Record<FixedProfileScheme, FixedProfileProxyField> 
   https: 'proxyForHttps'
 };
 const RULE_LIST_USAGE_URL = 'https://github.com/FelisCatus/SwitchyOmega/wiki/RuleListUsage';
-
-function createPacExport(options: Options, profileName: string) {
-  let missingProfile = '';
-  const ast = OmegaPac.PacGenerator.script(options, profileName, {
-    profileNotFound(name: string) {
-      missingProfile = name;
-      return 'dumb';
-    }
-  });
-  let pac = ast.print_to_string({
-    beautify: true,
-    comments: true
-  });
-  pac = OmegaPac.PacGenerator.ascii(pac);
-  const fileName = profileName.replace(/\W+/g, '_');
-  return {
-    blob: new Blob([pac], {
-      type: 'text/plain;charset=utf-8'
-    }),
-    fileName: `OmegaProfile_${fileName}.pac`,
-    missingProfile
-  };
-}
 
 function referencedProfiles(profileName: string, options: Options): Profile[] {
   if (typeof OmegaPac === 'undefined' || !OmegaPac?.Profiles?.referencedBySet) {

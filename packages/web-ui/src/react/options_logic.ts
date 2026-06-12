@@ -60,6 +60,29 @@ export function updateProfileError(results: ProfileUpdateResults | undefined, na
   return Object.values(results || {}).find(isErrorResult);
 }
 
+export function createPacExport(options: Options, profileName: string) {
+  let missingProfile = '';
+  const ast = OmegaPac.PacGenerator.script(options, profileName, {
+    profileNotFound(name: string) {
+      missingProfile = name;
+      return 'dumb';
+    }
+  });
+  let pac = ast.print_to_string({
+    beautify: true,
+    comments: true
+  });
+  pac = OmegaPac.PacGenerator.ascii(pac);
+  const fileName = safeProfileFileName(profileName);
+  return {
+    blob: new Blob([pac], {
+      type: 'text/plain;charset=utf-8'
+    }),
+    fileName: `OmegaProfile_${fileName}.pac`,
+    missingProfile
+  };
+}
+
 export function profileDownloadErrorMessage(err: unknown) {
   const error = err as Partial<BackgroundError> | null | undefined;
   const statusCode = error?.statusCode ?? error?.original?.statusCode ?? '';
