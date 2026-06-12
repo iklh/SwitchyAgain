@@ -1,4 +1,6 @@
 import {
+  attachedProfileDraft,
+  attachedProfileOption,
   cloneOptions,
   cloneAuth,
   composeLegacyRuleList,
@@ -13,6 +15,7 @@ import {
   isPatchEmpty,
   isProfileNameHidden,
   isProfileNameReserved,
+  isSwitchProfile,
   numberOption,
   optionsPatch,
   profileDraft,
@@ -261,6 +264,74 @@ describe('options logic', () => {
     expect(text).toContain('!@http://internal/*\r\n');
     expect(text).toContain('!^https://secure\r\n');
     expect(text).not.toContain('ignored');
+  });
+
+  it('detects switch profiles and attached rule-list options', () => {
+    const identity = {
+      attachedKey: '+__ruleListOf_auto',
+      attachedName: '__ruleListOf_auto'
+    };
+    const options: Options = {
+      '+__ruleListOf_auto': {
+        defaultProfileName: 'direct',
+        format: 'AutoProxy',
+        name: '__ruleListOf_auto',
+        profileType: 'RuleListProfile'
+      },
+      '+wrong': {
+        name: 'wrong',
+        profileType: 'PacProfile'
+      }
+    };
+
+    expect(isSwitchProfile({
+      name: 'auto',
+      profileType: 'SwitchProfile'
+    })).toBe(true);
+    expect(isSwitchProfile({
+      profileType: 'SwitchProfile'
+    })).toBe(false);
+    expect(isSwitchProfile({
+      name: 'proxy',
+      profileType: 'FixedProfile'
+    })).toBe(false);
+
+    expect(attachedProfileOption(options, identity)).toEqual({
+      defaultProfileName: 'direct',
+      format: 'AutoProxy',
+      name: '__ruleListOf_auto',
+      profileType: 'RuleListProfile'
+    });
+    expect(attachedProfileOption(options, {
+      attachedKey: '+wrong',
+      attachedName: '__ruleListOf_wrong'
+    })).toBeUndefined();
+  });
+
+  it('creates attached rule-list drafts from existing option records', () => {
+    const identity = {
+      attachedKey: '+__ruleListOf_auto',
+      attachedName: '__ruleListOf_auto'
+    };
+    const options: Options = {
+      '+__ruleListOf_auto': {
+        format: 'Switchy',
+        name: 'stale',
+        profileType: 'RuleListProfile',
+        ruleList: 'example.com'
+      }
+    };
+
+    expect(attachedProfileDraft(options, identity)).toEqual({
+      format: 'Switchy',
+      name: '__ruleListOf_auto',
+      profileType: 'RuleListProfile',
+      ruleList: 'example.com'
+    });
+    expect(attachedProfileDraft({}, identity)).toEqual({
+      name: '__ruleListOf_auto',
+      profileType: 'RuleListProfile'
+    });
   });
 
   it('detects proxy authentication and proxy script API support', () => {

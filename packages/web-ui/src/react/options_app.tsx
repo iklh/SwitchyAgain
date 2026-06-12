@@ -20,6 +20,8 @@ import {
 } from './options_client';
 import {OptionsAlert, OptionsShell} from './options_shell';
 import {
+  attachedProfileDraft,
+  attachedProfileOption,
   cloneOptions,
   cloneAuth,
   composeLegacyRuleList,
@@ -33,8 +35,8 @@ import {
   isPatchEmpty,
   isProfileNameHidden,
   isProfileNameReserved,
+  isSwitchProfile,
   numberOption,
-  objectOption,
   optionsPatch,
   profileDraft,
   profileDownloadErrorMessage,
@@ -66,7 +68,6 @@ import {
   isBuiltinProfile,
   isFixedProfile,
   isNamedProfile,
-  isNamedProfileType,
   isPacProfile,
   isRuleListProfile,
   isVirtualProfile,
@@ -109,7 +110,6 @@ import type {
   FixedProfileScheme,
   NamedFixedProfileModel,
   NamedPacProfileModel,
-  NamedRuleListProfileModel,
   PacProfileModel,
   Profile as ProfileModel,
   ProfileAuth,
@@ -208,24 +208,6 @@ function firstFixedProfileName(options: Options) {
     }
   });
   return profileName;
-}
-
-function isSwitchProfile(value: unknown): value is NamedSwitchProfileModel {
-  return isNamedProfileType<NamedSwitchProfileModel>(value, 'SwitchProfile');
-}
-
-function attachedProfileOption(options: Options, identity: ReturnType<typeof attachedIdentity>): NamedRuleListProfileModel | undefined {
-  const value = options[identity.attachedKey];
-  return isRuleListProfile(value) ? value : undefined;
-}
-
-function attachedProfileDraft(options: Options, identity: ReturnType<typeof attachedIdentity>) {
-  const draft: NamedRuleListProfileModel = {
-    profileType: 'RuleListProfile',
-    ...objectOption<RuleListProfileModel>(options[identity.attachedKey]),
-    name: identity.attachedName
-  } as NamedRuleListProfileModel;
-  return draft;
 }
 
 function ModalFrame({

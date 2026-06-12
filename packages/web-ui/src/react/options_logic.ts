@@ -1,6 +1,11 @@
 import {message, type BackgroundError, type Options, type ProfileUpdateResults} from './options_client';
-import type {Profile as ProfileModel, ProfileAuth} from './profile_types';
-import {createAttachedName, profileKey, type SwitchRule} from './switch_profile_runtime';
+import type {
+  NamedRuleListProfileModel,
+  Profile as ProfileModel,
+  ProfileAuth,
+  RuleListProfileModel
+} from './profile_types';
+import {createAttachedName, profileKey, type NamedSwitchProfileModel, type SwitchRule} from './switch_profile_runtime';
 
 const CHAR_CODE_UNDERSCORE = '_'.charCodeAt(0);
 const RULE_LIST_USAGE_URL = 'https://github.com/FelisCatus/SwitchyOmega/wiki/RuleListUsage';
@@ -12,6 +17,11 @@ type GlobalWithBrowserProxy = typeof globalThis & {
       registerProxyScript?: unknown;
     };
   };
+};
+
+type AttachedProfileIdentity = {
+  attachedKey: string;
+  attachedName: string;
 };
 
 export function cloneOptions<T>(options: T): T {
@@ -129,6 +139,36 @@ export function composeLegacyRuleList(rules: SwitchRule[], defaultProfileName: s
     regexpRules,
     '#END'
   ].join('\n');
+}
+
+export function isSwitchProfile(value: unknown): value is NamedSwitchProfileModel {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const profile = value as Partial<NamedSwitchProfileModel>;
+  return profile.profileType === 'SwitchProfile' && typeof profile.name === 'string' && profile.name.length > 0;
+}
+
+function isRuleListProfile(value: unknown): value is NamedRuleListProfileModel {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const profile = value as Partial<NamedRuleListProfileModel>;
+  return profile.profileType === 'RuleListProfile' && typeof profile.name === 'string' && profile.name.length > 0;
+}
+
+export function attachedProfileOption(options: Options, identity: AttachedProfileIdentity): NamedRuleListProfileModel | undefined {
+  const value = options[identity.attachedKey];
+  return isRuleListProfile(value) ? value : undefined;
+}
+
+export function attachedProfileDraft(options: Options, identity: AttachedProfileIdentity) {
+  const draft: NamedRuleListProfileModel = {
+    profileType: 'RuleListProfile',
+    ...objectOption<RuleListProfileModel>(options[identity.attachedKey]),
+    name: identity.attachedName
+  } as NamedRuleListProfileModel;
+  return draft;
 }
 
 export function profileDownloadErrorMessage(err: unknown) {
