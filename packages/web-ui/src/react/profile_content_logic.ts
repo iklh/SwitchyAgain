@@ -14,6 +14,14 @@ import type {
   FixedProfileScheme
 } from './profile_types';
 
+type GlobalWithBrowserProxy = typeof globalThis & {
+  browser?: {
+    proxy?: {
+      register?: unknown;
+    };
+  };
+};
+
 export const FIXED_PROFILE_SCHEMES: FixedProfileScheme[] = ['', 'http', 'https'];
 export const FIXED_PROFILE_PROXY_FIELDS: Record<FixedProfileScheme, FixedProfileProxyField> = {
   '': 'fallbackProxy',
@@ -126,6 +134,16 @@ export function fixedProfileHasAdvancedProxy(editors: FixedProfileProxyEditors) 
 
 export function fixedProfileAuthActive(profile: FixedProfileModel, scheme: FixedProfileScheme) {
   return !!profile.auth?.[FIXED_PROFILE_PROXY_FIELDS[scheme]];
+}
+
+export function fixedProfileAuthSupported(protocol?: string) {
+  if (protocol === 'http' || protocol === 'https') {
+    return true;
+  }
+  if (protocol === 'socks5') {
+    return Boolean((globalThis as GlobalWithBrowserProxy).browser?.proxy?.register);
+  }
+  return false;
 }
 
 export function cloneSourceState(source?: SwitchRuleSourceState | null): SwitchRuleSourceState | undefined {

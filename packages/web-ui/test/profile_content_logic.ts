@@ -7,6 +7,7 @@ import {
   conditionTypeFromSelectValue,
   conditionTypesForMode,
   fixedProfileAuthActive,
+  fixedProfileAuthSupported,
   fixedProfileBypassList,
   fixedProfileBypassText,
   fixedProfileEditors,
@@ -19,6 +20,10 @@ import {
 } from '../src/react/profile_content_logic';
 import type {ConditionTypeOption} from '../src/react/switch_profile_runtime';
 import type {FixedProfileModel, FixedProfileProxyEditors} from '../src/react/profile_types';
+
+beforeEach(() => {
+  delete (globalThis as any).browser;
+});
 
 describe('profile content logic', () => {
   it('normalizes profile colors for color input controls', () => {
@@ -212,6 +217,22 @@ describe('profile content logic', () => {
       }
     }, 'https')).toBe(true);
     expect(fixedProfileAuthActive({}, 'http')).toBe(false);
+  });
+
+  it('detects fixed profile proxy authentication support', () => {
+    expect(fixedProfileAuthSupported('http')).toBe(true);
+    expect(fixedProfileAuthSupported('https')).toBe(true);
+    expect(fixedProfileAuthSupported('socks4')).toBe(false);
+    expect(fixedProfileAuthSupported('socks5')).toBe(false);
+    expect(fixedProfileAuthSupported()).toBe(false);
+
+    (globalThis as any).browser = {
+      proxy: {
+        register() {}
+      }
+    };
+
+    expect(fixedProfileAuthSupported('socks5')).toBe(true);
   });
 
   it('clones switch source state and nested errors', () => {

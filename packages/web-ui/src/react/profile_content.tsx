@@ -41,6 +41,7 @@ import {
   conditionTypeFromSelectValue,
   conditionTypesForMode,
   fixedProfileAuthActive,
+  fixedProfileAuthSupported,
   fixedProfileBypassList,
   fixedProfileBypassText,
   fixedProfileEditors,
@@ -329,14 +330,6 @@ export function ProfileShell({
     </>
   );
 }
-
-type WindowWithBrowserProxy = Window & {
-  browser?: {
-    proxy?: {
-      register?: unknown;
-    };
-  };
-};
 
 type RuleDragState = {
   cellWidths: number[];
@@ -1048,16 +1041,6 @@ function fixedProfileOptionsForScheme(scheme: FixedProfileScheme) {
       value: protocol
     }))
   ];
-}
-
-function fixedProfileAuthSupported(protocol?: string) {
-  if (protocol === 'http' || protocol === 'https') {
-    return true;
-  }
-  if (protocol === 'socks5') {
-    return !!((window as WindowWithBrowserProxy).browser?.proxy?.register);
-  }
-  return false;
 }
 
 export function FixedProfileContent({
