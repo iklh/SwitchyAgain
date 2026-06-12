@@ -1,5 +1,4 @@
 import type {
-  Condition,
   OptionsMap,
   PacRequest,
   Profile,
@@ -12,7 +11,6 @@ import type {
 import type {AttachedCache as AttachedCacheType} from './utils';
 import Conditions from './conditions';
 import * as RuleList from './rule_list';
-import * as ShexpUtils from './shexp_utils';
 import * as Ast from './pac_ast';
 import {AttachedCache, Revision} from './utils';
 

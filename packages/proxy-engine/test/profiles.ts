@@ -265,9 +265,9 @@ describe('Profiles', function() {
       });
     });
     it('should clear the reference cache on profile revision change', function() {
-      let newSet, set;
+      let newSet;
       profile.revision = 'a';
-      set = Profiles.directReferenceSet(profile);
+      Profiles.directReferenceSet(profile);
       profile.defaultProfileName = 'abc';
       profile.revision = 'b';
       newSet = Profiles.directReferenceSet(profile);
@@ -278,9 +278,9 @@ describe('Profiles', function() {
       });
     });
     it('should clear the reference cache if explicitly requested', function() {
-      let newSet, set;
+      let newSet;
       profile.revision = 'a';
-      set = Profiles.directReferenceSet(profile);
+      Profiles.directReferenceSet(profile);
       profile.defaultProfileName = 'abc';
       Profiles.dropCache(profile);
       newSet = Profiles.directReferenceSet(profile);

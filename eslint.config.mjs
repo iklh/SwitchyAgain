@@ -55,8 +55,8 @@ export default tseslint.config(
       'no-empty': ['warn', {allowEmptyCatch: true}],
       'no-unused-expressions': 'off',
       'no-unused-vars': ['warn', {
-        argsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^_',
+        args: 'none',
+        caughtErrors: 'none',
         varsIgnorePattern: '^_'
       }],
       'prefer-const': 'off',
@@ -87,8 +87,8 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-expressions': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', {
-        argsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^_',
+        args: 'none',
+        caughtErrors: 'none',
         varsIgnorePattern: '^_'
       }],
       '@typescript-eslint/no-unsafe-declaration-merging': 'warn'

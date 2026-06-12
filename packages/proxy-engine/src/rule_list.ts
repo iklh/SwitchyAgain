@@ -93,7 +93,7 @@ export const Switchy = {
       return switchy[parser](text, matchProfileName, defaultProfileName);
     },
     directReferenceSet(arg: Profile): ReferenceSet | undefined {
-      const {ruleList, matchProfileName, defaultProfileName} = arg;
+      const {ruleList, defaultProfileName} = arg;
       const text = ruleList.trim();
       const switchy = Switchy;
       const parser = switchy.getParser(text);
