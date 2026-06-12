@@ -18,18 +18,14 @@ import {
   allProfilesFromOptions,
   profileByName
 } from './profile_widgets';
-
-const UI_KEYS = [
-  '-uiLocale',
-  '-startupProfileName',
-  '-showConditionTypes',
-  '-enableQuickSwitch',
-  '-quickSwitchProfiles',
-  '-confirmDeletion',
-  '-refreshOnProfileChange',
-  '-showInspectMenu',
-  '-addConditionsToBottom'
-];
+import {
+  moveQuickSwitchProfileName,
+  notCycledProfileNames,
+  quickSwitchProfileNames,
+  reorderQuickSwitchProfileName,
+  uiOptionPatch,
+  uiOptionsDirty
+} from './ui_settings_logic';
 
 export type UiSettingsProps = {
   embedded?: boolean;
@@ -40,23 +36,6 @@ export type UiSettingsProps = {
 
 function cloneOptions(options: Options) {
   return JSON.parse(JSON.stringify(options));
-}
-
-function sameOptionValue(a: unknown, b: unknown) {
-  if (Array.isArray(a) || Array.isArray(b)) {
-    return JSON.stringify(a || []) === JSON.stringify(b || []);
-  }
-  return a === b;
-}
-
-function uiOptionPatch(before: Options, after: Options) {
-  const patch: Options = {};
-  for (const key of UI_KEYS) {
-    if (!sameOptionValue(before[key], after[key])) {
-      patch[key] = [before[key], after[key]];
-    }
-  }
-  return patch;
 }
 
 function displayProfileName(profile: Profile) {
@@ -150,7 +129,7 @@ export function UiSettings({embedded = false, options, onOptionsChange, onOpenSh
     if (!savedOptions || !draftOptions) {
       return false;
     }
-    return UI_KEYS.some((key) => !sameOptionValue(savedOptions[key], draftOptions[key]));
+    return uiOptionsDirty(savedOptions, draftOptions);
   }, [savedOptions, draftOptions]);
 
   function updateOptions(updater: (current: Options) => Options) {
@@ -178,30 +157,20 @@ export function UiSettings({embedded = false, options, onOptionsChange, onOpenSh
   }
 
   function moveQuickSwitchProfile(name: string, enabled: boolean) {
-    const quickSwitchProfiles = (draftOptions?.['-quickSwitchProfiles'] || []) as string[];
-    if (enabled) {
-      if (quickSwitchProfiles.indexOf(name) >= 0) {
-        return;
-      }
-      updateQuickSwitchProfiles(quickSwitchProfiles.concat(name));
+    const quickSwitchProfiles = quickSwitchProfileNames(draftOptions?.['-quickSwitchProfiles']);
+    const next = moveQuickSwitchProfileName(quickSwitchProfiles, name, enabled);
+    if (next === quickSwitchProfiles) {
       return;
     }
-    updateQuickSwitchProfiles(quickSwitchProfiles.filter((profileName) => profileName !== name));
+    updateQuickSwitchProfiles(next);
   }
 
   function reorderQuickSwitchProfile(name: string, targetName: string, enabled: boolean) {
-    if (!enabled) {
+    const quickSwitchProfiles = quickSwitchProfileNames(draftOptions?.['-quickSwitchProfiles']);
+    const next = reorderQuickSwitchProfileName(quickSwitchProfiles, name, targetName, enabled);
+    if (next === quickSwitchProfiles) {
       return;
     }
-    const source = ((enabled ? draftOptions?.['-quickSwitchProfiles'] : notCycledProfiles) || []) as string[];
-    const fromIndex = source.indexOf(name);
-    const toIndex = source.indexOf(targetName);
-    if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
-      return;
-    }
-    const next = source.slice();
-    next.splice(fromIndex, 1);
-    next.splice(toIndex, 0, name);
     updateQuickSwitchProfiles(next);
   }
 
@@ -280,11 +249,8 @@ export function UiSettings({embedded = false, options, onOptionsChange, onOpenSh
   }
 
   const allProfiles = allProfilesFromOptions(draftOptions);
-  const quickSwitchProfiles = (draftOptions['-quickSwitchProfiles'] || []) as string[];
-  const quickSwitchProfileSet = new Set(quickSwitchProfiles);
-  const notCycledProfiles = allProfiles.map((profile) => profile.name).filter((name) => {
-    return name && !quickSwitchProfileSet.has(name);
-  });
+  const quickSwitchProfiles = quickSwitchProfileNames(draftOptions['-quickSwitchProfiles']);
+  const notCycledProfiles = notCycledProfileNames(allProfiles, quickSwitchProfiles);
 
   function QuickSwitchList({enabled, names}: {enabled: boolean; names: string[]}) {
     return (
