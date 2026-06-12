@@ -47,10 +47,10 @@ import {
   fixedProfileEditors,
   fixedProfileHasAdvancedProxy,
   groupedConditionTypes,
-  isFileUrl,
   isFixedProfileProxyProtocol,
   moveIndex,
-  normalizeColor
+  normalizeColor,
+  pacProfileUrlState
 } from './profile_content_logic';
 import type {
   FixedProfileBypassCondition,
@@ -868,9 +868,6 @@ export function UnsupportedProfile({profile}: UnsupportedProfileProps) {
   );
 }
 
-const PAC_URL_REGEX = /^(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?$/;
-const PAC_URL_WITH_FILE_REGEX = /^(ftp|http|https|file):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?$/;
-
 function formatMediumDate(value?: string | number | null) {
   if (!value) {
     return '';
@@ -925,9 +922,7 @@ export function PacProfile({
   }
 
   const pacUrl = draft.pacUrl;
-  const pacUrlIsFile = isFileUrl(pacUrl);
-  const pacUrlPattern = referenced ? PAC_URL_REGEX : PAC_URL_WITH_FILE_REGEX;
-  const pacUrlInvalid = !!pacUrl && !pacUrlPattern.test(pacUrl);
+  const {invalid: pacUrlInvalid, isFile: pacUrlIsFile} = pacProfileUrlState(pacUrl, referenced);
   const authAll = !!profile.auth?.all;
 
   return (

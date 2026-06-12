@@ -16,7 +16,8 @@ import {
   isFileUrl,
   isFixedProfileProxyProtocol,
   moveIndex,
-  normalizeColor
+  normalizeColor,
+  pacProfileUrlState
 } from '../src/react/profile_content_logic';
 import type {ConditionTypeOption} from '../src/react/switch_profile_runtime';
 import type {FixedProfileModel, FixedProfileProxyEditors} from '../src/react/profile_types';
@@ -95,6 +96,29 @@ describe('profile content logic', () => {
     expect(isFileUrl('file:///tmp/proxy.pac')).toBe(true);
     expect(isFileUrl('FILE:///tmp/proxy.pac')).toBe(true);
     expect(isFileUrl('https://example.com/proxy.pac')).toBe(false);
+  });
+
+  it('classifies PAC profile URLs for direct and referenced profiles', () => {
+    expect(pacProfileUrlState('')).toEqual({
+      invalid: false,
+      isFile: false
+    });
+    expect(pacProfileUrlState('https://example.com/proxy.pac')).toEqual({
+      invalid: false,
+      isFile: false
+    });
+    expect(pacProfileUrlState('file:///tmp/proxy.pac')).toEqual({
+      invalid: false,
+      isFile: true
+    });
+    expect(pacProfileUrlState('file:///tmp/proxy.pac', true)).toEqual({
+      invalid: true,
+      isFile: true
+    });
+    expect(pacProfileUrlState('not a url')).toEqual({
+      invalid: true,
+      isFile: false
+    });
   });
 
   it('defines fixed profile proxy schemes and defaults', () => {
