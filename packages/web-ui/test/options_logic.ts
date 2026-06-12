@@ -9,6 +9,7 @@ import {
   deleteAttachedProfileOption,
   deleteProfileOption,
   exportRuleListOptions,
+  firstFixedProfileName,
   getParentName,
   hasProxyScriptApi,
   isErrorResult,
@@ -332,6 +333,40 @@ describe('options logic', () => {
       name: '__ruleListOf_auto',
       profileType: 'RuleListProfile'
     });
+  });
+
+  it('finds the first fixed profile name from OmegaPac profile iteration', () => {
+    (globalThis as any).OmegaPac = {
+      Profiles: {
+        each(options: Options, callback: (key: string, profile: unknown) => void) {
+          for (const key of Object.keys(options)) {
+            callback(key, options[key]);
+          }
+        }
+      }
+    };
+
+    expect(firstFixedProfileName({
+      '+pac': {
+        name: 'pac',
+        profileType: 'PacProfile'
+      },
+      '+proxy-a': {
+        name: 'proxy-a',
+        profileType: 'FixedProfile'
+      },
+      '+proxy-b': {
+        name: 'proxy-b',
+        profileType: 'FixedProfile'
+      }
+    })).toBe('proxy-a');
+
+    expect(firstFixedProfileName({
+      '+pac': {
+        name: 'pac',
+        profileType: 'PacProfile'
+      }
+    })).toBe('');
   });
 
   it('detects proxy authentication and proxy script API support', () => {

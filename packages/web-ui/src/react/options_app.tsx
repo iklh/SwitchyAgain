@@ -30,6 +30,7 @@ import {
   deleteAttachedProfileOption,
   deleteProfileOption,
   exportRuleListOptions,
+  firstFixedProfileName,
   getParentName,
   hasProxyScriptApi,
   isPatchEmpty,
@@ -198,16 +199,6 @@ function referencedProfiles(profileName: string, options: Options): Profile[] {
   return Object.keys(refSet)
     .map((key) => OmegaPac.Profiles.byKey?.(key, options) || profileByName(options, refSet[key]))
     .filter(isNamedProfile);
-}
-
-function firstFixedProfileName(options: Options) {
-  let profileName = '';
-  OmegaPac.Profiles.each(options, (_key, profile) => {
-    if (!profileName && isFixedProfile(profile)) {
-      profileName = profile.name;
-    }
-  });
-  return profileName;
 }
 
 function ModalFrame({

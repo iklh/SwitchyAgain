@@ -1,5 +1,6 @@
 import {message, type BackgroundError, type Options, type ProfileUpdateResults} from './options_client';
 import type {
+  NamedFixedProfileModel,
   NamedRuleListProfileModel,
   Profile as ProfileModel,
   ProfileAuth,
@@ -155,6 +156,24 @@ function isRuleListProfile(value: unknown): value is NamedRuleListProfileModel {
   }
   const profile = value as Partial<NamedRuleListProfileModel>;
   return profile.profileType === 'RuleListProfile' && typeof profile.name === 'string' && profile.name.length > 0;
+}
+
+function isFixedProfile(value: unknown): value is NamedFixedProfileModel {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const profile = value as Partial<NamedFixedProfileModel>;
+  return profile.profileType === 'FixedProfile' && typeof profile.name === 'string' && profile.name.length > 0;
+}
+
+export function firstFixedProfileName(options: Options) {
+  let profileName = '';
+  OmegaPac.Profiles.each(options, (_key, profile) => {
+    if (!profileName && isFixedProfile(profile)) {
+      profileName = profile.name;
+    }
+  });
+  return profileName;
 }
 
 export function attachedProfileOption(options: Options, identity: AttachedProfileIdentity): NamedRuleListProfileModel | undefined {
