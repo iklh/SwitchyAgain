@@ -866,6 +866,14 @@ msgstr ""
 "всплывающем меню. Тем не менее, они могут использоваться, например, в "
 "переключаемом профиле."
 
+msgid "options_hideFromPopupMenu"
+msgstr "Скрыть во всплывающем меню"
+
+msgid "options_hideFromPopupMenuHelp"
+msgstr ""
+"Если включено, этот профиль будет перемещён в раздел скрытых профилей во "
+"всплывающем меню."
+
 msgid "options_modalHeader_replaceProfile"
 msgstr "Заменить профиль"
 
@@ -1434,6 +1442,9 @@ msgstr "ошибок"
 
 msgid "popup_routeInfoPacLimited"
 msgstr "PAC-скрипты передаются браузеру и не могут быть полностью раскрыты здесь."
+
+msgid "popup_hiddenProfilesMenu"
+msgstr "Скрытые"
 
 msgid "popup_routeInfoMenu"
 msgstr "Информация о маршруте"

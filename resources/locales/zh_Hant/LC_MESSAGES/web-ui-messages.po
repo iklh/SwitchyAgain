@@ -737,6 +737,12 @@ msgstr "以雙下劃線開頭的名稱為系統保留，禁止使用。"
 msgid "options_profileNameHidden"
 msgstr "以下劃線開頭的情境模式不會在彈出選單中顯示，但仍可被用作切換的結果等。"
 
+msgid "options_hideFromPopupMenu"
+msgstr "在彈出選單中隱藏"
+
+msgid "options_hideFromPopupMenuHelp"
+msgstr "啟用後，此情境模式會移到彈出選單的隱藏區域。"
+
 msgid "options_modalHeader_replaceProfile"
 msgstr "取代情境模式"
 
@@ -1242,6 +1248,9 @@ msgstr "錯誤"
 
 msgid "popup_routeInfoPacLimited"
 msgstr "PAC 指令碼由瀏覽器處理，無法在此完整展開。"
+
+msgid "popup_hiddenProfilesMenu"
+msgstr "隱藏"
 
 msgid "popup_routeInfoMenu"
 msgstr "路由資訊"

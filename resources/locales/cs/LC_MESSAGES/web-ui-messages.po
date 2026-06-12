@@ -839,6 +839,14 @@ msgstr ""
 "Profily s názvy začínají podtržítkem skrytý v místní nabídce. Však stále "
 "používají se v místech, jako je přepnutí profilu výsledky."
 
+msgid "options_hideFromPopupMenu"
+msgstr "Skrýt v místní nabídce"
+
+msgid "options_hideFromPopupMenuHelp"
+msgstr ""
+"Po zapnutí se tento profil přesune do části skrytých profilů v místní "
+"nabídce."
+
 msgid "options_modalHeader_replaceProfile"
 msgstr "Nahradit profil"
 
@@ -1393,6 +1401,9 @@ msgstr "chyb"
 
 msgid "popup_routeInfoPacLimited"
 msgstr "Skripty PAC jsou delegovány prohlížeči a zde je nelze plně rozbalit."
+
+msgid "popup_hiddenProfilesMenu"
+msgstr "Skryté"
 
 msgid "popup_routeInfoMenu"
 msgstr "Informace o trase"

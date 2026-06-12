@@ -849,6 +849,14 @@ msgstr ""
 "پروفایل هایی که نامشان با دو زیر خط \"_\" شروع میشوند در منوی بالاپر مخفی "
 "میباشند . هرجند ، در مکان هایی مانند نتایج پروفایل متغیر ، قابل استفاده اند."
 
+msgid "options_hideFromPopupMenu"
+msgstr "پنهان کردن از منوی بازشو"
+
+msgid "options_hideFromPopupMenuHelp"
+msgstr ""
+"پس از فعال‌سازی، این پروفایل به بخش پروفایل‌های پنهان در منوی بازشو منتقل "
+"می‌شود."
+
 msgid "options_modalHeader_replaceProfile"
 msgstr "جایگزینی پروفایل"
 
@@ -1411,6 +1419,9 @@ msgstr "خطا"
 
 msgid "popup_routeInfoPacLimited"
 msgstr "اسکریپت‌های PAC به مرورگر واگذار می‌شوند و اینجا نمی‌توان آن‌ها را کامل باز کرد."
+
+msgid "popup_hiddenProfilesMenu"
+msgstr "پنهان"
 
 msgid "popup_routeInfoMenu"
 msgstr "اطلاعات مسیر"

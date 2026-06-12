@@ -834,6 +834,14 @@ msgstr ""
 "Profiles with names starting with underscore will be hidden on the popup menu. "
 "However, they can still be used in places like switch profile results."
 
+msgid "options_hideFromPopupMenu"
+msgstr "Hide from popup menu"
+
+msgid "options_hideFromPopupMenuHelp"
+msgstr ""
+"When enabled, this profile is moved to the hidden profiles section in the "
+"popup menu."
+
 msgid "options_modalHeader_replaceProfile"
 msgstr "Replace Profile"
 
@@ -1382,6 +1390,9 @@ msgstr "errors"
 
 msgid "popup_routeInfoPacLimited"
 msgstr "PAC scripts are delegated to the browser and cannot be fully expanded here."
+
+msgid "popup_hiddenProfilesMenu"
+msgstr "Hidden"
 
 msgid "popup_routeInfoMenu"
 msgstr "Route Info"

@@ -736,6 +736,14 @@ msgstr "Profilnavn som begynner med dobbel understrek er reservert."
 msgid "options_profileNameHidden"
 msgstr ""
 
+msgid "options_hideFromPopupMenu"
+msgstr "Skjul i popup-menyen"
+
+msgid "options_hideFromPopupMenuHelp"
+msgstr ""
+"Når dette er aktivert, flyttes denne profilen til delen for skjulte profiler "
+"i popup-menyen."
+
 msgid "options_modalHeader_replaceProfile"
 msgstr "Erstatt profil"
 
@@ -1237,6 +1245,9 @@ msgstr "feil"
 
 msgid "popup_routeInfoPacLimited"
 msgstr "PAC-skript håndteres av nettleseren og kan ikke utvides fullstendig her."
+
+msgid "popup_hiddenProfilesMenu"
+msgstr "Skjulte"
 
 msgid "popup_routeInfoMenu"
 msgstr "Ruteinfo"

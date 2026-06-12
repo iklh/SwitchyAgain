@@ -727,6 +727,14 @@ msgstr ""
 msgid "options_profileNameHidden"
 msgstr ""
 
+msgid "options_hideFromPopupMenu"
+msgstr "Açılır menüde gizle"
+
+msgid "options_hideFromPopupMenuHelp"
+msgstr ""
+"Etkinleştirildiğinde bu profil açılır menüdeki gizli profiller bölümüne "
+"taşınır."
+
 msgid "options_modalHeader_replaceProfile"
 msgstr "Profili Yer Değiştir"
 
@@ -1225,6 +1233,9 @@ msgstr "hata"
 
 msgid "popup_routeInfoPacLimited"
 msgstr "PAC betikleri tarayıcıya devredilir ve burada tamamen açılamaz."
+
+msgid "popup_hiddenProfilesMenu"
+msgstr "Gizli"
 
 msgid "popup_routeInfoMenu"
 msgstr "Rota Bilgisi"

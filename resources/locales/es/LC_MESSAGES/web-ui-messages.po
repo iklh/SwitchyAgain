@@ -871,6 +871,14 @@ msgstr ""
 "emergente. Sin embargo, pueden seguirse utilizando en sitios como los "
 "resultados del perfil conmutador."
 
+msgid "options_hideFromPopupMenu"
+msgstr "Ocultar en el menú emergente"
+
+msgid "options_hideFromPopupMenuHelp"
+msgstr ""
+"Al activarlo, este perfil se moverá a la sección de perfiles ocultos del menú "
+"emergente."
+
 msgid "options_modalHeader_replaceProfile"
 msgstr "Reemplazar Perfil"
 
@@ -1450,6 +1458,9 @@ msgstr "errores"
 
 msgid "popup_routeInfoPacLimited"
 msgstr "Los scripts PAC se delegan al navegador y no se pueden expandir por completo aquí."
+
+msgid "popup_hiddenProfilesMenu"
+msgstr "Ocultos"
 
 msgid "popup_routeInfoMenu"
 msgstr "Información de ruta"

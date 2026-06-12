@@ -748,6 +748,12 @@ msgstr "以双下划线开头的名称为系统保留，禁止使用。"
 msgid "options_profileNameHidden"
 msgstr "以下划线开头的情景模式不会在弹出菜单中显示，但仍可被用作切换的结果等。"
 
+msgid "options_hideFromPopupMenu"
+msgstr "在弹出菜单中隐藏"
+
+msgid "options_hideFromPopupMenuHelp"
+msgstr "启用后，此情景模式会移动到弹出菜单的隐藏区域。"
+
 msgid "options_modalHeader_replaceProfile"
 msgstr "替换情景模式"
 
@@ -1255,6 +1261,9 @@ msgstr "错误"
 
 msgid "popup_routeInfoPacLimited"
 msgstr "PAC 脚本由浏览器处理，无法在此完整展开。"
+
+msgid "popup_hiddenProfilesMenu"
+msgstr "隐藏"
 
 msgid "popup_routeInfoMenu"
 msgstr "路由信息"
