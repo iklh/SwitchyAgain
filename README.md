@@ -63,7 +63,7 @@ License
 -------
 SwitchyAgain is a fork of [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega).
 The original project and this fork are licensed under the
-[GNU General Public License v3.0 or later](COPYING).
+[GNU General Public License v3.0](COPYING) or later.
 
 Bundled Bootstrap 3.3.7 assets are licensed under the
 [MIT License](packages/web-ui/vendor/bootstrap/3.3.7/LICENSE).
