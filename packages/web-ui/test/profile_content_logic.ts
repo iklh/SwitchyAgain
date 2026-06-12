@@ -2,6 +2,7 @@ import {
   FIXED_PROFILE_DEFAULT_PORT,
   FIXED_PROFILE_PROTOCOLS,
   FIXED_PROFILE_PROXY_FIELDS,
+  cloneSourceState,
   cloneProxyEditors,
   conditionTypeFromSelectValue,
   conditionTypesForMode,
@@ -211,5 +212,23 @@ describe('profile content logic', () => {
       }
     }, 'https')).toBe(true);
     expect(fixedProfileAuthActive({}, 'http')).toBe(false);
+  });
+
+  it('clones switch source state and nested errors', () => {
+    const source = {
+      code: 'rule list',
+      error: {
+        message: 'invalid source'
+      },
+      touched: true
+    };
+
+    const cloned = cloneSourceState(source);
+
+    expect(cloned).toEqual(source);
+    expect(cloned).not.toBe(source);
+    expect(cloned?.error).not.toBe(source.error);
+    expect(cloneSourceState(null)).toBeUndefined();
+    expect(cloneSourceState(undefined)).toBeUndefined();
   });
 });

@@ -37,6 +37,7 @@ import {
   FIXED_PROFILE_SCHEME_DISP,
   FIXED_PROFILE_SCHEMES,
   cloneProxyEditors,
+  cloneSourceState,
   conditionTypeFromSelectValue,
   conditionTypesForMode,
   fixedProfileAuthActive,
@@ -2023,16 +2024,6 @@ export function SwitchProfileContent(props: SwitchProfileContentProps) {
       />
     </>
   );
-}
-
-function cloneSourceState(source?: SwitchRuleSourceState | null): SwitchRuleSourceState | undefined {
-  if (!source) {
-    return undefined;
-  }
-  return {
-    ...source,
-    error: source.error ? {...source.error} : source.error
-  };
 }
 
 type SwitchProfileConfirmState =

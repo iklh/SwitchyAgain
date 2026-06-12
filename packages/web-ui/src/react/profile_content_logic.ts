@@ -2,7 +2,8 @@ import {
   conditionTypesForMode as switchConditionTypesForMode
 } from './switch_profile_runtime';
 import type {
-  ConditionTypeOption
+  ConditionTypeOption,
+  SwitchRuleSourceState
 } from './switch_profile_runtime';
 import type {
   FixedProfileBypassCondition,
@@ -125,4 +126,14 @@ export function fixedProfileHasAdvancedProxy(editors: FixedProfileProxyEditors) 
 
 export function fixedProfileAuthActive(profile: FixedProfileModel, scheme: FixedProfileScheme) {
   return !!profile.auth?.[FIXED_PROFILE_PROXY_FIELDS[scheme]];
+}
+
+export function cloneSourceState(source?: SwitchRuleSourceState | null): SwitchRuleSourceState | undefined {
+  if (!source) {
+    return undefined;
+  }
+  return {
+    ...source,
+    error: source.error ? {...source.error} : source.error
+  };
 }
