@@ -22,7 +22,6 @@ import {
   hasNotes
 } from './switch_profile_runtime';
 import type {
-  AttachedOptions,
   ConditionTypeOption,
   NamedSwitchProfileModel,
   SwitchRule,
@@ -1163,17 +1162,24 @@ export function FixedProfileContent({
   onEditProxyAuth,
   onProxyChange
 }: FixedProfileProps) {
+  const {
+    bypassList,
+    fallbackProxy,
+    name: profileName,
+    proxyForHttp,
+    proxyForHttps
+  } = profile;
   const initialEditors = fixedProfileEditors(profile);
   const [draftEditors, setDraftEditors] = useState<FixedProfileProxyEditors>(() => cloneProxyEditors(initialEditors));
   const [draftBypassList, setDraftBypassList] = useState(fixedProfileBypassText(profile));
   const [showAdvanced, setShowAdvanced] = useState(() => fixedProfileHasAdvancedProxy(initialEditors));
-  const previousProfileNameRef = useRef(profile.name);
+  const previousProfileNameRef = useRef(profileName);
 
   useEffect(() => {
-    const editors = fixedProfileEditors(profile);
+    const editors = fixedProfileEditors({fallbackProxy, proxyForHttp, proxyForHttps});
     const hasAdvancedProxy = fixedProfileHasAdvancedProxy(editors);
-    const profileChanged = previousProfileNameRef.current !== profile.name;
-    previousProfileNameRef.current = profile.name;
+    const profileChanged = previousProfileNameRef.current !== profileName;
+    previousProfileNameRef.current = profileName;
     setDraftEditors(cloneProxyEditors(editors));
     if (profileChanged) {
       setShowAdvanced(hasAdvancedProxy);
@@ -1181,21 +1187,15 @@ export function FixedProfileContent({
       setShowAdvanced(true);
     }
   }, [
-    profile.name,
-    profile.fallbackProxy?.scheme,
-    profile.fallbackProxy?.host,
-    profile.fallbackProxy?.port,
-    profile.proxyForHttp?.scheme,
-    profile.proxyForHttp?.host,
-    profile.proxyForHttp?.port,
-    profile.proxyForHttps?.scheme,
-    profile.proxyForHttps?.host,
-    profile.proxyForHttps?.port
+    profileName,
+    fallbackProxy,
+    proxyForHttp,
+    proxyForHttps
   ]);
 
   useEffect(() => {
-    setDraftBypassList(fixedProfileBypassText(profile));
-  }, [profile.name, profile.bypassList]);
+    setDraftBypassList(fixedProfileBypassText({bypassList}));
+  }, [profileName, bypassList]);
 
   function commitProxyEditor(
     scheme: FixedProfileScheme,
@@ -1759,7 +1759,7 @@ export function SwitchRulesSection({
   showConditionTypes = 0,
   showNotes = false,
   source,
-  visibleRuleCount = 0
+  visibleRuleCount: _visibleRuleCount = 0
 }: SwitchRulesSectionProps) {
   const rulesBodyRef = useRef<HTMLTableSectionElement>(null);
   const moveRuleRef = useRef(onMoveRule);
@@ -1774,6 +1774,8 @@ export function SwitchRulesSection({
   const [cloneSelectTarget, setCloneSelectTarget] = useState<{expectedLength: number; index: number; key: number} | null>(null);
   const [ruleDrag, setRuleDrag] = useState<RuleDragState | null>(null);
   const [renderedRuleCount, setRenderedRuleCount] = useState(0);
+  const activeRuleDragPointerId = ruleDrag?.pointerId;
+  const ruleDragTargetIndexRef = useRef(ruleDragTargetIndex);
 
   useEffect(() => {
     moveRuleRef.current = onMoveRule;
@@ -1875,6 +1877,7 @@ export function SwitchRulesSection({
     }
     return Math.max(0, Math.min(targetIndex, visibleCount - 1));
   }
+  ruleDragTargetIndexRef.current = ruleDragTargetIndex;
 
   function beginRuleDrag(index: number, event: React.PointerEvent<HTMLTableCellElement>) {
     if (editSource || !loadRules || rules.length < 2) {
@@ -1941,7 +1944,7 @@ export function SwitchRulesSection({
   }, [editSource, loadRules, renderedRuleCount, rules.length]);
 
   useEffect(() => {
-    if (!ruleDrag) {
+    if (activeRuleDragPointerId == null) {
       return;
     }
 
@@ -1953,7 +1956,7 @@ export function SwitchRulesSection({
         return;
       }
       event.preventDefault();
-      const targetIndex = ruleDragTargetIndex(event.clientY);
+      const targetIndex = ruleDragTargetIndexRef.current(event.clientY);
       updateRuleDrag({
         ...current,
         clientY: event.clientY,
@@ -1990,7 +1993,7 @@ export function SwitchRulesSection({
       window.removeEventListener('pointerup', finishDrag);
       window.removeEventListener('pointercancel', cancelDrag);
     };
-  }, [ruleDrag?.pointerId]);
+  }, [activeRuleDragPointerId]);
 
   useEffect(() => {
     if (!cloneSelectTarget || rules.length < cloneSelectTarget.expectedLength) {
@@ -2119,10 +2122,6 @@ export function SwitchProfileContent(props: SwitchProfileContentProps) {
   );
 }
 
-function sourceErrorMessage(source?: SwitchRuleSourceState | null) {
-  return source?.error?.message || '';
-}
-
 function cloneSourceState(source?: SwitchRuleSourceState | null): SwitchRuleSourceState | undefined {
   if (!source) {
     return undefined;
@@ -2217,7 +2216,6 @@ export function SwitchProfileStatefulContent({
   const [notesForcedVisible, setNotesForcedVisible] = useState(!!externalShowNotes || hasNotes(rules));
   const [confirmState, setConfirmState] = useState<SwitchProfileConfirmState>(null);
   const [, setLocalRevision] = useState(0);
-  const externalSourceError = sourceErrorMessage(externalSource);
 
   useEffect(() => {
     setConditionHelpShown(!!externalConditionHelpShown);
@@ -2229,7 +2227,7 @@ export function SwitchProfileStatefulContent({
 
   useEffect(() => {
     setSource(cloneSourceState(externalSource));
-  }, [externalSource?.code, externalSource?.touched, externalSourceError]);
+  }, [externalSource]);
 
   useEffect(() => {
     if (externalShowNotes || hasNotes(rules)) {

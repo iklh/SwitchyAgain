@@ -170,7 +170,6 @@ const UI_LOCALE_BY_VALUE = new Map(UI_LOCALES.map((locale) => [locale.value, loc
 const UI_LOCALE_BY_EXTENSION = new Map(UI_LOCALES.map((locale) => [locale.extensionLocale, locale]));
 const localeCatalogs = new Map<UiLocale, LocaleCatalog | null>();
 
-let currentUiLocale: UiLocale = 'en';
 let currentCatalog: LocaleCatalog | null = null;
 let englishCatalog: LocaleCatalog | null = null;
 
@@ -292,7 +291,6 @@ export async function setUiLocale(locale: unknown) {
     fetchLocaleCatalog(nextLocale),
     fetchLocaleCatalog('en')
   ]);
-  currentUiLocale = nextLocale;
   currentCatalog = nextCatalog;
   englishCatalog = fallbackCatalog;
   applyDocumentLocale(nextLocale);
@@ -427,7 +425,7 @@ export function getLocalState<T = unknown>(name: string) {
   try {
     const value = window.localStorage.getItem(stateKey(name));
     return value == null ? undefined : JSON.parse(value) as T;
-  } catch (err) {
+  } catch (_err) {
     return undefined;
   }
 }
@@ -526,7 +524,7 @@ export function openOptions(hash?: string) {
         const parsed = new URL(tabs?.[0]?.url || optionsUrl);
         parsed.hash = hash;
         targetUrl = parsed.href;
-      } catch (err) {
+      } catch (_err) {
         targetUrl = `${optionsUrl}${hash}`;
       }
     }
