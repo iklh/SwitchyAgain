@@ -73,6 +73,15 @@ describe('options shell components', () => {
     expect(onDiscard).toHaveBeenCalled();
   });
 
+  it('keeps profile links in a separate scroll region from shell actions', () => {
+    const {container} = render(<OptionsShell options={optionsFixture()} optionsDirty={true} />);
+
+    expect(container.querySelector('.options-shell-profile-list .nav-profile')).toBeTruthy();
+    expect(container.querySelector('.options-shell-profile-list .nav-new-profile')).toBeNull();
+    expect(container.querySelector('.options-shell-actions .nav-new-profile')).toBeTruthy();
+    expect(container.querySelector('.options-shell-actions .btn-success')).toBeTruthy();
+  });
+
   it('keeps discard disabled when there are no dirty options', () => {
     const onDiscard = vi.fn();
 

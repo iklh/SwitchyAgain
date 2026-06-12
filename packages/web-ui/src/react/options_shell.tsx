@@ -103,74 +103,82 @@ export function OptionsShell({
         </a>
         {isExperimental && <sup className="om-experimental text-danger">{message('options_experimental_badge', 'Experimental')}</sup>}
       </h1>
-      <nav className="nav nav-pills nav-stacked">
-        <li className="nav-header">{message('options_navHeader_setting', 'Settings')}</li>
-        <SettingsLink
-          active={currentState === 'ui'}
-          href={uiHref}
-          icon="glyphicon-wrench"
-          label={message('options_tab_ui', 'Interface')}
-          onClick={() => onNavigate?.('ui')}
-        />
-        <SettingsLink
-          active={currentState === 'general'}
-          href={generalHref}
-          icon="glyphicon-cog"
-          label={message('options_tab_general', 'General')}
-          onClick={() => onNavigate?.('general')}
-        />
-        <SettingsLink
-          active={currentState === 'routeTrace'}
-          href={routeTraceHref}
-          icon="glyphicon-sort"
-          label={message('options_tab_routeTrace', 'Route Trace')}
-          onClick={() => onNavigate?.('routeTrace')}
-        />
-        <SettingsLink
-          active={currentState === 'io'}
-          href={importExportHref}
-          icon="glyphicon-floppy-save"
-          label={message('options_tab_importExport', 'Import/Export')}
-          onClick={() => onNavigate?.('io')}
-        />
-        <li className="divider" />
-        <li className="nav-header">{message('options_navHeader_profiles', 'Profiles')}</li>
-        {profiles.map((profile) => (
-          <li
-            key={profile.name}
-            className={`nav-profile ${currentState === 'profile' && profile.name === currentProfileName ? 'active' : ''}`}
-            data-profile-type={profile.profileType}
-          >
-            <a
-              href={profileHref?.(profile) || '#'}
-              onClick={(event) => navClick(event, () => onNavigate?.('profile', {name: profile.name}))}
-            >
-              <ProfileInline profile={profile} />
+      <nav className="options-shell-nav">
+        <ul className="nav nav-pills nav-stacked options-shell-settings">
+          <li className="nav-header">{message('options_navHeader_setting', 'Settings')}</li>
+          <SettingsLink
+            active={currentState === 'ui'}
+            href={uiHref}
+            icon="glyphicon-wrench"
+            label={message('options_tab_ui', 'Interface')}
+            onClick={() => onNavigate?.('ui')}
+          />
+          <SettingsLink
+            active={currentState === 'general'}
+            href={generalHref}
+            icon="glyphicon-cog"
+            label={message('options_tab_general', 'General')}
+            onClick={() => onNavigate?.('general')}
+          />
+          <SettingsLink
+            active={currentState === 'routeTrace'}
+            href={routeTraceHref}
+            icon="glyphicon-sort"
+            label={message('options_tab_routeTrace', 'Route Trace')}
+            onClick={() => onNavigate?.('routeTrace')}
+          />
+          <SettingsLink
+            active={currentState === 'io'}
+            href={importExportHref}
+            icon="glyphicon-floppy-save"
+            label={message('options_tab_importExport', 'Import/Export')}
+            onClick={() => onNavigate?.('io')}
+          />
+          <li className="divider" />
+          <li className="nav-header">{message('options_navHeader_profiles', 'Profiles')}</li>
+        </ul>
+        <div className="options-shell-profile-list">
+          <ul className="nav nav-pills nav-stacked">
+            {profiles.map((profile) => (
+              <li
+                key={profile.name}
+                className={`nav-profile ${currentState === 'profile' && profile.name === currentProfileName ? 'active' : ''}`}
+                data-profile-type={profile.profileType}
+              >
+                <a
+                  href={profileHref?.(profile) || '#'}
+                  onClick={(event) => navClick(event, () => onNavigate?.('profile', {name: profile.name}))}
+                >
+                  <ProfileInline profile={profile} />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <ul className="nav nav-pills nav-stacked options-shell-actions">
+          <li className="nav-new-profile">
+            <a href={newProfileHref} role="button" onClick={(event) => navClick(event, onNewProfile)}>
+              <span className="glyphicon glyphicon-plus" /> <span>{message('options_newProfile', 'New profile')}</span>
             </a>
           </li>
-        ))}
-        <li className="nav-new-profile">
-          <a href={newProfileHref} role="button" onClick={(event) => navClick(event, onNewProfile)}>
-            <span className="glyphicon glyphicon-plus" /> <span>{message('options_newProfile', 'New profile')}</span>
-          </a>
-        </li>
-        <li className="divider" />
-        <li className="nav-header">{message('options_navHeader_actions', 'Actions')}</li>
-        <li>
-          <a
-            className={`btn-default btn align-initial ${optionsDirty ? 'btn-success' : ''}`}
-            href="#"
-            role="button"
-            onClick={(event) => actionClick(event, onApply)}
-          >
-            <span className="glyphicon glyphicon-ok-circle" /> {message('options_apply', 'Apply changes')}
-          </a>
-        </li>
-        <li className={optionsDirty ? '' : 'disabled'}>
-          <a className="text-danger" href="#" role="button" onClick={(event) => navClick(event, optionsDirty ? onDiscard : undefined)}>
-            <span className="glyphicon glyphicon-remove-circle" /> {message('options_discard', 'Discard changes')}
-          </a>
-        </li>
+          <li className="divider" />
+          <li className="nav-header">{message('options_navHeader_actions', 'Actions')}</li>
+          <li>
+            <a
+              className={`btn-default btn align-initial ${optionsDirty ? 'btn-success' : ''}`}
+              href="#"
+              role="button"
+              onClick={(event) => actionClick(event, onApply)}
+            >
+              <span className="glyphicon glyphicon-ok-circle" /> {message('options_apply', 'Apply changes')}
+            </a>
+          </li>
+          <li className={optionsDirty ? '' : 'disabled'}>
+            <a className="text-danger" href="#" role="button" onClick={(event) => navClick(event, optionsDirty ? onDiscard : undefined)}>
+              <span className="glyphicon glyphicon-remove-circle" /> {message('options_discard', 'Discard changes')}
+            </a>
+          </li>
+        </ul>
       </nav>
     </>
   );

@@ -295,16 +295,60 @@ h1 {
 }
 
 .side-nav {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   position: fixed;
   height: 100%;
-  overflow: auto;
+  overflow: hidden;
+  padding-bottom: 20px;
+}
+
+.side-nav h1 {
+  flex: 0 0 auto;
+}
+
+.options-shell-nav {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.options-shell-settings,
+.options-shell-actions {
+  flex: 0 0 auto;
+}
+
+.options-shell-profile-list {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.options-shell-profile-list .nav,
+.options-shell-actions {
+  margin-bottom: 0;
 }
 
 @media (max-width: 767px) {
   .side-nav {
+    display: block;
     position: static;
     height: auto;
     height: initial;
+    overflow: visible;
+    overflow: initial;
+  }
+
+  .options-shell-nav {
+    display: block;
+  }
+
+  .options-shell-profile-list {
+    overflow: visible;
+    overflow: initial;
   }
 }
 
