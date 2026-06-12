@@ -1,15 +1,13 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {setUiLocale} from './options_client';
-import type {RequestExplanation, RequestExplainProfile} from './options_client';
+import type {RequestExplanation} from './options_client';
 import {createRoot} from 'react-dom/client';
 import {
   PageInfo,
   PopupCondition,
-  PopupConditionType,
   PopupMode,
   PopupState,
   Profile,
-  ProfileKey,
   ProfileMap,
   callbackPromise,
   closePopup,
@@ -19,65 +17,27 @@ import {
   popupTarget,
   waitForPopupTarget
 } from './popup_target';
-
-const defaultConditionType: PopupConditionType = 'HostWildcardCondition';
-
-const conditionTypes: readonly PopupConditionType[] = [
-  'HostWildcardCondition',
-  'HostRegexCondition',
-  'UrlWildcardCondition',
-  'UrlRegexCondition',
-  'KeywordCondition'
-];
-
-function isPopupConditionType(value: string): value is PopupConditionType {
-  return conditionTypes.includes(value as PopupConditionType);
-}
-
-const iconForProfileType: Record<string, string> = {
-  AutoDetectProfile: 'glyphicon-file',
-  DirectProfile: 'glyphicon-transfer',
-  FixedProfile: 'glyphicon-globe',
-  PacProfile: 'glyphicon-file',
-  RuleListProfile: 'glyphicon-list',
-  SwitchProfile: 'glyphicon-retweet',
-  SystemProfile: 'glyphicon-off',
-  VirtualProfile: 'glyphicon-question-sign'
-};
-
-const orderForType: Record<string, number> = {
-  FixedProfile: -2000,
-  PacProfile: -1000,
-  VirtualProfile: 1000,
-  SwitchProfile: 2000,
-  RuleListProfile: 3000
-};
-
-function compareProfile(a: Profile, b: Profile) {
-  const diff = (orderForType[a.profileType || ''] || 0) - (orderForType[b.profileType || ''] || 0);
-  if (diff !== 0) {
-    return diff;
-  }
-  return a.name === b.name ? 0 : a.name < b.name ? -1 : 1;
-}
-
-function popupErrorMessage(error: unknown) {
-  const candidate = error as {message?: unknown} | null | undefined;
-  return String(candidate?.message || error);
-}
-
-function modeFromHash(): PopupMode {
-  if (location.hash === '#!routeInfo') {
-    return 'routeInfo';
-  }
-  if (location.hash === '#!external') {
-    return 'external';
-  }
-  if (location.hash === '#!addRule') {
-    return 'condition';
-  }
-  return 'menu';
-}
+import {
+  aggregateRouteInfo,
+  compareProfile,
+  conditionTypes,
+  defaultConditionType,
+  iconForProfileType,
+  isPopupConditionType,
+  isVisibleResultProfileName,
+  lastResultProfile,
+  modeFromHash,
+  popupErrorMessage,
+  popupProfileFromExplanation,
+  profileFromMap,
+  profileTarget,
+  profileTitle,
+  requestDomains,
+  suggestCondition,
+  visibleMenuProfiles,
+  visibleResultProfiles
+} from './popup_logic';
+import type {RouteInfoGroup} from './popup_logic';
 
 function displayProfileName(profile?: Profile, override?: string) {
   if (override) {
@@ -90,74 +50,6 @@ function displayProfileName(profile?: Profile, override?: string) {
     return popupMessage('options_switchAttachedProfileInCondition', 'Rule list rules');
   }
   return popupMessage(`profile_${profile.name}`, profile.name);
-}
-
-function profileKey(profileName?: string): ProfileKey | undefined {
-  return profileName ? `+${profileName}` as ProfileKey : undefined;
-}
-
-function profileFromMap(availableProfiles?: ProfileMap, profileName?: string) {
-  const key = profileKey(profileName);
-  return key ? availableProfiles?.[key] : undefined;
-}
-
-function profileTarget(profile?: Profile, availableProfiles?: ProfileMap) {
-  if (profile?.profileType === 'VirtualProfile') {
-    return profileFromMap(availableProfiles, profile.defaultProfileName) || profile;
-  }
-  return profile;
-}
-
-function visibleMenuProfiles(state?: PopupState) {
-  return Object.values(state?.availableProfiles || {})
-    .filter((profile): profile is Profile => !!profile && !profile.builtin && profile.name.charAt(0) !== '_')
-    .sort(compareProfile);
-}
-
-function visibleResultProfiles(state?: PopupState) {
-  return (state?.validResultProfiles || [])
-    .filter((name) => name.charAt(0) !== '_' || name.charAt(1) !== '_')
-    .map((name) => profileFromMap(state?.availableProfiles, name))
-    .filter((profile): profile is Profile => !!profile)
-    .sort(compareProfile);
-}
-
-function isVisibleResultProfileName(name: string) {
-  return name.charAt(0) !== '_' || name.charAt(1) !== '_';
-}
-
-function requestDomains(info?: PageInfo) {
-  return Object.keys(info?.summary || {})
-    .map((domain) => ({
-      domain,
-      errorCount: info?.summary?.[domain]?.errorCount || 0
-    }))
-    .sort((a, b) => b.errorCount - a.errorCount);
-}
-
-function popupProfileFromExplanation(state: PopupState, profile?: RequestExplainProfile): Profile | undefined {
-  const profileName = typeof profile?.name === 'string' ? profile.name : '';
-  if (!profileName) {
-    return undefined;
-  }
-  return profileFromMap(state.availableProfiles, profileName) || {
-    attachedToProfileName: profile?.attachedToProfileName,
-    builtin: !!profile?.builtin,
-    color: typeof profile?.color === 'string' ? profile.color : undefined,
-    name: profileName,
-    profileType: typeof profile?.profileType === 'string' ? profile.profileType : 'VirtualProfile',
-    role: profile?.role
-  };
-}
-
-function requestHostname(url: unknown) {
-  const rawUrl = String(url || '');
-  try {
-    const parsed = new URL(rawUrl);
-    return parsed.hostname || parsed.host || rawUrl;
-  } catch (_error) {
-    return rawUrl;
-  }
 }
 
 function finalLabel(explanation: RequestExplanation, state: PopupState, {showPacResult = true}: {showPacResult?: boolean} = {}) {
@@ -191,88 +83,6 @@ function finalLabel(explanation: RequestExplanation, state: PopupState, {showPac
     return <span>{final.pacResult}</span>;
   }
   return <span>{popupMessage('popup_routeInfoUnknown', 'Unknown')}</span>;
-}
-
-type RouteInfoGroup = {
-  errorCount: number;
-  errors: string[];
-  hostname: string;
-  pacLimited: boolean;
-  requestCount: number;
-  results: Record<string, RequestExplanation>;
-};
-
-type PageRequest = NonNullable<PageInfo['requests']>[number];
-
-function routeInfoGroup(groups: Record<string, RouteInfoGroup>, hostname: string) {
-  let group = groups[hostname];
-  if (!group) {
-    group = groups[hostname] = {
-      errorCount: 0,
-      errors: [],
-      hostname,
-      pacLimited: false,
-      requestCount: 0,
-      results: {}
-    };
-  }
-  return group;
-}
-
-function requestHasError(request?: PageRequest) {
-  return !!request?.error || request?.status === 'error' || request?.status === 'timeout' || request?.status === 'timeoutAbort';
-}
-
-function finalRouteKey(explanation: RequestExplanation) {
-  const final = explanation.final || {kind: 'profile'};
-  const profile = final.profile || explanation.finalProfile;
-  const profileName = typeof profile?.name === 'string' ? profile.name : '';
-  return [final.kind || '', profileName].join('\n');
-}
-
-function aggregateRouteInfo(explanations: RequestExplanation[], requests: NonNullable<PageInfo['requests']> = []) {
-  const groups: Record<string, RouteInfoGroup> = {};
-  requests.forEach((request) => {
-    const hostname = requestHostname(request?.url) || popupMessage('popup_routeInfoUnknownHost', 'Unknown host');
-    const group = routeInfoGroup(groups, hostname);
-    group.requestCount++;
-    if (requestHasError(request)) {
-      group.errorCount++;
-    }
-  });
-  explanations.forEach((explanation, index) => {
-    const request = requests[index];
-    const hostname = requestHostname(explanation.request?.url || request?.url) || popupMessage('popup_routeInfoUnknownHost', 'Unknown host');
-    const group = routeInfoGroup(groups, hostname);
-    if (!request) {
-      group.requestCount++;
-    }
-    for (const item of explanation.errors || []) {
-      if (group.errors.indexOf(item) < 0) {
-        group.errors.push(item);
-      }
-    }
-    if (explanation.warnings?.includes('pacProfileLimited')) {
-      group.pacLimited = true;
-    }
-    const resultKey = finalRouteKey(explanation);
-    if (!group.results[resultKey]) {
-      group.results[resultKey] = explanation;
-    }
-  });
-  return Object.keys(groups)
-    .map((hostname) => groups[hostname])
-    .sort((a, b) => {
-      const errorDiff = b.errorCount - a.errorCount;
-      if (errorDiff !== 0) {
-        return errorDiff;
-      }
-      const countDiff = b.requestCount - a.requestCount;
-      if (countDiff !== 0) {
-        return countDiff;
-      }
-      return a.hostname.localeCompare(b.hostname);
-    });
 }
 
 function requestCountText(count: number) {
@@ -323,7 +133,7 @@ function RouteInfoList({
       </p>
     );
   }
-  const groups = aggregateRouteInfo(explanations, requests);
+  const groups = aggregateRouteInfo(explanations, requests, popupMessage('popup_routeInfoUnknownHost', 'Unknown host'));
   return (
     <div className="om-route-info-list">
       {groups.map((group) => {
@@ -350,63 +160,6 @@ function RouteInfoList({
       })}
     </div>
   );
-}
-
-function suggestCondition(domain = ''): Record<PopupConditionType, string> {
-  let currentDomain = domain;
-  let currentDomainEscaped = currentDomain.replace(/\./g, '\\.');
-  let domainLooksLikeIp = false;
-  if (currentDomain.indexOf(':') >= 0) {
-    domainLooksLikeIp = true;
-    if (currentDomain[0] !== '[') {
-      currentDomain = `[${currentDomain}]`;
-      currentDomainEscaped = currentDomain.replace(/\./g, '\\.').replace(/\[/g, '\\[').replace(/\]/g, '\\]');
-    }
-  } else if (currentDomain[currentDomain.length - 1] >= '0' && currentDomain[currentDomain.length - 1] <= '9') {
-    domainLooksLikeIp = true;
-  }
-  if (domainLooksLikeIp) {
-    return {
-      HostWildcardCondition: currentDomain,
-      HostRegexCondition: `^${currentDomainEscaped}$`,
-      UrlWildcardCondition: `*://${currentDomain}/*`,
-      UrlRegexCondition: `://${currentDomainEscaped}(:\\d+)?/`,
-      KeywordCondition: currentDomain
-    };
-  }
-  return {
-    HostWildcardCondition: `*.${currentDomain}`,
-    HostRegexCondition: `(^|\\.)${currentDomainEscaped}$`,
-    UrlWildcardCondition: `*://*.${currentDomain}/*`,
-    UrlRegexCondition: `://([^/.]+\\.)*${currentDomainEscaped}(:\\d+)?/`,
-    KeywordCondition: currentDomain
-  };
-}
-
-function lastResultProfile(state?: PopupState, pageInfo?: PageInfo) {
-  const profiles = visibleResultProfiles(state);
-  const names = new Set(profiles.map((profile) => profile.name));
-  if (pageInfo?.tempRuleProfileName && names.has(pageInfo.tempRuleProfileName)) {
-    return pageInfo.tempRuleProfileName;
-  }
-  if (state?.lastProfileNameForCondition && names.has(state.lastProfileNameForCondition)) {
-    return state.lastProfileNameForCondition;
-  }
-  return profiles[0]?.name || 'direct';
-}
-
-function profileTitle(profile?: Profile, availableProfiles?: ProfileMap) {
-  let current = profile;
-  let desc = '';
-  while (current) {
-    desc = current.desc || desc;
-    const next = profileTarget(current, availableProfiles);
-    if (!next || next === current) {
-      break;
-    }
-    current = next;
-  }
-  return desc || profile?.name || '';
 }
 
 function PopupApp() {
