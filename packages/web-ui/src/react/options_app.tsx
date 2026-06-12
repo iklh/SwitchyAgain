@@ -21,6 +21,7 @@ import {
   updateProfile as updateProfileFromBackground
 } from './options_client';
 import {OptionsAlert, OptionsShell} from './options_shell';
+import {parseRoute, routeHref} from './options_routes';
 import {ConfirmModal} from './confirm_modals';
 import {WelcomeModal} from './options_modals';
 import {NewProfileModal, ProxyAuthModal, RenameProfileModal} from './profile_modals';
@@ -96,14 +97,7 @@ import type {
   RuleListProfileModel,
   VirtualProfileModel
 } from './profile_types';
-
-type RouteName = 'about' | 'general' | 'io' | 'profile' | 'routeTrace' | 'ui';
-
-type Route = {
-  name: RouteName;
-  params?: Record<string, string>;
-  profileName?: string;
-};
+import type {RouteName} from './options_routes';
 
 type AlertState = {
   i18n?: string;
@@ -484,44 +478,11 @@ function ModalFrame({
   );
 }
 
-function routeHref(route: RouteName, params?: Record<string, string>) {
-  if (route === 'profile') {
-    return `#/profile/${encodeURIComponent(params?.name || '')}`;
-  }
-  return `#/${route}`;
-}
-
-function parseRoute(hash = window.location.hash): Route {
-  const value = hash.replace(/^#!?\/?/, '');
-  const [path, query = ''] = value.split('?', 2);
-  const params = Object.fromEntries(new URLSearchParams(query));
-  const parts = path.split('/');
-  switch (parts[0]) {
-    case 'ui':
-      return {name: 'ui', params};
-    case 'general':
-      return {name: 'general', params};
-    case 'routeTrace':
-      return {name: 'routeTrace', params};
-    case 'io':
-      return {name: 'io', params};
-    case 'profile':
-      return {
-        params,
-        name: 'profile',
-        profileName: decodeURIComponent(parts.slice(1).join('/') || '')
-      };
-    case 'about':
-    default:
-      return {name: 'about', params};
-  }
-}
-
 function useHashRoute() {
-  const [route, setRoute] = useState(parseRoute);
+  const [route, setRoute] = useState(() => parseRoute(window.location.hash));
   useEffect(() => {
     function syncRoute() {
-      const nextRoute = parseRoute();
+      const nextRoute = parseRoute(window.location.hash);
       setRoute(nextRoute);
       lastUrl(routeHref(nextRoute.name, nextRoute.profileName ? {name: nextRoute.profileName} : undefined).replace(/^#/, ''));
     }
