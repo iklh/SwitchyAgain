@@ -372,6 +372,31 @@ export function deleteAttachedProfileOption(options: Options, profileName: strin
   deleteProfileOption(options, createAttachedName(profileName));
 }
 
+export function deleteProfileScopeAssignments(options: Options, profileName: string) {
+  const rawAssignments = options['-profileScopeAssignments'];
+  if (!rawAssignments || typeof rawAssignments !== 'object') {
+    return;
+  }
+  const assignments = rawAssignments as {
+    containers?: Record<string, string>;
+    normalDefaultProfileName?: string;
+    privateDefaultProfileName?: string;
+  };
+  if (assignments.normalDefaultProfileName === profileName) {
+    delete assignments.normalDefaultProfileName;
+  }
+  if (assignments.privateDefaultProfileName === profileName) {
+    delete assignments.privateDefaultProfileName;
+  }
+  if (assignments.containers) {
+    for (const [cookieStoreId, assignedProfileName] of Object.entries(assignments.containers)) {
+      if (assignedProfileName === profileName) {
+        delete assignments.containers[cookieStoreId];
+      }
+    }
+  }
+}
+
 export function updateProfileRevision(profile: ProfileModel) {
   if (typeof OmegaPac !== 'undefined' && OmegaPac?.Profiles?.updateRevision) {
     OmegaPac.Profiles.updateRevision(profile);

@@ -3,6 +3,7 @@ import {flushSync} from 'react-dom';
 import {createRoot} from 'react-dom/client';
 import {
   Options,
+  getState,
   loadOptions,
   message,
   openShortcutConfig as openDefaultShortcutConfig,
@@ -31,11 +32,35 @@ export type UiSettingsProps = {
   onOpenShortcutConfig?: () => void;
 };
 
+type ProfileScopeCapabilities = {
+  container?: boolean;
+  tab?: boolean;
+  window?: boolean;
+};
+
+type ProfileScopeKey = keyof ProfileScopeCapabilities;
+
+const DEFAULT_PROFILE_SCOPE_CAPABILITIES: ProfileScopeCapabilities = {
+  container: false,
+  tab: false,
+  window: false
+};
+
 function displayProfileName(profile: Profile) {
   if (profile.builtin) {
     return message(`profile_${profile.name}`, profile.name);
   }
   return profile.name;
+}
+
+function profileScopesForOptions(options?: Options | null): Required<ProfileScopeCapabilities> {
+  const raw = options?.['-profileScopes'];
+  const scopes = raw && typeof raw === 'object' ? raw as ProfileScopeCapabilities : {};
+  return {
+    tab: scopes.tab === true,
+    container: scopes.container === true,
+    window: scopes.window === true
+  };
 }
 
 function UiLocaleSelect({value, onChange}: {value: string; onChange: (value: string) => void}) {
@@ -158,6 +183,25 @@ export function UiSettings({embedded = false, options, onOptionsChange, onOpenSh
     embedded && options ? 'ready' : 'loading'
   );
   const [error, setError] = useState('');
+  const [profileScopeCapabilities, setProfileScopeCapabilities] = useState<ProfileScopeCapabilities>(DEFAULT_PROFILE_SCOPE_CAPABILITIES);
+
+  useEffect(() => {
+    let mounted = true;
+    getState<ProfileScopeCapabilities>('profileScopeCapabilities')
+      .then((capabilities) => {
+        if (mounted) {
+          setProfileScopeCapabilities(capabilities || DEFAULT_PROFILE_SCOPE_CAPABILITIES);
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setProfileScopeCapabilities(DEFAULT_PROFILE_SCOPE_CAPABILITIES);
+        }
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (embedded && options) {
@@ -168,11 +212,15 @@ export function UiSettings({embedded = false, options, onOptionsChange, onOpenSh
       return;
     }
 
-    loadOptions()
-      .then((loadedOptions) => {
+    Promise.all([
+      loadOptions(),
+      getState<ProfileScopeCapabilities>('profileScopeCapabilities').catch(() => DEFAULT_PROFILE_SCOPE_CAPABILITIES)
+    ])
+      .then(([loadedOptions, capabilities]) => {
         const cloned = cloneOptions(loadedOptions);
         setSavedOptions(cloned);
         setDraftOptions(cloneOptions(cloned));
+        setProfileScopeCapabilities(capabilities || DEFAULT_PROFILE_SCOPE_CAPABILITIES);
         setStatus('ready');
       })
       .catch((err) => {
@@ -206,6 +254,16 @@ export function UiSettings({embedded = false, options, onOptionsChange, onOpenSh
 
   function updateOption(key: string, value: unknown) {
     updateOptions((current) => ({...current, [key]: value}));
+  }
+
+  function updateProfileScope(scope: ProfileScopeKey, enabled: boolean) {
+    updateOptions((current) => ({
+      ...current,
+      '-profileScopes': {
+        ...profileScopesForOptions(current),
+        [scope]: enabled
+      }
+    }));
   }
 
   function updateQuickSwitchProfiles(profiles: string[]) {
@@ -309,6 +367,7 @@ export function UiSettings({embedded = false, options, onOptionsChange, onOpenSh
   const allProfiles = allProfilesFromOptions(draftOptions);
   const quickSwitchProfiles = quickSwitchProfileNames(draftOptions['-quickSwitchProfiles']);
   const notCycledProfiles = notCycledProfileNames(allProfiles, quickSwitchProfiles);
+  const profileScopes = profileScopesForOptions(draftOptions);
 
   function QuickSwitchList({enabled, names}: {enabled: boolean; names: string[]}) {
     return (
@@ -352,6 +411,36 @@ export function UiSettings({embedded = false, options, onOptionsChange, onOpenSh
     );
   }
 
+  function ProfileScopeCheckbox({
+    fallback,
+    helpFallback,
+    helpKey,
+    messageKey,
+    scope
+  }: {
+    fallback: string;
+    helpFallback: string;
+    helpKey: string;
+    messageKey: string;
+    scope: ProfileScopeKey;
+  }) {
+    const supported = profileScopeCapabilities[scope] === true;
+    return (
+      <div className={`checkbox ${supported ? '' : 'disabled'}`}>
+        <label>
+          <input
+            type="checkbox"
+            checked={supported && profileScopes[scope] === true}
+            disabled={!supported}
+            onChange={(event) => updateProfileScope(scope, event.currentTarget.checked)}
+          />
+          <span> {message(messageKey, fallback)}</span>
+        </label>
+        <p className="help-block">{message(helpKey, helpFallback)}</p>
+      </div>
+    );
+  }
+
   const settings = (
     <>
       {status === 'error' && (
@@ -382,6 +471,31 @@ export function UiSettings({embedded = false, options, onOptionsChange, onOpenSh
           <label>{message('options_interfaceTheme', 'Interface theme')}</label>{' '}
           <UiThemeSelect value={uiThemeForOptions(draftOptions)} onChange={(value) => updateOption('-uiTheme', value)} />
         </div>
+      </section>
+
+      <section className="settings-group">
+        <h3>{message('options_group_profileScope', 'Profile Scope')}</h3>
+        <ProfileScopeCheckbox
+          scope="tab"
+          messageKey="options_profileScopeTab"
+          fallback="Tab profiles"
+          helpKey="options_profileScopeTabHelp"
+          helpFallback="Allow assigning a profile to the current tab from the popup. Firefox only."
+        />
+        <ProfileScopeCheckbox
+          scope="container"
+          messageKey="options_profileScopeContainer"
+          fallback="Container profiles"
+          helpKey="options_profileScopeContainerHelp"
+          helpFallback="Allow assigning profiles to Firefox containers from the popup. Firefox only."
+        />
+        <ProfileScopeCheckbox
+          scope="window"
+          messageKey="options_profileScopeWindow"
+          fallback="Normal/private defaults"
+          helpKey="options_profileScopeWindowHelp"
+          helpFallback="Allow separate default profiles for normal and private windows."
+        />
       </section>
 
       <section className="settings-group">

@@ -5,6 +5,14 @@ export default function defaultOptions() {
     '-refreshOnProfileChange': false,
     '-uiLocale': 'en',
     '-uiTheme': 'light',
+    '-profileScopes': {
+      tab: false,
+      container: false,
+      window: false
+    },
+    '-profileScopeAssignments': {
+      containers: {}
+    },
     '-startupProfileName': '',
     '-quickSwitchProfiles': [] as string[],
     '-revertProxyChanges': true,

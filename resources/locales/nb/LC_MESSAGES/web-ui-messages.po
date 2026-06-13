@@ -1275,3 +1275,39 @@ msgstr "Midlertidige regler er aktive; forespørsler kontrolleres mot midlertidi
 
 msgid "popup_routeInfoLimitExceeded"
 msgstr "Bare de første fangede forespørslene vises."
+
+msgid "options_group_profileScope"
+msgstr "Profilomfang"
+
+msgid "options_profileScopeTab"
+msgstr "Faneprofiler"
+
+msgid "options_profileScopeTabHelp"
+msgstr "Tillat å tilordne en profil til gjeldende fane fra sprettoppmenyen. Bare Firefox."
+
+msgid "options_profileScopeContainer"
+msgstr "Beholderprofiler"
+
+msgid "options_profileScopeContainerHelp"
+msgstr "Tillat å tilordne profiler til Firefox-beholdere fra sprettoppmenyen. Bare Firefox."
+
+msgid "options_profileScopeWindow"
+msgstr "Standarder for normal/privat"
+
+msgid "options_profileScopeWindowHelp"
+msgstr "Tillat separate standardprofiler for normale og private vinduer."
+
+msgid "popup_profileScopeTab"
+msgstr "Denne fanen"
+
+msgid "popup_profileScopeContainer"
+msgstr "Beholder"
+
+msgid "popup_profileScopePrivate"
+msgstr "Privat"
+
+msgid "popup_profileScopeNormal"
+msgstr "Normal"
+
+msgid "popup_profileScopeUseDefault"
+msgstr "Bruk standard"

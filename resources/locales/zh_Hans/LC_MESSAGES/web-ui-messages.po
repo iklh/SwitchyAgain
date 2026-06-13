@@ -1291,3 +1291,39 @@ msgstr "临时规则已启用；请求会先匹配临时规则，然后再使用
 
 msgid "popup_routeInfoLimitExceeded"
 msgstr "仅显示已捕获的前几个请求。"
+
+msgid "options_group_profileScope"
+msgstr "情景模式作用范围"
+
+msgid "options_profileScopeTab"
+msgstr "标签页情景模式"
+
+msgid "options_profileScopeTabHelp"
+msgstr "允许在弹出菜单中为当前标签页指定情景模式。仅 Firefox 支持。"
+
+msgid "options_profileScopeContainer"
+msgstr "容器情景模式"
+
+msgid "options_profileScopeContainerHelp"
+msgstr "允许在弹出菜单中为 Firefox 容器指定情景模式。仅 Firefox 支持。"
+
+msgid "options_profileScopeWindow"
+msgstr "普通/隐私默认情景模式"
+
+msgid "options_profileScopeWindowHelp"
+msgstr "允许为普通窗口和隐私窗口分别设置默认情景模式。"
+
+msgid "popup_profileScopeTab"
+msgstr "当前标签页"
+
+msgid "popup_profileScopeContainer"
+msgstr "容器"
+
+msgid "popup_profileScopePrivate"
+msgstr "隐私"
+
+msgid "popup_profileScopeNormal"
+msgstr "普通"
+
+msgid "popup_profileScopeUseDefault"
+msgstr "使用默认"

@@ -60,6 +60,16 @@ export type OptionsData = {
   '-enableQuickSwitch'?: boolean;
   '-exportLegacyRuleList'?: boolean;
   '-monitorWebRequests'?: boolean;
+  '-profileScopeAssignments'?: {
+    containers?: Record<string, string>;
+    normalDefaultProfileName?: string;
+    privateDefaultProfileName?: string;
+  };
+  '-profileScopes'?: {
+    container?: boolean;
+    tab?: boolean;
+    window?: boolean;
+  };
   '-quickSwitchProfiles'?: string[];
   '-refreshOnProfileChange'?: boolean;
   '-showConditionTypes'?: number;

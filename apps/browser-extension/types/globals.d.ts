@@ -84,7 +84,9 @@ interface BrowserRuntimeApi {
 
 interface ChromeTab {
   active?: boolean;
+  cookieStoreId?: string;
   id?: number;
+  incognito?: boolean;
   pendingUrl?: string;
   url?: string;
   [key: string]: unknown;
@@ -193,7 +195,7 @@ interface ChromeProxyApi {
 interface BrowserProxyApi {
   onError: ChromeEvent<(error: unknown) => void>;
   onProxyError: ChromeEvent<(error: {message?: string}) => void>;
-  onRequest: ChromeEvent<(details: {url: string}) => unknown>;
+  onRequest: ChromeEvent<(details: {cookieStoreId?: string; incognito?: boolean; tabId?: number; url: string}) => unknown>;
   register?(scriptUrl: string): Promise<unknown> | void;
   registerProxyScript(scriptUrl: string): Promise<unknown> | void;
   unregister?(): Promise<unknown> | void;
@@ -314,6 +316,16 @@ interface OmegaOptionsState {
 
 interface OmegaOptionsData extends Record<string, unknown> {
   '-enableQuickSwitch'?: boolean;
+  '-profileScopeAssignments'?: {
+    containers?: Record<string, string>;
+    normalDefaultProfileName?: string;
+    privateDefaultProfileName?: string;
+  };
+  '-profileScopes'?: {
+    container?: boolean;
+    tab?: boolean;
+    window?: boolean;
+  };
   '-quickSwitchProfiles'?: string[];
   '-refreshOnProfileChange'?: boolean;
   '-uiTheme'?: string;
@@ -324,11 +336,12 @@ interface OmegaOptionsBase {
   _options: OmegaOptionsData;
   _setOptions(changes: Record<string, unknown>): OmegaPromise<unknown>;
   _state: OmegaOptionsState;
+  fallbackProfileName: string;
   log: {
     error(...args: unknown[]): void;
     log(...args: unknown[]): void;
   };
-  applyProfile(profileName: string): OmegaPromise<unknown>;
+  applyProfile(profileName: string, options?: Record<string, unknown>): OmegaPromise<unknown>;
   currentProfileChanged(reason: string): unknown;
   explainRequest(args: unknown): OmegaPromise<PopupApiRequestExplanation>;
   queryTempRule(domain: string): unknown;
@@ -408,6 +421,32 @@ type PopupApiRequestExplanation = {
 type PopupApiPageInfo = {
   domain?: string;
   errorCount?: number;
+  profileScope?: {
+    assignments?: {
+      containers?: Record<string, string>;
+      normalDefaultProfileName?: string;
+      privateDefaultProfileName?: string;
+    };
+    capabilities?: {
+      container?: boolean;
+      tab?: boolean;
+      window?: boolean;
+    };
+    containerProfileName?: string;
+    cookieStoreId?: string;
+    effectiveProfileName?: string;
+    effectiveScope?: string;
+    enabled?: {
+      container?: boolean;
+      tab?: boolean;
+      window?: boolean;
+    };
+    incognito?: boolean;
+    isContainer?: boolean;
+    tabId?: number;
+    tabProfileName?: string;
+    windowProfileName?: string;
+  };
   requestExplanations?: PopupApiRequestExplanation[];
   requestLimitExceeded?: boolean;
   requests?: Array<{
@@ -472,6 +511,13 @@ interface OmegaTargetPopupApi {
   openManage(domain?: string, profileName?: string, cb?: PopupApiCallback): void;
   openOptions(hash?: string | null, cb?: PopupApiCallback): void;
   setDefaultProfile(profileName: string, defaultProfileName: string, cb?: PopupApiCallback): void;
+  setProfileScope(args: {
+    cookieStoreId?: string;
+    incognito?: boolean;
+    profileName?: string;
+    scope: 'container' | 'normal' | 'private' | 'tab';
+    tabId?: number;
+  }, cb?: PopupApiCallback): void;
   setState(
     name: PopupApiWritableStateKey,
     value: PopupApiState[PopupApiWritableStateKey],

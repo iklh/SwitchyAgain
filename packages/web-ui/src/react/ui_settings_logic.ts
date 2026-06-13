@@ -3,6 +3,7 @@ import type {Options} from './options_client';
 export const UI_KEYS = [
   '-uiLocale',
   '-uiTheme',
+  '-profileScopes',
   '-startupProfileName',
   '-showConditionTypes',
   '-enableQuickSwitch',
@@ -16,6 +17,9 @@ export const UI_KEYS = [
 export function sameOptionValue(a: unknown, b: unknown) {
   if (Array.isArray(a) || Array.isArray(b)) {
     return JSON.stringify(a || []) === JSON.stringify(b || []);
+  }
+  if ((a && typeof a === 'object') || (b && typeof b === 'object')) {
+    return JSON.stringify(a || {}) === JSON.stringify(b || {});
   }
   return a === b;
 }

@@ -14,14 +14,40 @@ type BackgroundMethodArgs = {
   resetOptionsSync: [];
   setDefaultProfile: [profileName: string, defaultProfileName: string];
   setOptionsSync: [enabled: boolean, args?: unknown];
+  setProfileScope: [args: ProfileScopeSetArgs];
   setState: [items: Record<string, unknown>] | [name: string, value: unknown];
   updateProfile: [name?: string | string[] | null, bypassCache?: boolean | string];
 };
 
 type PageInfoArgs = {
+  cookieStoreId?: string;
   includeExplanations?: boolean;
+  incognito?: boolean;
   tabId: number;
   url?: string;
+};
+
+type ProfileScopeSetArgs = {
+  cookieStoreId?: string;
+  incognito?: boolean;
+  profileName?: string;
+  scope: 'container' | 'normal' | 'private' | 'tab';
+  tabId?: number;
+};
+
+type ProfileScopeName = 'container' | 'current' | 'normal' | 'private' | 'tab';
+
+type ProfileScopeMarker = Exclude<ProfileScopeName, 'current'>;
+
+type ProfileScopeInfo = {
+  effectiveProfileName?: string;
+  effectiveScope?: ProfileScopeName;
+};
+
+type ProfileScopeInfoArgs = {
+  cookieStoreId?: string;
+  incognito?: boolean;
+  tabId?: number;
 };
 
 function backgroundTabUrl(tab?: Pick<ChromeTab, 'pendingUrl' | 'url'> | null) {
@@ -115,7 +141,9 @@ type BackgroundOptions = BackgroundOptionMethods & {
   currentProfile(): BackgroundProfile | null | undefined;
   externalApi: BackgroundExternalApi;
   explainRequest(args: unknown): OmegaPromise<unknown>;
+  getProfileScopeInfo(args: ProfileScopeInfoArgs): ProfileScopeInfo;
   isCurrentProfileStatic(): boolean;
+  matchProfileFromProfileName(profileName: string, request: unknown): OmegaPromise<BackgroundMatchResult>;
   matchProfile(request: unknown): OmegaPromise<BackgroundMatchResult>;
   getMonitoredTabUrl(tabId: number, url?: string): string | undefined;
   optionsLoaded: OmegaPromise<unknown> | null;
@@ -189,7 +217,7 @@ type ProxyChangeDetails = Record<string, unknown> & {
 
 type BackgroundOmegaTarget = {
   BrowserStorage: new (storage: Storage, prefix: string) => BackgroundState;
-  ChromeTabs: new (actionForUrl: (url: string) => Promise<BackgroundActionInfo | null>) => BackgroundTabs;
+  ChromeTabs: new (actionForUrl: (tab: ChromeTab, url: string) => Promise<BackgroundActionInfo | null>) => BackgroundTabs;
   ExternalApi: new (options: BackgroundOptions) => BackgroundExternalApi;
   Inspect: new (onInspect: (url: string, tab: ChromeTab) => unknown) => BackgroundInspect;
   Log: BackgroundLog;
@@ -286,8 +314,34 @@ type BackgroundOmegaTarget = {
 
   let drawError: unknown = null;
 
-  function drawIcon(resultColor?: string, profileColor?: string): BackgroundIcon | null {
-    const cacheKey = `omega+${resultColor != null ? resultColor : ''}+${profileColor}`;
+  const profileScopeMarkerColors: Record<ProfileScopeMarker, string> = {
+    tab: '#3d8bfd',
+    container: '#8f6ed5',
+    normal: '#38a169',
+    private: '#c47f17'
+  };
+
+  function drawProfileScopeMarker(ctx: DrawingContext, marker: ProfileScopeMarker) {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.beginPath();
+    ctx.arc(0.78, 0.22, 0.2, 0, Math.PI * 2, true);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(0.78, 0.22, 0.17, 0, Math.PI * 2, true);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = profileScopeMarkerColors[marker];
+    ctx.beginPath();
+    ctx.arc(0.78, 0.22, 0.12, 0, Math.PI * 2, true);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawIcon(resultColor?: string, profileColor?: string, scopeMarker?: ProfileScopeMarker): BackgroundIcon | null {
+    const cacheKey = `omega+${resultColor != null ? resultColor : ''}+${profileColor || ''}+${scopeMarker || ''}`;
     const cachedIcon = iconCache[cacheKey];
     if (cachedIcon) {
       return cachedIcon;
@@ -320,6 +374,9 @@ type BackgroundOmegaTarget = {
         } else {
           drawOmega(drawContext, profileColor);
         }
+        if (scopeMarker) {
+          drawProfileScopeMarker(drawContext, scopeMarker);
+        }
         drawContext.setTransform(1, 0, 0, 1, 0, 0);
         icon[size] = drawContext.getImageData(0, 0, size, size);
         if (icon[size].data[3] === 255) {
@@ -350,6 +407,43 @@ type BackgroundOmegaTarget = {
     return chrome.i18n.getMessage('profile_' + name) || name;
   }
 
+  function profileScopeMarker(scope?: ProfileScopeName): ProfileScopeMarker | undefined {
+    switch (scope) {
+      case 'tab':
+      case 'container':
+      case 'normal':
+      case 'private':
+        return scope;
+      default:
+        return undefined;
+    }
+  }
+
+  function profileScopeLabel(scope: ProfileScopeMarker) {
+    const messageKey = {
+      tab: 'popup_profileScopeTab',
+      container: 'popup_profileScopeContainer',
+      normal: 'popup_profileScopeNormal',
+      private: 'popup_profileScopePrivate'
+    }[scope];
+    const fallback = {
+      tab: 'This Tab',
+      container: 'Container',
+      normal: 'Normal',
+      private: 'Private'
+    }[scope];
+    return chrome.i18n.getMessage(messageKey) || fallback;
+  }
+
+  function profileScopeTitleLine(profileScope: ProfileScopeInfo, marker: ProfileScopeMarker) {
+    const group = chrome.i18n.getMessage('options_group_profileScope') || 'Profile Scope';
+    return `${group}: ${profileScopeLabel(marker)} -> ${dispName(profileScope.effectiveProfileName)}\n`;
+  }
+
+  function staticProfile(profile: BackgroundProfile | null | undefined) {
+    return !profile?.name || !OmegaPac.Profiles.isInclusive(profile);
+  }
+
   function stringOrUndefined(value: unknown): string | undefined {
     return value == null ? undefined : String(value);
   }
@@ -363,14 +457,31 @@ type BackgroundOmegaTarget = {
   let tabs: BackgroundTabs;
   let proxyImpl: BackgroundProxyImpl;
 
-  function actionForUrl(url: string) {
+  function actionForUrl(tab: ChromeTab, url: string) {
     return options.ready.then(() => {
       const request = OmegaPac.Conditions.requestFromUrl(url);
-      return options.matchProfile(request);
+      const profileScope = options.getProfileScopeInfo({
+        cookieStoreId: tab.cookieStoreId,
+        incognito: tab.incognito,
+        tabId: tab.id
+      });
+      const scopeMarker = profileScopeMarker(profileScope.effectiveScope);
+      const match = scopeMarker && profileScope.effectiveProfileName
+        ? options.matchProfileFromProfileName(profileScope.effectiveProfileName, request)
+        : options.matchProfile(request);
+      return match.then((result) => ({
+        ...result,
+        profileScope,
+        scopeMarker
+      }));
     }).then((arg) => {
       const profile = arg.profile;
+      const profileScope = arg.profileScope;
       const results = arg.results;
-      let current = options.currentProfile() as BackgroundProfile;
+      const scopeMarker = arg.scopeMarker;
+      let current = scopeMarker && profileScope.effectiveProfileName
+        ? options.profile(profileScope.effectiveProfileName)
+        : options.currentProfile() as BackgroundProfile;
       let currentName = dispName(current.name);
       let realCurrentName: string | undefined;
       if (current.profileType === 'VirtualProfile') {
@@ -438,21 +549,24 @@ type BackgroundOmegaTarget = {
       if (!details) {
         details = stringOrUndefined(options.printProfile(current)) || '';
       }
+      if (scopeMarker) {
+        details = profileScopeTitleLine(profileScope, scopeMarker) + details;
+      }
       let resultColor = profile.color;
       let profileColor = current.color;
       let icon = null;
       if (direct) {
         resultColor = stringOrUndefined(options.profile('direct').color);
         profileColor = profile.color;
-      } else if (profile.name === current.name && options.isCurrentProfileStatic()) {
+      } else if (profile.name === current.name && (scopeMarker ? staticProfile(current) : options.isCurrentProfileStatic())) {
         resultColor = profileColor = profile.color;
-        icon = drawIcon(profile.color);
+        icon = drawIcon(profile.color, undefined, scopeMarker);
       } else {
         resultColor = profile.color;
         profileColor = current.color;
       }
       if (icon == null) {
-        icon = drawIcon(resultColor, profileColor);
+        icon = drawIcon(resultColor, profileColor, scopeMarker);
       }
       let shortTitle = 'Again: ' + currentName;
       if (profile.name !== currentName) {
@@ -513,7 +627,7 @@ type BackgroundOmegaTarget = {
     state.set({
       inspectUrl: url
     });
-    return actionForUrl(url).then((action) => {
+    return actionForUrl(tab, url).then((action) => {
       if (!action) {
         return;
       }
@@ -698,6 +812,7 @@ type BackgroundOmegaTarget = {
       case 'resetOptionsSync':
       case 'setDefaultProfile':
       case 'setOptionsSync':
+      case 'setProfileScope':
       case 'setState':
       case 'updateProfile':
         return true;

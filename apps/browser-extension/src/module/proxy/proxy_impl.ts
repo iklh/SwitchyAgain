@@ -49,22 +49,31 @@ class ProxyImpl {
     });
   }
 
-  setProxyAuth(profile: ProxyProfile, options: unknown) {
+  setProxyAuth(profile: ProxyProfile, options: unknown, extraProfileNames: string[] = []) {
     return OmegaPromise.try(() => {
       if (this._proxyAuth == null) {
         this._proxyAuth = new ProxyAuth(this.log);
       }
       this._proxyAuth.listen();
       const referencedProfiles: ProxyProfile[] = [];
-      const refSet = OmegaPac.Profiles.allReferenceSet(profile, options, {
-        profileNotFound: this._profileNotFound.bind(this)
-      });
-      for (const key of Object.keys(refSet)) {
-        const name = refSet[key];
-        const referencedProfile = OmegaPac.Profiles.byName(name, options);
-        if (referencedProfile) {
-          referencedProfiles.push(referencedProfile);
+      const addReferencedProfiles = (rootProfile?: ProxyProfile) => {
+        if (!rootProfile) {
+          return;
         }
+        const refSet = OmegaPac.Profiles.allReferenceSet(rootProfile, options, {
+          profileNotFound: this._profileNotFound.bind(this)
+        });
+        for (const key of Object.keys(refSet)) {
+          const name = refSet[key];
+          const referencedProfile = OmegaPac.Profiles.byName(name, options);
+          if (referencedProfile && referencedProfiles.indexOf(referencedProfile) < 0) {
+            referencedProfiles.push(referencedProfile);
+          }
+        }
+      };
+      addReferencedProfiles(profile);
+      for (const profileName of extraProfileNames) {
+        addReferencedProfiles(OmegaPac.Profiles.byName(profileName, options));
       }
       return this._proxyAuth.setProxies(referencedProfiles);
     });

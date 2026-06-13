@@ -35,6 +35,17 @@ export type ProxyProfile = Record<string, unknown> & {
   revision?: string;
 };
 
+export type ProxyRequestDetails = {
+  cookieStoreId?: string;
+  incognito?: boolean;
+  tabId?: number;
+  url: string;
+  [key: string]: unknown;
+};
+
+export type ProxyProfileResolver = (details: ProxyRequestDetails) => ProxyProfile | null | undefined;
+export type ProxyScopeProfileNames = () => string[];
+
 export type ProxyRules = Record<string, unknown> & {
   bypassList?: string[];
   fallbackProxy?: ProxyServer;
@@ -72,6 +83,7 @@ export type ProxyImplInstance = {
   features: string[];
   applyProfile(profile: ProxyProfile, meta?: unknown, options?: unknown): Promise<unknown>;
   parseExternalProfile(details: ExternalProxyDetails | ProxyProfile, options?: unknown): unknown;
+  setProfileResolver?(resolver: ProxyProfileResolver | null, profileNames?: ProxyScopeProfileNames): void;
   watchProxyChange(callback: ProxyChangeWatcher): void | null;
 };
 

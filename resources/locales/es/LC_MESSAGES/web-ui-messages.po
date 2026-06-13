@@ -1488,3 +1488,39 @@ msgstr "Las reglas temporales están activas; las solicitudes se comprueban con 
 
 msgid "popup_routeInfoLimitExceeded"
 msgstr "Solo se muestran las primeras solicitudes capturadas."
+
+msgid "options_group_profileScope"
+msgstr "Ámbito del perfil"
+
+msgid "options_profileScopeTab"
+msgstr "Perfiles por pestaña"
+
+msgid "options_profileScopeTabHelp"
+msgstr "Permite asignar un perfil a la pestaña actual desde el menú emergente. Solo Firefox."
+
+msgid "options_profileScopeContainer"
+msgstr "Perfiles de contenedor"
+
+msgid "options_profileScopeContainerHelp"
+msgstr "Permite asignar perfiles a contenedores de Firefox desde el menú emergente. Solo Firefox."
+
+msgid "options_profileScopeWindow"
+msgstr "Predeterminados normal/privado"
+
+msgid "options_profileScopeWindowHelp"
+msgstr "Permite perfiles predeterminados separados para ventanas normales y privadas."
+
+msgid "popup_profileScopeTab"
+msgstr "Esta pestaña"
+
+msgid "popup_profileScopeContainer"
+msgstr "Contenedor"
+
+msgid "popup_profileScopePrivate"
+msgstr "Privado"
+
+msgid "popup_profileScopeNormal"
+msgstr "Normal"
+
+msgid "popup_profileScopeUseDefault"
+msgstr "Usar predeterminado"

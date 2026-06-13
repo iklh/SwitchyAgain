@@ -181,6 +181,7 @@ function PopupApp() {
   const [error, setError] = useState('');
   const [defaultMenuOpen, setDefaultMenuOpen] = useState('');
   const [hiddenMenuOpen, setHiddenMenuOpen] = useState(false);
+  const [profileScopeMenuOpen, setProfileScopeMenuOpen] = useState('');
   const [tempMenuOpen, setTempMenuOpen] = useState(false);
   const [keyboardHelp, setKeyboardHelp] = useState(false);
 
@@ -245,6 +246,7 @@ function PopupApp() {
     setMode(nextMode);
     setDefaultMenuOpen('');
     setHiddenMenuOpen(false);
+    setProfileScopeMenuOpen('');
     setTempMenuOpen(false);
   }
 
@@ -266,6 +268,17 @@ function PopupApp() {
       popupTarget().setState?.('lastProfileNameForCondition', profileName);
       closePopup();
     });
+  }
+
+  function setProfileScope(scope: 'container' | 'normal' | 'private' | 'tab', profileName?: string) {
+    const info = pageInfo?.profileScope;
+    popupTarget().setProfileScope?.({
+      cookieStoreId: info?.cookieStoreId,
+      incognito: info?.incognito,
+      profileName,
+      scope,
+      tabId: info?.tabId
+    }, closePopup);
   }
 
   function showOptions() {
@@ -293,9 +306,10 @@ function PopupApp() {
     }
 
     function closeDropdown() {
-      if (defaultMenuOpen || hiddenMenuOpen || tempMenuOpen) {
+      if (defaultMenuOpen || hiddenMenuOpen || profileScopeMenuOpen || tempMenuOpen) {
         setDefaultMenuOpen('');
         setHiddenMenuOpen(false);
+        setProfileScopeMenuOpen('');
         setTempMenuOpen(false);
       }
     }
@@ -308,6 +322,8 @@ function PopupApp() {
         setDefaultMenuOpen(profileName);
       } else if (item?.classList.contains('om-nav-hidden-profiles')) {
         setHiddenMenuOpen(true);
+      } else if (item?.dataset.profileScope) {
+        setProfileScopeMenuOpen(item.dataset.profileScope);
       } else if (item?.classList.contains('om-nav-temprule')) {
         setTempMenuOpen(true);
       }
@@ -390,7 +406,7 @@ function PopupApp() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [customProfiles, defaultMenuOpen, hiddenMenuOpen, mode, tempMenuOpen]);
+  }, [customProfiles, defaultMenuOpen, hiddenMenuOpen, mode, profileScopeMenuOpen, tempMenuOpen]);
 
   useEffect(() => {
     if (mode !== 'menu') {
@@ -444,6 +460,12 @@ function PopupApp() {
   const tempRuleProfiles = resultProfiles
     .filter((profile) => profile.name.indexOf('__') !== 0)
     .filter((profile) => !!pageInfo?.tempRuleProfileName || resultProfiles.length === 1 || profile.name !== state.currentProfileName);
+  const profileScope = pageInfo?.profileScope;
+  const showTabScope = !!(profileScope?.enabled?.tab && profileScope.tabId != null && hasResultProfiles);
+  const showContainerScope = !!(profileScope?.enabled?.container && profileScope.isContainer && hasResultProfiles);
+  const windowScope = profileScope?.incognito ? 'private' : 'normal';
+  const showWindowScope = !!(profileScope?.enabled?.window && hasResultProfiles);
+  const showProfileScopes = showTabScope || showContainerScope || showWindowScope;
 
   return (
     <ul className="om-nav">
@@ -530,6 +552,54 @@ function PopupApp() {
             </ul>
           )}
         </li>
+      )}
+      {showProfileScopes && (
+        <>
+          <li className="om-divider" />
+          {showTabScope && (
+            <ProfileScopeMenuItem
+              scope="tab"
+              icon="glyphicon-pushpin"
+              label={popupMessage('popup_profileScopeTab', 'This Tab')}
+              activeProfileName={profileScope?.tabProfileName}
+              open={profileScopeMenuOpen === 'tab'}
+              profiles={resultProfiles}
+              state={state}
+              onToggle={() => setProfileScopeMenuOpen(profileScopeMenuOpen === 'tab' ? '' : 'tab')}
+              onProfileChange={(profileName) => setProfileScope('tab', profileName)}
+            />
+          )}
+          {showContainerScope && (
+            <ProfileScopeMenuItem
+              scope="container"
+              icon="glyphicon-tags"
+              label={popupMessage('popup_profileScopeContainer', 'Container')}
+              activeProfileName={profileScope?.containerProfileName}
+              open={profileScopeMenuOpen === 'container'}
+              profiles={resultProfiles}
+              state={state}
+              onToggle={() => setProfileScopeMenuOpen(profileScopeMenuOpen === 'container' ? '' : 'container')}
+              onProfileChange={(profileName) => setProfileScope('container', profileName)}
+            />
+          )}
+          {showWindowScope && (
+            <ProfileScopeMenuItem
+              scope={windowScope}
+              icon={windowScope === 'private' ? 'glyphicon-lock' : 'glyphicon-new-window'}
+              label={
+                windowScope === 'private'
+                  ? popupMessage('popup_profileScopePrivate', 'Private')
+                  : popupMessage('popup_profileScopeNormal', 'Normal')
+              }
+              activeProfileName={profileScope?.windowProfileName}
+              open={profileScopeMenuOpen === windowScope}
+              profiles={resultProfiles}
+              state={state}
+              onToggle={() => setProfileScopeMenuOpen(profileScopeMenuOpen === windowScope ? '' : windowScope)}
+              onProfileChange={(profileName) => setProfileScope(windowScope, profileName)}
+            />
+          )}
+        </>
       )}
       <li className="om-divider" />
       {showAddCondition && (
@@ -708,6 +778,81 @@ function MenuProfileItem({
                 }}
               >
                 <ProfileInline legacySpacing profile={resultProfile} availableProfiles={state.availableProfiles} />
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
+function ProfileScopeMenuItem({
+  activeProfileName,
+  icon,
+  label,
+  onProfileChange,
+  onToggle,
+  open,
+  profiles,
+  scope,
+  state
+}: {
+  activeProfileName?: string;
+  icon: string;
+  label: string;
+  onProfileChange: (profileName?: string) => void;
+  onToggle: () => void;
+  open: boolean;
+  profiles: Profile[];
+  scope: string;
+  state: PopupState;
+}) {
+  const activeProfile = profileFromMap(state.availableProfiles, activeProfileName);
+  const text = activeProfile ? `${label}: ${displayProfileName(activeProfile)}` : label;
+  return (
+    <li className={`om-nav-item om-nav-profile-scope om-has-dropdown ${activeProfile ? 'om-active' : ''} ${open ? 'om-open' : ''}`} data-profile-scope={scope}>
+      <a
+        aria-expanded={open}
+        href="#"
+        role="button"
+        onClick={(event) => {
+          event.preventDefault();
+          onToggle();
+        }}
+      >
+        <span className={`glyphicon ${icon}`} />
+        <span>
+          <span>{text}</span>
+          <span className="om-caret" />
+        </span>
+      </a>
+      {open && (
+        <ul className="om-dropdown">
+          <li className={`om-nav-item ${activeProfileName ? '' : 'om-active'}`}>
+            <a
+              href="#"
+              role="button"
+              onClick={(event) => {
+                event.preventDefault();
+                onProfileChange();
+              }}
+            >
+              <span className="glyphicon glyphicon-share-alt" /> {popupMessage('popup_profileScopeUseDefault', 'Use Default')}
+            </a>
+          </li>
+          {profiles.map((profile) => (
+            <li className={`om-nav-item ${profile.name === activeProfileName ? 'om-active' : ''}`} key={profile.name}>
+              <a
+                href="#"
+                role="button"
+                title={profileTitle(profile, state.availableProfiles)}
+                onClick={(event) => {
+                  event.preventDefault();
+                  onProfileChange(profile.name);
+                }}
+              >
+                <ProfileInline legacySpacing profile={profile} availableProfiles={state.availableProfiles} />
               </a>
             </li>
           ))}

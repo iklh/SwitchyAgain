@@ -1449,3 +1449,39 @@ msgstr "قوانین موقت فعال هستند؛ درخواست‌ها پیش
 
 msgid "popup_routeInfoLimitExceeded"
 msgstr "فقط نخستین درخواست‌های ثبت‌شده نمایش داده می‌شوند."
+
+msgid "options_group_profileScope"
+msgstr "دامنه نمایه"
+
+msgid "options_profileScopeTab"
+msgstr "نمایه‌های زبانه"
+
+msgid "options_profileScopeTabHelp"
+msgstr "اجازه دهید از پنجره بازشو یک نمایه به زبانه فعلی اختصاص داده شود. فقط Firefox."
+
+msgid "options_profileScopeContainer"
+msgstr "نمایه‌های کانتینر"
+
+msgid "options_profileScopeContainerHelp"
+msgstr "اجازه دهید از پنجره بازشو نمایه‌هایی به کانتینرهای Firefox اختصاص داده شوند. فقط Firefox."
+
+msgid "options_profileScopeWindow"
+msgstr "پیش‌فرض‌های عادی/خصوصی"
+
+msgid "options_profileScopeWindowHelp"
+msgstr "اجازه دهید برای پنجره‌های عادی و خصوصی نمایه‌های پیش‌فرض جداگانه تنظیم شود."
+
+msgid "popup_profileScopeTab"
+msgstr "این زبانه"
+
+msgid "popup_profileScopeContainer"
+msgstr "کانتینر"
+
+msgid "popup_profileScopePrivate"
+msgstr "خصوصی"
+
+msgid "popup_profileScopeNormal"
+msgstr "عادی"
+
+msgid "popup_profileScopeUseDefault"
+msgstr "استفاده از پیش‌فرض"

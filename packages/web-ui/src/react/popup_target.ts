@@ -18,6 +18,7 @@ export type ProfileMap = Record<ProfileKey, Profile | undefined>;
 export type PageInfo = {
   domain?: string;
   errorCount?: number;
+  profileScope?: ProfileScopeInfo;
   requestExplanations?: RequestExplanation[];
   requestLimitExceeded?: boolean;
   requests?: Array<{
@@ -30,6 +31,39 @@ export type PageInfo = {
   summary?: Record<string, {errorCount?: number}>;
   tempRuleProfileName?: string;
   url?: string;
+};
+
+export type ProfileScopeInfo = {
+  assignments?: {
+    containers?: Record<string, string>;
+    normalDefaultProfileName?: string;
+    privateDefaultProfileName?: string;
+  };
+  capabilities?: ProfileScopeSettings;
+  containerProfileName?: string;
+  cookieStoreId?: string;
+  effectiveProfileName?: string;
+  effectiveScope?: 'container' | 'current' | 'normal' | 'private' | 'tab';
+  enabled?: ProfileScopeSettings;
+  incognito?: boolean;
+  isContainer?: boolean;
+  tabId?: number;
+  tabProfileName?: string;
+  windowProfileName?: string;
+};
+
+export type ProfileScopeSettings = {
+  container?: boolean;
+  tab?: boolean;
+  window?: boolean;
+};
+
+export type ProfileScopeSetRequest = {
+  cookieStoreId?: string;
+  incognito?: boolean;
+  profileName?: string;
+  scope: 'container' | 'normal' | 'private' | 'tab';
+  tabId?: number;
 };
 
 export type PageInfoOptions = {
@@ -89,6 +123,7 @@ export type PopupTarget = {
   };
   openOptions?: (hash?: string | null, callback?: PopupVoidCallback) => void;
   setDefaultProfile?: (profileName: string, defaultProfileName: string, callback?: PopupVoidCallback) => void;
+  setProfileScope?: (args: ProfileScopeSetRequest, callback?: PopupVoidCallback) => void;
   setState?: <TKey extends PopupWritableStateKey>(name: TKey, value: PopupState[TKey], callback?: PopupCallback) => void;
 };
 

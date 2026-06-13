@@ -5,6 +5,8 @@ import type {
   ProxyChangeWatcher,
   ProxyLog,
   ProxyProfile,
+  ProxyProfileResolver,
+  ProxyRequestDetails,
   ProxyServer
 } from './proxy_types';
 
@@ -15,10 +17,6 @@ type MatchedProxyServer = ProxyServer & {
   host: string;
   port: number;
   scheme: string;
-};
-
-type RequestDetails = {
-  url: string;
 };
 
 type ProxyInfo = {
@@ -35,14 +33,18 @@ class ListenerProxyImpl extends ProxyImpl {
   private _optionsReady: Promise<void>;
   private _optionsReadyCallback: (() => void) | null;
   private _profile?: ProxyProfile;
+  private _profileResolver: ProxyProfileResolver | null;
+  private _scopeProfileNames: (() => string[]) | null;
 
   constructor(log: ProxyLog) {
     super(log);
-    this.features = ['fullUrl', 'socks5Auth'];
+    this.features = ['fullUrl', 'socks5Auth', 'tabProfileScope', 'containerProfileScope', 'windowProfileScope'];
     this._optionsReadyCallback = null;
     this._optionsReady = new (NativePromise as PromiseConstructor)((resolve) => {
       this._optionsReadyCallback = resolve;
     });
+    this._profileResolver = null;
+    this._scopeProfileNames = null;
     this._initRequestListeners();
   }
 
@@ -64,6 +66,11 @@ class ListenerProxyImpl extends ProxyImpl {
     return null;
   }
 
+  setProfileResolver(resolver: ProxyProfileResolver | null, profileNames?: () => string[]) {
+    this._profileResolver = resolver;
+    this._scopeProfileNames = profileNames || null;
+  }
+
   applyProfile(profile: ProxyProfile, _state?: unknown, options?: unknown) {
     this._options = options;
     this._profile = profile;
@@ -71,13 +78,13 @@ class ListenerProxyImpl extends ProxyImpl {
       this._optionsReadyCallback();
     }
     this._optionsReadyCallback = null;
-    return this.setProxyAuth(profile, options);
+    return this.setProxyAuth(profile, options, this._scopeProfileNames?.() || []);
   }
 
-  onRequest(requestDetails: RequestDetails) {
+  onRequest(requestDetails: ProxyRequestDetails) {
     return (NativePromise as PromiseConstructor).resolve(this._optionsReady.then(() => {
       const request = OmegaPac.Conditions.requestFromUrl(requestDetails.url);
-      let profile = this._profile;
+      let profile = this._profileResolver?.(requestDetails) || this._profile;
       let next;
       while (profile) {
         const result = OmegaPac.Profiles.match(profile, request);

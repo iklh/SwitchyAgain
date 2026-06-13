@@ -26,6 +26,32 @@ const FIXED_PROXY_RULE_KEYS = [
 const PROTOCOL_PROXY_RULE_KEYS = ['proxyForHttp', 'proxyForHttps', 'proxyForFtp'] as const;
 
 type FixedProxyRuleKey = typeof FIXED_PROXY_RULE_KEYS[number];
+type ProxySettingsScope = 'regular' | 'incognito_persistent';
+
+type ProfileScopeAssignments = {
+  normalDefaultProfileName?: string;
+  privateDefaultProfileName?: string;
+};
+
+function isRecordValue(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object';
+}
+
+function windowScopeEnabled(options?: unknown) {
+  if (!isRecordValue(options)) {
+    return false;
+  }
+  const scopes = options['-profileScopes'];
+  return isRecordValue(scopes) && scopes.window === true;
+}
+
+function profileScopeAssignments(options?: unknown): ProfileScopeAssignments {
+  if (!isRecordValue(options)) {
+    return {};
+  }
+  const assignments = options['-profileScopeAssignments'];
+  return isRecordValue(assignments) ? assignments : {};
+}
 
 class SettingsProxyImpl extends ProxyImpl {
   private _proxyChangeListener: (details: ProxyChangeDetails) => unknown[];
@@ -33,7 +59,7 @@ class SettingsProxyImpl extends ProxyImpl {
 
   constructor(log: ProxyLog) {
     super(log);
-    this.features = ['fullUrlHttp', 'pacScript', 'watchProxyChange'];
+    this.features = ['fullUrlHttp', 'pacScript', 'watchProxyChange', 'windowProfileScope'];
     this._proxyChangeWatchers = null;
     this._proxyChangeListener = this._handleProxyChange.bind(this);
   }
@@ -42,11 +68,27 @@ class SettingsProxyImpl extends ProxyImpl {
     return chrome?.proxy?.settings != null;
   }
 
-  applyProfile(profile: ProxyProfile, meta: ProxyProfile = profile, options?: unknown) {
+  async applyProfile(profile: ProxyProfile, meta: ProxyProfile = profile, options?: unknown) {
+    const windowProfiles = this._windowScopeProfiles(profile, meta, options);
+    const authProfileNames = windowProfiles ? [windowProfiles.regular.profile.name, windowProfiles.private.profile.name] : [];
+    await (this.setProxyAuth(
+      profile,
+      options,
+      authProfileNames.filter((name): name is string => typeof name === 'string')
+    ) as unknown as PromiseLike<unknown>);
+    if (windowProfiles) {
+      await this._applyWindowScopeProfiles(windowProfiles, options);
+    } else {
+      await this._clearPrivateScopeProfile();
+      await this._applyProfileConfig(profile, meta, options);
+    }
+    chrome.proxy.settings.get({}, this._proxyChangeListener);
+  }
+
+  private _applyProfileConfig(profile: ProxyProfile, meta: ProxyProfile = profile, options?: unknown, scope?: ProxySettingsScope) {
+    const details = scope ? {scope} : {};
     if (profile.profileType === 'SystemProfile') {
-      return chromeApiPromisify<void>(chrome.proxy.settings, 'clear')({}).then(() => {
-        chrome.proxy.settings.get({}, this._proxyChangeListener);
-      });
+      return chromeApiPromisify<void>(chrome.proxy.settings, 'clear')(details);
     }
 
     let config: ProxySettingsConfig = {};
@@ -71,13 +113,56 @@ class SettingsProxyImpl extends ProxyImpl {
       };
     }
 
-    return this.setProxyAuth(profile, options).then(() => {
-      return chromeApiPromisify<void>(chrome.proxy.settings, 'set')({
-        value: config
-      });
-    }).then(() => {
-      chrome.proxy.settings.get({}, this._proxyChangeListener);
+    return chromeApiPromisify<void>(chrome.proxy.settings, 'set')({
+      ...details,
+      value: config
     });
+  }
+
+  private _windowScopeProfiles(profile: ProxyProfile, meta: ProxyProfile, options?: unknown) {
+    if (!windowScopeEnabled(options)) {
+      return null;
+    }
+    const assignments = profileScopeAssignments(options);
+    const regularProfile = this._profileByName(assignments.normalDefaultProfileName, options) || profile;
+    const privateProfile = this._profileByName(assignments.privateDefaultProfileName, options) || profile;
+    return {
+      regular: {
+        profile: regularProfile,
+        meta: regularProfile === profile ? meta : regularProfile
+      },
+      private: {
+        profile: privateProfile,
+        meta: privateProfile === profile ? meta : privateProfile
+      }
+    };
+  }
+
+  private _profileByName(profileName: unknown, options?: unknown) {
+    return typeof profileName === 'string' && profileName
+      ? OmegaPac.Profiles.byName(profileName, options)
+      : null;
+  }
+
+  private _applyWindowScopeProfiles(
+    profiles: {
+      private: {meta: ProxyProfile; profile: ProxyProfile};
+      regular: {meta: ProxyProfile; profile: ProxyProfile};
+    },
+    options?: unknown
+  ) {
+    const applyRegular = this._applyProfileConfig(profiles.regular.profile, profiles.regular.meta, options, 'regular');
+    const applyPrivate = this._applyProfileConfig(profiles.private.profile, profiles.private.meta, options, 'incognito_persistent')
+      .catch((error: unknown) => {
+        this.log.error('Failed to apply private window proxy profile:', error);
+      });
+    return Promise.all([applyRegular, applyPrivate]);
+  }
+
+  private _clearPrivateScopeProfile() {
+    return chromeApiPromisify<void>(chrome.proxy.settings, 'clear')({
+      scope: 'incognito_persistent'
+    }).catch(() => {});
   }
 
   private _fixedProfileConfig(profile: ProxyProfile) {

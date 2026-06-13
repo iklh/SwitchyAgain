@@ -6,7 +6,9 @@ type BackgroundResponse<T = unknown> = {
 };
 
 type PageInfoRequest = {
+  cookieStoreId?: string;
   includeExplanations?: boolean;
+  incognito?: boolean;
   tabId?: number;
   url: string;
 };
@@ -19,6 +21,14 @@ function popupTabUrl(tab?: Pick<ChromeTab, 'pendingUrl' | 'url'> | null) {
   return tab?.pendingUrl || tab?.url;
 }
 
+type ProfileScopeSetRequest = {
+  cookieStoreId?: string;
+  incognito?: boolean;
+  profileName?: string;
+  scope: 'container' | 'normal' | 'private' | 'tab';
+  tabId?: number;
+};
+
 type PopupBackgroundMethodArgs = {
   addCondition: [condition: PopupApiConditionInput, profileName: string, addToBottom: boolean];
   addProfile: [profile: PopupApiProfile];
@@ -27,6 +37,7 @@ type PopupBackgroundMethodArgs = {
   getPageInfo: [args: PageInfoRequest];
   getState: [keys: PopupApiStateKey[]];
   setDefaultProfile: [profileName: string, defaultProfileName: string];
+  setProfileScope: [args: ProfileScopeSetRequest];
   setState: [name: PopupApiWritableStateKey, value: PopupApiState[PopupApiWritableStateKey]];
 };
 
@@ -38,11 +49,12 @@ type PopupBackgroundMethodResult = {
   getPageInfo: PopupApiPageInfo;
   getState: PopupApiState;
   setDefaultProfile: unknown;
+  setProfileScope: unknown;
   setState: unknown;
 };
 
 type PopupBackgroundMethod = keyof PopupBackgroundMethodArgs;
-type PopupNoReplyMethod = 'addTempRule' | 'applyProfile' | 'setDefaultProfile';
+type PopupNoReplyMethod = 'addTempRule' | 'applyProfile' | 'setDefaultProfile' | 'setProfileScope';
 
 type BackgroundMessage<M extends PopupBackgroundMethod = PopupBackgroundMethod> = {
   args: PopupBackgroundMethodArgs[M];
@@ -188,7 +200,9 @@ function cacheActivePageInfo(info?: PopupApiPageInfo | null) {
       const url = popupTabUrl(tab);
       if (tabs.length === 0 || !url) return callback?.();
       const args = {
+        cookieStoreId: typeof tab.cookieStoreId === 'string' ? tab.cookieStoreId : undefined,
         includeExplanations: options.includeExplanations,
+        incognito: typeof tab.incognito === 'boolean' ? tab.incognito : undefined,
         tabId: tab.id,
         url
       };
@@ -201,6 +215,9 @@ function cacheActivePageInfo(info?: PopupApiPageInfo | null) {
   setDefaultProfile(profileName: string, defaultProfileName: string, cb?: PopupCallback) {
     callBackgroundNoReply('setDefaultProfile',
       [profileName, defaultProfileName], cb);
+  },
+  setProfileScope(args: ProfileScopeSetRequest, cb?: PopupCallback) {
+    callBackgroundNoReply('setProfileScope', [args], cb);
   },
   addTempRule(domain: string, profileName: string, cb?: PopupCallback) {
     callBackgroundNoReply('addTempRule', [domain, profileName], cb);

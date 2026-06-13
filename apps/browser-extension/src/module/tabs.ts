@@ -26,12 +26,12 @@ function actionApi(): ChromeActionApi {
 }
 
 class ChromeTabs {
-  actionForUrl: (url: string) => Promise<TabAction | null | undefined>;
+  actionForUrl: (tab: ChromeTab, url: string) => Promise<TabAction | null | undefined>;
   private _badgeTab: Record<number, boolean> | null;
   private _defaultAction: TabAction | null;
   private _dirtyTabs: Record<number, number>;
 
-  constructor(actionForUrl: (url: string) => Promise<TabAction | null | undefined>) {
+  constructor(actionForUrl: (tab: ChromeTab, url: string) => Promise<TabAction | null | undefined>) {
     this.actionForUrl = actionForUrl;
     this._dirtyTabs = {};
     this._defaultAction = null;
@@ -118,7 +118,7 @@ class ChromeTabs {
       }
       return;
     }
-    return this.actionForUrl(url).then((action) => {
+    return this.actionForUrl(tab, url).then((action) => {
       if (!action) {
         this.clearIcon(tab.id);
         return;

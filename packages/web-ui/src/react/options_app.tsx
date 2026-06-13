@@ -29,6 +29,7 @@ import {
   createPacExport,
   deleteAttachedProfileOption,
   deleteProfileOption,
+  deleteProfileScopeAssignments,
   exportRuleListOptions,
   firstFixedProfileName,
   hasProxyScriptApi,
@@ -794,6 +795,7 @@ export function OptionsApp() {
     updateOptionsDraft((nextOptions) => {
       deleteAttachedProfileOption(nextOptions, profileName);
       deleteProfileOption(nextOptions, profileName);
+      deleteProfileScopeAssignments(nextOptions, profileName);
       if (nextOptions['-startupProfileName'] === profileName) {
         nextOptions['-startupProfileName'] = '';
       }

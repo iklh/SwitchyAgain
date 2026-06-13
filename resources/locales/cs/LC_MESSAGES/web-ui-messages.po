@@ -1431,3 +1431,39 @@ msgstr "Dočasná pravidla jsou aktivní; požadavky se před aktuálním profil
 
 msgid "popup_routeInfoLimitExceeded"
 msgstr "Zobrazují se pouze první zachycené požadavky."
+
+msgid "options_group_profileScope"
+msgstr "Rozsah profilu"
+
+msgid "options_profileScopeTab"
+msgstr "Profily karet"
+
+msgid "options_profileScopeTabHelp"
+msgstr "Umožní přiřadit profil aktuální kartě z vyskakovací nabídky. Pouze Firefox."
+
+msgid "options_profileScopeContainer"
+msgstr "Profily kontejnerů"
+
+msgid "options_profileScopeContainerHelp"
+msgstr "Umožní přiřadit profily kontejnerům Firefoxu z vyskakovací nabídky. Pouze Firefox."
+
+msgid "options_profileScopeWindow"
+msgstr "Výchozí pro normální/soukromá okna"
+
+msgid "options_profileScopeWindowHelp"
+msgstr "Umožní samostatné výchozí profily pro normální a soukromá okna."
+
+msgid "popup_profileScopeTab"
+msgstr "Tato karta"
+
+msgid "popup_profileScopeContainer"
+msgstr "Kontejner"
+
+msgid "popup_profileScopePrivate"
+msgstr "Soukromé"
+
+msgid "popup_profileScopeNormal"
+msgstr "Normální"
+
+msgid "popup_profileScopeUseDefault"
+msgstr "Použít výchozí"

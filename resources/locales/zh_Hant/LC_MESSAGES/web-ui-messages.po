@@ -1278,3 +1278,39 @@ msgstr "臨時規則已啟用；請求會先比對臨時規則，然後再使用
 
 msgid "popup_routeInfoLimitExceeded"
 msgstr "僅顯示已擷取的前幾個請求。"
+
+msgid "options_group_profileScope"
+msgstr "情境模式作用範圍"
+
+msgid "options_profileScopeTab"
+msgstr "分頁情境模式"
+
+msgid "options_profileScopeTabHelp"
+msgstr "允許在彈出選單中為目前分頁指定情境模式。僅 Firefox 支援。"
+
+msgid "options_profileScopeContainer"
+msgstr "容器情境模式"
+
+msgid "options_profileScopeContainerHelp"
+msgstr "允許在彈出選單中為 Firefox 容器指定情境模式。僅 Firefox 支援。"
+
+msgid "options_profileScopeWindow"
+msgstr "一般/隱私預設情境模式"
+
+msgid "options_profileScopeWindowHelp"
+msgstr "允許為一般視窗與隱私視窗分別設定預設情境模式。"
+
+msgid "popup_profileScopeTab"
+msgstr "目前分頁"
+
+msgid "popup_profileScopeContainer"
+msgstr "容器"
+
+msgid "popup_profileScopePrivate"
+msgstr "隱私"
+
+msgid "popup_profileScopeNormal"
+msgstr "一般"
+
+msgid "popup_profileScopeUseDefault"
+msgstr "使用預設"

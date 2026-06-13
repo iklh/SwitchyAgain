@@ -3,7 +3,7 @@ import ChromePort from './chrome_port';
 import fetchUrl from './fetch_url';
 import {tabUrl} from './tabs';
 import WebRequestMonitor from './web_request_monitor';
-import type {ProxyImplInstance, ProxyProfile} from './proxy/proxy_types';
+import type {ProxyImplInstance, ProxyProfile, ProxyRequestDetails} from './proxy/proxy_types';
 
 const OmegaPac = OmegaTarget.OmegaPac;
 const OmegaPromise = OmegaTarget.Promise;
@@ -61,6 +61,37 @@ type TabRequestInfo = {
   [key: string]: unknown;
 };
 
+type ProfileScopeSettings = {
+  container: boolean;
+  tab: boolean;
+  window: boolean;
+};
+
+type ProfileScopeAssignments = {
+  containers: Record<string, string>;
+  normalDefaultProfileName?: string;
+  privateDefaultProfileName?: string;
+};
+
+type ProfileScopeSetArgs = {
+  cookieStoreId?: string;
+  incognito?: boolean;
+  profileName?: string;
+  scope: 'container' | 'normal' | 'private' | 'tab';
+  tabId?: number;
+};
+
+type ProfileScopeInfoArgs = {
+  cookieStoreId?: string;
+  incognito?: boolean;
+  tabId?: number;
+};
+
+type TabProfileContext = {
+  cookieStoreId?: string;
+  incognito?: boolean;
+};
+
 type RequestMonitorLike = {
   tabInfo: Record<string, TabRequestInfo | undefined>;
   watchTabs(callback: (
@@ -78,7 +109,9 @@ type UpgradeOptions = Record<string, unknown> & {
 };
 
 type PageInfoArgs = {
+  cookieStoreId?: string;
   includeExplanations?: boolean;
+  incognito?: boolean;
   tabId: number;
   url?: string;
 };
@@ -92,6 +125,42 @@ function actionApi(): ChromeActionApi {
 
 function explainableRequestUrl(url?: string) {
   return !!url && /^(https?|ftp|ws|wss):/i.test(url);
+}
+
+function isRecordValue(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object';
+}
+
+function normalizeProfileScopes(value: unknown): ProfileScopeSettings {
+  const scopes = isRecordValue(value) ? value : {};
+  return {
+    tab: scopes.tab === true,
+    container: scopes.container === true,
+    window: scopes.window === true
+  };
+}
+
+function normalizeProfileScopeAssignments(value: unknown): ProfileScopeAssignments {
+  const rawAssignments = isRecordValue(value) ? value : {};
+  const rawContainers = isRecordValue(rawAssignments.containers) ? rawAssignments.containers : {};
+  const containers: Record<string, string> = {};
+  for (const [cookieStoreId, profileName] of Object.entries(rawContainers)) {
+    if (cookieStoreId && typeof profileName === 'string' && profileName) {
+      containers[cookieStoreId] = profileName;
+    }
+  }
+  const assignments: ProfileScopeAssignments = {containers};
+  if (typeof rawAssignments.normalDefaultProfileName === 'string' && rawAssignments.normalDefaultProfileName) {
+    assignments.normalDefaultProfileName = rawAssignments.normalDefaultProfileName;
+  }
+  if (typeof rawAssignments.privateDefaultProfileName === 'string' && rawAssignments.privateDefaultProfileName) {
+    assignments.privateDefaultProfileName = rawAssignments.privateDefaultProfileName;
+  }
+  return assignments;
+}
+
+function isFirefoxContainerId(cookieStoreId?: string) {
+  return !!cookieStoreId && cookieStoreId !== 'firefox-default' && cookieStoreId !== 'firefox-private';
 }
 
 function requestStartTime(request: MonitoredRequestInfo) {
@@ -208,6 +277,9 @@ class ChromeOptions extends OmegaTarget.Options {
   private _quickSwitchHandlerReady: boolean;
   private _quickSwitchInit: boolean;
   private _requestMonitor: RequestMonitorLike | null;
+  private _tabProfileContexts: Record<number, TabProfileContext>;
+  private _tabProfileNames: Record<number, string | undefined>;
+  private _tabProfileScopeWatching: boolean;
   private _tabRequestInfoPorts: Record<number, ChromePortLike> | null;
 
   constructor(...args: unknown[]) {
@@ -220,9 +292,292 @@ class ChromeOptions extends OmegaTarget.Options {
     this._quickSwitchHandlerReady = false;
     this._quickSwitchCanEnable = false;
     this._requestMonitor = null;
+    this._tabProfileContexts = {};
+    this._tabProfileNames = {};
+    this._tabProfileScopeWatching = false;
     this._monitorWebRequests = false;
     this._tabRequestInfoPorts = null;
     this._alarms = null;
+    this.initProfileScopes();
+  }
+
+  private initProfileScopes() {
+    this.proxyImpl.setProfileResolver?.(
+      (details) => this.profileForScopeRequest(details),
+      () => this.scopeProfileNames()
+    );
+    this._state.set({
+      profileScopeCapabilities: this.profileScopeCapabilities()
+    });
+    this.watchTabProfileContexts();
+  }
+
+  private watchTabProfileContexts() {
+    if (this._tabProfileScopeWatching || !chrome?.tabs) {
+      return;
+    }
+    this._tabProfileScopeWatching = true;
+    chrome.tabs.onRemoved.addListener((tabId: number) => {
+      delete this._tabProfileNames[tabId];
+      delete this._tabProfileContexts[tabId];
+    });
+    chrome.tabs.onReplaced?.addListener((added: number, removed: number) => {
+      if (this._tabProfileNames[removed] != null) {
+        this._tabProfileNames[added] = this._tabProfileNames[removed];
+      }
+      if (this._tabProfileContexts[removed]) {
+        this._tabProfileContexts[added] = this._tabProfileContexts[removed];
+      }
+      delete this._tabProfileNames[removed];
+      delete this._tabProfileContexts[removed];
+    });
+    chrome.tabs.onUpdated.addListener((tabId: number, _changeInfo: Record<string, unknown>, tab: ChromeTab) => {
+      this.updateTabProfileContext(tabId, tab);
+    });
+    chrome.tabs.query({}, (tabs: ChromeTab[]) => {
+      for (const tab of tabs) {
+        if (tab.id != null) {
+          this.updateTabProfileContext(tab.id, tab);
+        }
+      }
+    });
+  }
+
+  private updateTabProfileContext(tabId: number, tab: Pick<ChromeTab, 'cookieStoreId' | 'incognito'>) {
+    this._tabProfileContexts[tabId] = {
+      cookieStoreId: typeof tab.cookieStoreId === 'string' ? tab.cookieStoreId : this._tabProfileContexts[tabId]?.cookieStoreId,
+      incognito: typeof tab.incognito === 'boolean' ? tab.incognito : this._tabProfileContexts[tabId]?.incognito
+    };
+  }
+
+  private profileScopeCapabilities(): ProfileScopeSettings {
+    const features = this.proxyImpl.features || [];
+    return {
+      tab: features.indexOf('tabProfileScope') >= 0,
+      container: features.indexOf('containerProfileScope') >= 0,
+      window: features.indexOf('windowProfileScope') >= 0
+    };
+  }
+
+  private enabledProfileScopes(): ProfileScopeSettings {
+    const scopes = normalizeProfileScopes(this._options['-profileScopes']);
+    const capabilities = this.profileScopeCapabilities();
+    return {
+      tab: scopes.tab && capabilities.tab,
+      container: scopes.container && capabilities.container,
+      window: scopes.window && capabilities.window
+    };
+  }
+
+  private profileScopeAssignments() {
+    return normalizeProfileScopeAssignments(this._options['-profileScopeAssignments']);
+  }
+
+  private validProfileName(profileName?: string) {
+    return profileName && OmegaPac.Profiles.byName(profileName, this._options) ? profileName : undefined;
+  }
+
+  private scopeContext(args: ProfileScopeInfoArgs | ProxyRequestDetails): Required<Pick<ProfileScopeInfoArgs, 'tabId'>> & TabProfileContext {
+    const tabId = typeof args.tabId === 'number' ? args.tabId : -1;
+    const cached = tabId >= 0 ? this._tabProfileContexts[tabId] : undefined;
+    const context = {
+      tabId,
+      cookieStoreId: typeof args.cookieStoreId === 'string' ? args.cookieStoreId : cached?.cookieStoreId,
+      incognito: typeof args.incognito === 'boolean' ? args.incognito : cached?.incognito
+    };
+    if (tabId >= 0) {
+      this._tabProfileContexts[tabId] = {
+        cookieStoreId: context.cookieStoreId,
+        incognito: context.incognito
+      };
+    }
+    return context;
+  }
+
+  private scopeProfileName(args: ProfileScopeInfoArgs | ProxyRequestDetails) {
+    const scopes = this.enabledProfileScopes();
+    const assignments = this.profileScopeAssignments();
+    const context = this.scopeContext(args);
+    const tabProfileName = context.tabId >= 0 ? this.validProfileName(this._tabProfileNames[context.tabId]) : undefined;
+    if (scopes.tab && tabProfileName) {
+      return {
+        profileName: tabProfileName,
+        scope: 'tab'
+      };
+    }
+    const containerProfileName = isFirefoxContainerId(context.cookieStoreId)
+      ? this.validProfileName(assignments.containers[context.cookieStoreId as string])
+      : undefined;
+    if (scopes.container && containerProfileName) {
+      return {
+        profileName: containerProfileName,
+        scope: 'container'
+      };
+    }
+    if (scopes.window) {
+      const windowProfileName = this.validProfileName(
+        context.incognito ? assignments.privateDefaultProfileName : assignments.normalDefaultProfileName
+      );
+      if (windowProfileName) {
+        return {
+          profileName: windowProfileName,
+          scope: context.incognito ? 'private' : 'normal'
+        };
+      }
+    }
+    return {
+      profileName: this._currentProfileName || this.fallbackProfileName,
+      scope: 'current'
+    };
+  }
+
+  private profileForScopeRequest(details: ProxyRequestDetails) {
+    const {profileName, scope} = this.scopeProfileName(details);
+    if (scope === 'current') {
+      return null;
+    }
+    return OmegaPac.Profiles.byName(profileName, this._options);
+  }
+
+  matchProfileFromProfileName(profileName: string, request: Record<string, unknown>) {
+    let profile = this.validProfileName(profileName)
+      ? OmegaPac.Profiles.byName(profileName, this._options)
+      : null;
+    if (!profile) {
+      return OmegaPromise.reject(new Error(`Profile ${profileName} does not exist!`));
+    }
+    const results: unknown[] = [];
+    let currentProfile = profile;
+    let lastProfile = profile;
+    while (currentProfile) {
+      lastProfile = currentProfile;
+      const result = OmegaPac.Profiles.match(currentProfile, request);
+      if (result == null) {
+        break;
+      }
+      results.push(result);
+      let next;
+      if (Array.isArray(result)) {
+        next = result[0];
+      } else if (result.profileName) {
+        next = OmegaPac.Profiles.nameAsKey(result.profileName);
+      } else {
+        break;
+      }
+      currentProfile = OmegaPac.Profiles.byKey(next, this._options);
+    }
+    return OmegaPromise.resolve({
+      profile: lastProfile,
+      results
+    });
+  }
+
+  private scopeProfileNames() {
+    const assignments = this.profileScopeAssignments();
+    const names = new Set<string>();
+    for (const profileName of Object.values(this._tabProfileNames)) {
+      if (this.validProfileName(profileName)) {
+        names.add(profileName as string);
+      }
+    }
+    for (const profileName of Object.values(assignments.containers)) {
+      if (this.validProfileName(profileName)) {
+        names.add(profileName);
+      }
+    }
+    if (this.validProfileName(assignments.normalDefaultProfileName)) {
+      names.add(assignments.normalDefaultProfileName as string);
+    }
+    if (this.validProfileName(assignments.privateDefaultProfileName)) {
+      names.add(assignments.privateDefaultProfileName as string);
+    }
+    return Array.from(names);
+  }
+
+  getProfileScopeInfo(args: ProfileScopeInfoArgs) {
+    const context = this.scopeContext(args);
+    const capabilities = this.profileScopeCapabilities();
+    const enabled = this.enabledProfileScopes();
+    const assignments = this.profileScopeAssignments();
+    const tabProfileName = context.tabId >= 0 ? this.validProfileName(this._tabProfileNames[context.tabId]) : undefined;
+    const containerProfileName = isFirefoxContainerId(context.cookieStoreId)
+      ? this.validProfileName(assignments.containers[context.cookieStoreId as string])
+      : undefined;
+    const windowProfileName = this.validProfileName(
+      context.incognito ? assignments.privateDefaultProfileName : assignments.normalDefaultProfileName
+    );
+    const effective = this.scopeProfileName(args);
+    return {
+      assignments,
+      capabilities,
+      cookieStoreId: context.cookieStoreId,
+      enabled,
+      effectiveProfileName: effective.profileName,
+      effectiveScope: effective.scope,
+      incognito: !!context.incognito,
+      isContainer: isFirefoxContainerId(context.cookieStoreId),
+      tabId: context.tabId >= 0 ? context.tabId : undefined,
+      tabProfileName,
+      containerProfileName,
+      windowProfileName
+    };
+  }
+
+  setProfileScope(args: ProfileScopeSetArgs) {
+    const capabilities = this.profileScopeCapabilities();
+    const scopes = normalizeProfileScopes(this._options['-profileScopes']);
+    const profileName = this.validProfileName(args.profileName);
+    if (args.profileName && !profileName) {
+      return OmegaPromise.reject(new Error(`Profile ${args.profileName} does not exist!`));
+    }
+    if (args.scope === 'tab') {
+      if (!capabilities.tab || !scopes.tab || args.tabId == null) {
+        return OmegaPromise.resolve();
+      }
+      if (profileName) {
+        this._tabProfileNames[args.tabId] = profileName;
+      } else {
+        delete this._tabProfileNames[args.tabId];
+      }
+      return this._currentProfileName
+        ? this.applyProfile(this._currentProfileName, {update: false})
+        : OmegaPromise.resolve();
+    }
+    if (args.scope === 'container') {
+      if (!capabilities.container || !scopes.container || !isFirefoxContainerId(args.cookieStoreId)) {
+        return OmegaPromise.resolve();
+      }
+      const assignments = this.profileScopeAssignments();
+      if (profileName) {
+        assignments.containers[args.cookieStoreId as string] = profileName;
+      } else {
+        delete assignments.containers[args.cookieStoreId as string];
+      }
+      return this._setOptions({
+        '-profileScopeAssignments': assignments
+      });
+    }
+    if (args.scope === 'normal' || args.scope === 'private') {
+      if (!capabilities.window || !scopes.window) {
+        return OmegaPromise.resolve();
+      }
+      const assignments = this.profileScopeAssignments();
+      if (args.scope === 'private') {
+        if (profileName) {
+          assignments.privateDefaultProfileName = profileName;
+        } else {
+          delete assignments.privateDefaultProfileName;
+        }
+      } else if (profileName) {
+        assignments.normalDefaultProfileName = profileName;
+      } else {
+        delete assignments.normalDefaultProfileName;
+      }
+      return this._setOptions({
+        '-profileScopeAssignments': assignments
+      });
+    }
+    return OmegaPromise.resolve();
   }
 
   updateProfile(...args: unknown[]) {
@@ -537,8 +892,13 @@ class ChromeOptions extends OmegaTarget.Options {
     return tabInfoPageUrl(this._requestMonitor?.tabInfo[tabId], url);
   }
 
-  getPageInfo({includeExplanations = false, tabId, url}: PageInfoArgs) {
+  getPageInfo({cookieStoreId, includeExplanations = false, incognito, tabId, url}: PageInfoArgs) {
     const tabInfo = this._requestMonitor?.tabInfo[tabId];
+    const profileScope = this.getProfileScopeInfo({
+      cookieStoreId,
+      incognito,
+      tabId
+    });
     const errorCount = tabInfo?.errorCount;
     const summary = tabInfo?.summary;
     const result = errorCount ? {
@@ -593,6 +953,7 @@ class ChromeOptions extends OmegaTarget.Options {
         url,
         domain,
         tempRuleProfileName: this.queryTempRule(domain),
+        profileScope,
         errorCount,
         summary,
         requests: pageRequests.requests,
@@ -602,7 +963,10 @@ class ChromeOptions extends OmegaTarget.Options {
         return basePageInfo;
       }
       const explanations = pageRequests.requests.map((request) => {
-        return this.explainRequest({url: request.url}).catch((error: unknown) => ({
+        const explainArgs = profileScope.effectiveScope && profileScope.effectiveScope !== 'current'
+          ? {profileName: profileScope.effectiveProfileName, url: request.url}
+          : {url: request.url};
+        return this.explainRequest(explainArgs).catch((error: unknown) => ({
           currentProfile: undefined as Partial<PopupApiProfile> | undefined,
           errors: [error instanceof Error ? error.message : String(error)],
           final: {

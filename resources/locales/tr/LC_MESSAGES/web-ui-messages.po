@@ -1263,3 +1263,39 @@ msgstr "Geçici kurallar etkin; istekler geçerli profilden önce geçici kurall
 
 msgid "popup_routeInfoLimitExceeded"
 msgstr "Yalnızca yakalanan ilk istekler gösterilir."
+
+msgid "options_group_profileScope"
+msgstr "Profil Kapsamı"
+
+msgid "options_profileScopeTab"
+msgstr "Sekme profilleri"
+
+msgid "options_profileScopeTabHelp"
+msgstr "Açılır menüden geçerli sekmeye profil atamaya izin ver. Yalnızca Firefox."
+
+msgid "options_profileScopeContainer"
+msgstr "Kapsayıcı profilleri"
+
+msgid "options_profileScopeContainerHelp"
+msgstr "Açılır menüden Firefox kapsayıcılarına profil atamaya izin ver. Yalnızca Firefox."
+
+msgid "options_profileScopeWindow"
+msgstr "Normal/gizli varsayılanları"
+
+msgid "options_profileScopeWindowHelp"
+msgstr "Normal ve gizli pencereler için ayrı varsayılan profillere izin ver."
+
+msgid "popup_profileScopeTab"
+msgstr "Bu Sekme"
+
+msgid "popup_profileScopeContainer"
+msgstr "Kapsayıcı"
+
+msgid "popup_profileScopePrivate"
+msgstr "Gizli"
+
+msgid "popup_profileScopeNormal"
+msgstr "Normal"
+
+msgid "popup_profileScopeUseDefault"
+msgstr "Varsayılanı Kullan"

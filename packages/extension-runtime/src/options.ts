@@ -50,8 +50,91 @@ const optionNumber = (value: unknown) => Number(value);
 const supportedUiLocales = new Set(['en', 'zh-Hans', 'zh-Hant', 'es', 'ru', 'cs', 'fa']);
 const supportedUiThemes = new Set(['light', 'dark', 'system']);
 
+type ProfileScopeSettings = {
+  container: boolean;
+  tab: boolean;
+  window: boolean;
+};
+
+type ProfileScopeAssignments = {
+  containers: Record<string, string>;
+  normalDefaultProfileName?: string;
+  privateDefaultProfileName?: string;
+};
+
 function isRecordValue(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
+}
+
+function normalizeProfileScopes(value: unknown): ProfileScopeSettings {
+  const scopes = isRecordValue(value) ? value : {};
+  return {
+    tab: scopes.tab === true,
+    container: scopes.container === true,
+    window: scopes.window === true
+  };
+}
+
+function normalizeProfileScopeAssignments(value: unknown): ProfileScopeAssignments {
+  const rawAssignments = isRecordValue(value) ? value : {};
+  const rawContainers = isRecordValue(rawAssignments.containers) ? rawAssignments.containers : {};
+  const containers: Record<string, string> = {};
+  for (const [key, profileName] of Object.entries(rawContainers)) {
+    if (typeof key === 'string' && key && typeof profileName === 'string' && profileName) {
+      containers[key] = profileName;
+    }
+  }
+  const assignments: ProfileScopeAssignments = {containers};
+  if (typeof rawAssignments.normalDefaultProfileName === 'string' && rawAssignments.normalDefaultProfileName) {
+    assignments.normalDefaultProfileName = rawAssignments.normalDefaultProfileName;
+  }
+  if (typeof rawAssignments.privateDefaultProfileName === 'string' && rawAssignments.privateDefaultProfileName) {
+    assignments.privateDefaultProfileName = rawAssignments.privateDefaultProfileName;
+  }
+  return assignments;
+}
+
+function profileScopeSettingsEqual(left: ProfileScopeSettings, right: unknown) {
+  if (!isRecordValue(right)) {
+    return false;
+  }
+  const validKeys = new Set(['tab', 'container', 'window']);
+  return left.tab === right.tab &&
+    left.container === right.container &&
+    left.window === right.window &&
+    Object.keys(right).every((key) => validKeys.has(key));
+}
+
+function profileScopeAssignmentsEqual(left: ProfileScopeAssignments, right: unknown) {
+  if (!isRecordValue(right)) {
+    return false;
+  }
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function replaceProfileScopeAssignmentRef(assignments: ProfileScopeAssignments, fromName: string, toName: string) {
+  let changed = false;
+  const next: ProfileScopeAssignments = {
+    ...assignments,
+    containers: {
+      ...assignments.containers
+    }
+  };
+  if (next.normalDefaultProfileName === fromName) {
+    next.normalDefaultProfileName = toName;
+    changed = true;
+  }
+  if (next.privateDefaultProfileName === fromName) {
+    next.privateDefaultProfileName = toName;
+    changed = true;
+  }
+  for (const [cookieStoreId, profileName] of Object.entries(next.containers)) {
+    if (profileName === fromName) {
+      next.containers[cookieStoreId] = toName;
+      changed = true;
+    }
+  }
+  return changed ? next : null;
 }
 
 function normalizeExplainUrl(url: string): string {
@@ -576,6 +659,16 @@ class Options {
         changes['-uiTheme'] = uiTheme;
         options['-uiTheme'] = uiTheme;
       }
+      const profileScopes = normalizeProfileScopes(options['-profileScopes']);
+      if (!profileScopeSettingsEqual(normalizeProfileScopes(options['-profileScopes']), options['-profileScopes'] as ProfileScopeSettings)) {
+        changes['-profileScopes'] = profileScopes;
+        options['-profileScopes'] = profileScopes;
+      }
+      const profileScopeAssignments = normalizeProfileScopeAssignments(options['-profileScopeAssignments']);
+      if (!profileScopeAssignmentsEqual(profileScopeAssignments, options['-profileScopeAssignments'] as ProfileScopeAssignments)) {
+        changes['-profileScopeAssignments'] = profileScopeAssignments;
+        options['-profileScopeAssignments'] = profileScopeAssignments;
+      }
       return Promise.resolve([options, changes]);
     } else {
       return Promise.reject(new Error("Invalid schemaVersion " + version + "!"));
@@ -771,6 +864,9 @@ class Options {
         this._options[key] = value;
       }
       if (!currentProfileAffected && this._watchingProfiles[key]) {
+        currentProfileAffected = 'changed';
+      }
+      if (!currentProfileAffected && (key === '-profileScopes' || key === '-profileScopeAssignments')) {
         currentProfileAffected = 'changed';
       }
     }
@@ -1317,6 +1413,14 @@ class Options {
     });
     if (this._options['-startupProfileName'] === fromName) {
       changes['-startupProfileName'] = toName;
+    }
+    const nextProfileScopeAssignments = replaceProfileScopeAssignmentRef(
+      normalizeProfileScopeAssignments(this._options['-profileScopeAssignments']),
+      fromName,
+      toName
+    );
+    if (nextProfileScopeAssignments) {
+      changes['-profileScopeAssignments'] = nextProfileScopeAssignments;
     }
     const quickSwitch = this._options['-quickSwitchProfiles'] as string[];
     if (quickSwitch.indexOf(toName) < 0) {

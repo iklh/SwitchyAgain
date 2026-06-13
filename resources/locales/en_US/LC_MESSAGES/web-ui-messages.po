@@ -1420,3 +1420,39 @@ msgstr "Temporary rules are active; requests are checked against temporary rules
 
 msgid "popup_routeInfoLimitExceeded"
 msgstr "Only the first captured requests are shown."
+
+msgid "options_group_profileScope"
+msgstr "Profile Scope"
+
+msgid "options_profileScopeTab"
+msgstr "Tab profiles"
+
+msgid "options_profileScopeTabHelp"
+msgstr "Allow assigning a profile to the current tab from the popup. Firefox only."
+
+msgid "options_profileScopeContainer"
+msgstr "Container profiles"
+
+msgid "options_profileScopeContainerHelp"
+msgstr "Allow assigning profiles to Firefox containers from the popup. Firefox only."
+
+msgid "options_profileScopeWindow"
+msgstr "Normal/private defaults"
+
+msgid "options_profileScopeWindowHelp"
+msgstr "Allow separate default profiles for normal and private windows."
+
+msgid "popup_profileScopeTab"
+msgstr "This Tab"
+
+msgid "popup_profileScopeContainer"
+msgstr "Container"
+
+msgid "popup_profileScopePrivate"
+msgstr "Private"
+
+msgid "popup_profileScopeNormal"
+msgstr "Normal"
+
+msgid "popup_profileScopeUseDefault"
+msgstr "Use Default"
