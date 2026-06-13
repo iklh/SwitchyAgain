@@ -117,6 +117,7 @@ type BackgroundOptions = BackgroundOptionMethods & {
   explainRequest(args: unknown): OmegaPromise<unknown>;
   isCurrentProfileStatic(): boolean;
   matchProfile(request: unknown): OmegaPromise<BackgroundMatchResult>;
+  getMonitoredTabUrl(tabId: number, url?: string): string | undefined;
   optionsLoaded: OmegaPromise<unknown> | null;
   printProfile(profile?: BackgroundProfile | null): unknown;
   profile(name?: unknown): BackgroundProfile;
@@ -656,7 +657,10 @@ type BackgroundOmegaTarget = {
       lastFocusedWindow: true
     }, (tabs) => {
       const tab = tabs[0];
-      const url = backgroundTabUrl(tab);
+      if (tab?.id == null) {
+        return;
+      }
+      const url = options.getMonitoredTabUrl(tab.id, backgroundTabUrl(tab));
       if (!url) {
         return;
       }

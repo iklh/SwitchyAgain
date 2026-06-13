@@ -51,6 +51,9 @@ type PageRequestInfo = {
 type TabRequestInfo = {
   badgeSet?: boolean;
   errorCount: number;
+  mainFrameRequestId?: string;
+  mainFrameStartTime?: number;
+  mainFrameUrl?: string;
   requestCount?: number;
   requests?: Record<string, MonitoredRequestInfo>;
   requestStatus?: Record<string, RequestStatus>;
@@ -93,6 +96,29 @@ function explainableRequestUrl(url?: string) {
 
 function requestStartTime(request: MonitoredRequestInfo) {
   return typeof request._startTime === 'number' ? request._startTime : 0;
+}
+
+function tabInfoPageUrl(tabInfo?: TabRequestInfo, currentUrl?: string) {
+  const requestId = tabInfo?.mainFrameRequestId;
+  if (!requestId) {
+    return currentUrl;
+  }
+  const status = tabInfo?.requestStatus?.[requestId];
+  const request = tabInfo?.requests?.[requestId];
+  const monitoredUrl = request?.url || tabInfo?.mainFrameUrl;
+  if (!explainableRequestUrl(monitoredUrl)) {
+    return currentUrl;
+  }
+  switch (status) {
+    case 'start':
+    case 'ongoing':
+    case 'timeout':
+    case 'error':
+    case 'timeoutAbort':
+      return monitoredUrl;
+    default:
+      return currentUrl;
+  }
 }
 
 function pageRequestsFromTabInfo(tabInfo?: TabRequestInfo, pageUrl?: string) {
@@ -507,6 +533,10 @@ class ChromeOptions extends OmegaTarget.Options {
     });
   }
 
+  getMonitoredTabUrl(tabId: number, url?: string) {
+    return tabInfoPageUrl(this._requestMonitor?.tabInfo[tabId], url);
+  }
+
   getPageInfo({includeExplanations = false, tabId, url}: PageInfoArgs) {
     const tabInfo = this._requestMonitor?.tabInfo[tabId];
     const errorCount = tabInfo?.errorCount;
@@ -535,6 +565,7 @@ class ChromeOptions extends OmegaTarget.Options {
         url = inspectUrl;
       } else {
         this.clearBadge();
+        url = tabInfoPageUrl(tabInfo, url);
       }
       if (!url) {
         return result;

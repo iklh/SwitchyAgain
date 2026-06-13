@@ -91,6 +91,10 @@ type RequestInfo = {
 };
 
 type RequestTab = Pick<ChromeTab, 'id'>;
+type TabChangeInfo = {
+  url?: string;
+  [key: string]: unknown;
+};
 
 type SummaryItem = {
   errorCount: number;
@@ -99,6 +103,9 @@ type SummaryItem = {
 type TabInfo = {
   doneCount: number;
   errorCount: number;
+  mainFrameRequestId?: string;
+  mainFrameStartTime?: number;
+  mainFrameUrl?: string;
   ongoingCount: number;
   requestCount: number;
   requests: Record<string, RequestInfo>;
@@ -113,6 +120,19 @@ type TabCallback = (
   req: RequestInfo | null,
   status: RequestStatus | 'updated'
 ) => unknown;
+
+function shouldResetTabInfoForUpdatedUrl(url?: string) {
+  if (!url) {
+    return false;
+  }
+  if (url.indexOf('chrome://errorpage/') === 0) {
+    return false;
+  }
+  if (url.indexOf('about:neterror') === 0 || url.indexOf('about:certerror') === 0) {
+    return false;
+  }
+  return url.indexOf('chrome') === 0 || url.indexOf('about:') === 0 || url.indexOf('moz-') === 0;
+}
 
 class WebRequestMonitor {
   eventCategory: Record<RequestStatus, EventCategory>;
@@ -305,13 +325,16 @@ class WebRequestMonitor {
       }
       return delete this.tabInfo[removed];
     });
-    chrome.tabs.onUpdated.addListener((_tabId: number, _changeInfo: Record<string, unknown>, tab: RequestTab) => {
+    chrome.tabs.onUpdated.addListener((_tabId: number, changeInfo: TabChangeInfo, tab: RequestTab) => {
       if (tab.id == null) {
         return;
       }
       const info = this.tabInfo[tab.id] != null
         ? this.tabInfo[tab.id]
         : this.tabInfo[tab.id] = this._newTabInfo();
+      if (shouldResetTabInfoForUpdatedUrl(changeInfo.url)) {
+        this.resetTabInfo(info, this._newTabInfo());
+      }
       return this._tabCallbacks.map((tabCallback) => {
         return tabCallback(tab.id, info, null, 'updated');
       });
@@ -349,6 +372,9 @@ class WebRequestMonitor {
       if (req.url.indexOf('chrome://errorpage/') !== 0) {
         const freshInfo = this._newTabInfo();
         this.resetTabInfo(info, freshInfo);
+        info.mainFrameRequestId = req.requestId;
+        info.mainFrameStartTime = req._startTime;
+        info.mainFrameUrl = req.url;
       }
     }
     if (info.requestCount > 1000) {
@@ -404,6 +430,9 @@ class WebRequestMonitor {
     info.requests = freshInfo.requests;
     info.requestCount = freshInfo.requestCount;
     info.requestStatus = freshInfo.requestStatus;
+    info.mainFrameRequestId = freshInfo.mainFrameRequestId;
+    info.mainFrameStartTime = freshInfo.mainFrameStartTime;
+    info.mainFrameUrl = freshInfo.mainFrameUrl;
     info.ongoingCount = freshInfo.ongoingCount;
     info.errorCount = freshInfo.errorCount;
     info.doneCount = freshInfo.doneCount;
