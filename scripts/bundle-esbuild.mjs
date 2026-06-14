@@ -1,5 +1,8 @@
 import * as esbuild from 'esbuild';
+import {createRequire} from 'node:module';
 import path from 'node:path';
+
+const requireFromCwd = createRequire(path.join(process.cwd(), 'package.json'));
 
 const args = Object.fromEntries(process.argv.slice(2).map((arg) => {
   const index = arg.indexOf('=');
@@ -21,7 +24,8 @@ const alias = Object.fromEntries((args['--alias'] || '').split(',').filter(Boole
   if (index < 1 || index === mapping.length - 1) {
     throw new Error(`Invalid alias mapping: ${mapping}`);
   }
-  return [mapping.slice(0, index), mapping.slice(index + 1)];
+  const value = mapping.slice(index + 1);
+  return [mapping.slice(0, index), value.startsWith('npm:') ? requireFromCwd.resolve(value.slice(4)) : value];
 }));
 
 if (!entry || !outfile || (format === 'iife' && !globalName)) {
