@@ -110,6 +110,10 @@ describe('profile content logic', () => {
       invalid: false,
       isFile: false
     });
+    expect(pacProfileUrlState('ftp://example.com/proxy.pac')).toEqual({
+      invalid: true,
+      isFile: false
+    });
     expect(pacProfileUrlState('file:///tmp/proxy.pac')).toEqual({
       invalid: false,
       isFile: true

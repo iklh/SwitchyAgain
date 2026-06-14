@@ -146,7 +146,7 @@ function actionApi(): ChromeActionApi {
 }
 
 function explainableRequestUrl(url?: string) {
-  return !!url && /^(https?|ftp|ws|wss):/i.test(url);
+  return !!url && /^(https?|ws|wss):/i.test(url);
 }
 
 function isRecordValue(value: unknown): value is Record<string, unknown> {

@@ -140,6 +140,10 @@ describe('Conditions', function() {
     it('should match requests based on wildcard pattern', function() {
       return testCond(cond, 'http://www.example.com/', true);
     });
+    it('should match WebSocket requests by host', function() {
+      testCond(cond, 'ws://www.example.com/socket', true);
+      return testCond(cond, 'wss://www.example.com/socket', true);
+    });
     it('should also match hostname without the optional level', function() {
       return testCond(cond, 'http://example.com/', true);
     });

@@ -18,12 +18,11 @@ const OmegaPac = OmegaTarget.OmegaPac;
 const FIXED_PROXY_RULE_KEYS = [
   'proxyForHttp',
   'proxyForHttps',
-  'proxyForFtp',
   'fallbackProxy',
   'singleProxy'
 ] as const;
 
-const PROTOCOL_PROXY_RULE_KEYS = ['proxyForHttp', 'proxyForHttps', 'proxyForFtp'] as const;
+const PROTOCOL_PROXY_RULE_KEYS = ['proxyForHttp', 'proxyForHttps'] as const;
 
 type FixedProxyRuleKey = typeof FIXED_PROXY_RULE_KEYS[number];
 type ProxySettingsScope = 'regular' | 'incognito_persistent';

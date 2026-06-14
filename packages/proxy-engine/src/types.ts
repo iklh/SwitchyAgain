@@ -80,7 +80,6 @@ export type Profile = {
   pacScript?: string;
   pacUrl?: string;
   profileType?: ProfileType;
-  proxyForFtp?: ProxyServer;
   proxyForHttp?: ProxyServer;
   proxyForHttps?: ProxyServer;
   revision?: string;

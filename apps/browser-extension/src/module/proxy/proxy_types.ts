@@ -49,7 +49,6 @@ export type ProxyScopeProfileNames = () => string[];
 export type ProxyRules = Record<string, unknown> & {
   bypassList?: string[];
   fallbackProxy?: ProxyServer;
-  proxyForFtp?: ProxyServer;
   proxyForHttp?: ProxyServer;
   proxyForHttps?: ProxyServer;
   singleProxy?: ProxyServer;

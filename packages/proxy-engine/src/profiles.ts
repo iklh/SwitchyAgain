@@ -122,9 +122,6 @@ const ProfilesApi: ProfilesApiType = {
       scheme: 'https',
       prop: 'proxyForHttps'
     }, {
-      scheme: 'ftp',
-      prop: 'proxyForFtp'
-    }, {
       scheme: '',
       prop: 'fallbackProxy'
     }
@@ -454,7 +451,7 @@ const ProfilesApi: ProfilesApiType = {
         return [this.pacResult(profile.fallbackProxy), '', profile.fallbackProxy, auth];
       },
       compile(profile) {
-        if ((!profile.bypassList || !profile.fallbackProxy) && !profile.proxyForHttp && !profile.proxyForHttps && !profile.proxyForFtp) {
+        if ((!profile.bypassList || !profile.fallbackProxy) && !profile.proxyForHttp && !profile.proxyForHttps) {
           return Ast.str(this.pacResult(profile.fallbackProxy));
         }
         const body = [
@@ -472,7 +469,7 @@ const ProfilesApi: ProfilesApiType = {
           }
           body.push(Ast.ifStmt(conditions, Ast.returnStmt(Ast.str(this.pacResult()))));
         }
-        if (!profile.proxyForHttp && !profile.proxyForHttps && !profile.proxyForFtp) {
+        if (!profile.proxyForHttp && !profile.proxyForHttps) {
           body.push(Ast.returnStmt(Ast.str(this.pacResult(profile.fallbackProxy))));
         } else {
           body.push(Ast.switchStmt(

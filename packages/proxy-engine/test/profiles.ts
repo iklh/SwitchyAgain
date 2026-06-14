@@ -180,13 +180,13 @@ describe('Profiles', function() {
       return testProfile(profile, 'https://www.example.com/', ['PROXY 127.0.0.1:2345', 'https', profile.proxyForHttps, profile.auth.proxyForHttps]);
     });
     it('should use fallback proxies for other protocols', function() {
-      return testProfile(profile, 'ftp://www.example.com/', ['SOCKS 127.0.0.1:3456', '', profile.fallbackProxy, void 0]);
+      return testProfile(profile, 'wss://www.example.com/', ['SOCKS 127.0.0.1:3456', '', profile.fallbackProxy, void 0]);
     });
     it('should not return authentication if not provided for protocol', function() {
       return testProfile(profile, 'http://www.example.com/', ['SOCKS 127.0.0.1:1234', 'http', profile.proxyForHttp, void 0]);
     });
     it('should not use any proxy for requests matching the bypassList', function() {
-      return testProfile(profile, 'ftp://localhost/', [
+      return testProfile(profile, 'wss://localhost/', [
         'DIRECT', profile.bypassList[0], {
           scheme: 'direct'
         }, void 0
@@ -198,16 +198,16 @@ describe('Profiles', function() {
     profile = Profiles.create('test', 'PacProfile');
     profile.pacScript = 'function FindProxyForURL(url, host) {\n  return "PROXY " + host + ":8080";\n}';
     it('should return the result of the pac script', function() {
-      return testProfile(profile, 'ftp://www.example.com:9999/abc', null, 'PROXY www.example.com:8080');
+      return testProfile(profile, 'https://www.example.com:9999/abc', null, 'PROXY www.example.com:8080');
     });
     it('should not fail for PAC with trailing comments', function() {
       let p;
       p = Profiles.create('test', 'PacProfile');
       p.pacScript = profile.pacScript + '// This is a trailing line comment.';
-      testProfile(p, 'ftp://www.example.com:9999/abc', null, 'PROXY www.example.com:8080');
+      testProfile(p, 'https://www.example.com:9999/abc', null, 'PROXY www.example.com:8080');
       p = Profiles.create('test', 'PacProfile');
       p.pacScript = profile.pacScript + '/* This is a multiline comment which is not properly closed.';
-      return testProfile(p, 'ftp://www.example.com:9999/abc', null, 'PROXY www.example.com:8080');
+      return testProfile(p, 'https://www.example.com:9999/abc', null, 'PROXY www.example.com:8080');
     });
     it('should return includable for non-file pacUrl', function() {
       assert.strictEqual(Profiles.isIncludable(profile), true);

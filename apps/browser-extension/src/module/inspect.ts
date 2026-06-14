@@ -11,7 +11,7 @@ type InspectInfo = {
 
 type InspectTab = Pick<ChromeTab, 'id' | 'url'> & Record<string, unknown>;
 
-const WEB_RESOURCE_PATTERNS = ['http://*/*', 'https://*/*', 'ftp://*/*'];
+const WEB_RESOURCE_PATTERNS = ['http://*/*', 'https://*/*'];
 
 class Inspect {
   onInspect: (url: string, tab: InspectTab) => unknown;
