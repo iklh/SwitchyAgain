@@ -509,6 +509,14 @@ function optionProfileName(value: unknown) {
   return typeof name === 'string' ? name : '';
 }
 
+function sourceResultProfileExists(key: string, options: Options | null | undefined, profilesByKey: Record<string, string>) {
+  const profile = OmegaPac.Profiles.byKey?.(key, options || {});
+  if (profile) {
+    return profile.profileType !== 'SystemProfile';
+  }
+  return key !== '+system' && !!profilesByKey[key];
+}
+
 export function parseSource(code: string, options: Options | null | undefined) {
   const profilesByKey: Record<string, string> = {};
   for (const key of Object.keys(options || {})) {
@@ -520,7 +528,7 @@ export function parseSource(code: string, options: Options | null | undefined) {
   try {
     const refs = OmegaPac.RuleList.Switchy.directReferenceSet({ruleList: code});
     for (const key of Object.keys(refs || {})) {
-      if (!profilesByKey[key]) {
+      if (!sourceResultProfileExists(key, options, profilesByKey)) {
         return {
           error: new Error(`Unknown profile: ${refs[key]}`)
         };

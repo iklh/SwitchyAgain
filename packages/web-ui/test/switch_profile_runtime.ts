@@ -4,6 +4,7 @@ import {
   cloneRule,
   inspectRules,
   moveRule,
+  parseSource,
   removeRule,
   resetRuleProfiles,
   setAttachedEnabled,
@@ -17,8 +18,51 @@ import type {RuleListProfileModel} from '../src/react/profile_types';
 function installOmegaPacMock() {
   (globalThis as any).OmegaPac = {
     Profiles: {
+      byKey(key: string, options: Record<string, unknown>) {
+        const builtinProfiles: Record<string, unknown> = {
+          '+direct': {
+            builtin: true,
+            name: 'direct',
+            profileType: 'DirectProfile'
+          },
+          '+system': {
+            builtin: true,
+            name: 'system',
+            profileType: 'SystemProfile'
+          }
+        };
+        return builtinProfiles[key] || options[key] || null;
+      },
       updateRevision(profile: {revision?: number}) {
         profile.revision = (profile.revision || 0) + 1;
+      }
+    },
+    RuleList: {
+      Switchy: {
+        directReferenceSet({ruleList}: {ruleList: string}) {
+          const refs: Record<string, string> = {};
+          for (let line of ruleList.split(/\n|\r/)) {
+            line = line.trim();
+            if (!line || '[;#@!'.indexOf(line[0]) >= 0) {
+              continue;
+            }
+            const iSpace = line.lastIndexOf(' +');
+            const profile = iSpace < 0 ? 'direct' : line.slice(iSpace + 2).trim();
+            refs[`+${profile}`] = profile;
+          }
+          return refs;
+        },
+        parseOmega() {
+          return [
+            {
+              condition: {
+                conditionType: 'HostWildcardCondition',
+                pattern: '*'
+              },
+              profileName: 'direct'
+            }
+          ];
+        }
       }
     }
   };
@@ -187,6 +231,23 @@ describe('switch profile runtime', () => {
 
     expect(updateRuleWeekday(rule, 1, true)).toBe(true);
     expect(rule.condition.days).toBe('SMTWtFs');
+  });
+
+  it('allows the built-in direct profile in source editing', () => {
+    const result = parseSource('[SwitchyOmega Conditions]\n@with result\n* +direct', {
+      '+proxy': {
+        name: 'proxy',
+        profileType: 'FixedProfile'
+      }
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.rules).toHaveLength(1);
+  });
+
+  it('rejects unknown and non-result profiles in source editing', () => {
+    expect(parseSource('[SwitchyOmega Conditions]\n@with result\n* +missing', {}).error?.message).toBe('Unknown profile: missing');
+    expect(parseSource('[SwitchyOmega Conditions]\n@with result\n* +system', {}).error?.message).toBe('Unknown profile: system');
   });
 
   it('applies parsed source rules to profile and attached defaults', () => {
