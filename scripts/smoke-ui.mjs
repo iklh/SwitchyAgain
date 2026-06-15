@@ -42,9 +42,9 @@ function messageForKey(key, substitutions) {
   return text;
 }
 
-async function installExtensionApi(page) {
-  await page.addInitScript(({mockManifest, mockOptions, mockPageInfo, mockPopupState}) => {
-    const localState = new Map();
+async function installExtensionApi(page, initialState = {}) {
+  await page.addInitScript(({mockInitialState, mockManifest, mockOptions, mockPageInfo, mockPopupState}) => {
+    const localState = new Map(Object.entries(mockInitialState || {}));
     function pageInfoForRequest(args) {
       const result = structuredClone(mockPageInfo);
       if (!args?.includeExplanations) {
@@ -132,6 +132,7 @@ async function installExtensionApi(page) {
     };
     window.__switchyAgainSmokeMessages = {};
   }, {
+    mockInitialState: initialState,
     mockManifest: manifest,
     mockOptions: options,
     mockPageInfo: popupPageInfo(),
@@ -209,9 +210,36 @@ async function installPopupTarget(page) {
   });
 }
 
+async function pageSnapshot(page) {
+  return page.evaluate(() => ({
+    bodyClass: document.body.className,
+    fixedServers: document.querySelectorAll('.fixed-servers').length,
+    fixedServerTargets: document.querySelectorAll('.fixed-servers.options-guide-target').length,
+    guidePopovers: document.querySelectorAll('.options-guide-popover').length,
+    guideStep: document.body.getAttribute('data-options-guide-step') || '',
+    mainHtmlLength: document.querySelector('main')?.innerHTML?.length || 0,
+    mainText: document.querySelector('main')?.textContent?.slice(0, 240) || '',
+    modalCount: document.querySelectorAll('.modal').length,
+    profileHeaders: document.querySelectorAll('.react-profile-shell-host').length,
+    reactRootHtmlLength: document.querySelector('#react-root')?.innerHTML?.length || 0,
+    url: window.location.href
+  }));
+}
+
+async function expectSelectorWithSnapshot(page, selector, label) {
+  try {
+    await expectSelector(page, selector, label);
+  } catch (error) {
+    const snapshot = await pageSnapshot(page).catch((snapshotError) => ({
+      snapshotError: snapshotError?.message || String(snapshotError)
+    }));
+    throw new Error(`${error.message}\n${JSON.stringify(snapshot, null, 2)}`);
+  }
+}
+
 async function runPage(page, target) {
   const guard = installBrowserErrorGuards(page, target.label);
-  await installExtensionApi(page);
+  await installExtensionApi(page, target.state);
   if (target.popup) {
     await installPopupTarget(page);
     await page.route('**/js/omega_target_popup.js', (route) => {
@@ -231,12 +259,25 @@ async function runPage(page, target) {
   }
   if (target.click) {
     await page.locator(target.click).first().click();
+    await page.waitForTimeout(100);
+    guard.assertNoErrors();
   }
   if (target.afterClickSelector) {
-    await expectSelector(page, target.afterClickSelector, target.label);
+    await expectSelectorWithSnapshot(page, target.afterClickSelector, target.label);
   }
   if (target.afterClickText) {
     await expectText(page, target.afterClickText, target.label);
+  }
+  if (target.followUpClick) {
+    await page.locator(target.followUpClick).first().click();
+    await page.waitForTimeout(100);
+    guard.assertNoErrors();
+  }
+  if (target.afterFollowUpSelector) {
+    await expectSelectorWithSnapshot(page, target.afterFollowUpSelector, target.label);
+  }
+  if (target.afterFollowUpText) {
+    await expectText(page, target.afterFollowUpText, target.label);
   }
   guard.assertNoErrors();
   console.log(`ok ${target.label}`);
@@ -247,6 +288,20 @@ const pages = [
     label: 'options about route',
     url: extensionServer.url('options.html', '#/about'),
     text: messageForKey('about_title') || 'About'
+  },
+  {
+    label: 'options first-run guide',
+    url: extensionServer.url('options.html', '#/about'),
+    state: {
+      firstRun: 'install'
+    },
+    text: messageForKey('options_modalHeader_welcome') || 'Welcome to SwitchyAgain',
+    click: '.modal-footer .btn-primary',
+    afterClickSelector: '.nav-profile[data-profile-type="FixedProfile"].options-guide-target',
+    afterClickText: 'contains settings like server ip',
+    followUpClick: '.options-guide-popover .options-guide-button:not(.options-guide-button-secondary)',
+    afterFollowUpSelector: '.fixed-servers.options-guide-target',
+    afterFollowUpText: 'does not come with any proxy servers'
   },
   {
     label: 'options ui route',

@@ -56,6 +56,7 @@ import {
 } from './options_logic';
 import {parseRoute, routeHref} from './options_routes';
 import {ConfirmModal} from './confirm_modals';
+import {OPTIONS_GUIDE_STEPS, OptionsGuide, SWITCH_PROFILE_GUIDE_STEPS, type OptionsGuideState} from './options_guide';
 import {WelcomeModal} from './options_modals';
 import {NewProfileModal, ProxyAuthModal, RenameProfileModal, type NewProfileSpec} from './profile_modals';
 import {
@@ -192,6 +193,11 @@ const FIXED_PROXY_AUTH_KEYS: Record<FixedProfileScheme, FixedProfileProxyField> 
   http: 'proxyForHttp',
   https: 'proxyForHttps'
 };
+
+function guideStepCount(guide: OptionsGuideState) {
+  return guide.kind === 'switch' ? SWITCH_PROFILE_GUIDE_STEPS.length : OPTIONS_GUIDE_STEPS.length;
+}
+
 function ModalFrame({children, onDismiss}: {children: React.ReactNode; onDismiss: () => void}) {
   return (
     <>
@@ -422,6 +428,8 @@ export function OptionsApp() {
   const [status, setStatus] = useState<'loading' | 'ready' | 'saving' | 'error'>('loading');
   const [updatingProfiles, setUpdatingProfiles] = useState<Record<string, boolean>>({});
   const [modal, setModal] = useState<ModalState>(null);
+  const [guide, setGuide] = useState<OptionsGuideState | null>(null);
+  const [pendingOptionsGuideProfileName, setPendingOptionsGuideProfileName] = useState('');
   const [pendingApplyAction, setPendingApplyAction] = useState<(() => void | Promise<void>) | null>(null);
   const [alert, setAlert] = useState<AlertState>(null);
   const [alertShown, setAlertShown] = useState(false);
@@ -483,6 +491,47 @@ export function OptionsApp() {
     }
     loadProfileScopeContainerNames();
   }, [appliedVisibleProfileScopes.container, status]);
+
+  useEffect(() => {
+    if (
+      status !== 'ready' ||
+      !pendingOptionsGuideProfileName ||
+      route.name !== 'profile' ||
+      route.profileName !== pendingOptionsGuideProfileName ||
+      modal
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    let timeout: number | undefined;
+
+    function startWhenReady(attempt = 0) {
+      const target = document.querySelector('.fixed-servers');
+      if (!target && attempt < 30) {
+        timeout = window.setTimeout(() => startWhenReady(attempt + 1), 100);
+        return;
+      }
+      if (cancelled) {
+        return;
+      }
+      setPendingOptionsGuideProfileName('');
+      if (target) {
+        setGuide({
+          kind: 'options',
+          stepIndex: 0
+        });
+      }
+    }
+
+    timeout = window.setTimeout(startWhenReady, 0);
+    return () => {
+      cancelled = true;
+      if (timeout != null) {
+        window.clearTimeout(timeout);
+      }
+    };
+  }, [modal, pendingOptionsGuideProfileName, route.name, route.profileName, status]);
 
   useEffect(() => {
     if (!dirty) {
@@ -1017,10 +1066,30 @@ export function OptionsApp() {
   function closeWelcome(result: string, profileName: string) {
     setModal(null);
     if (result === 'show') {
+      setPendingOptionsGuideProfileName(profileName);
       navigate('profile', {
         name: profileName
       });
     }
+  }
+
+  function skipGuide() {
+    setGuide(null);
+  }
+
+  function nextGuide() {
+    setGuide((current) => {
+      if (!current) {
+        return null;
+      }
+      if (current.stepIndex >= guideStepCount(current) - 1) {
+        return null;
+      }
+      return {
+        ...current,
+        stepIndex: current.stepIndex + 1
+      };
+    });
   }
 
   function navigate(name: string, params?: Record<string, string>) {
@@ -1356,6 +1425,7 @@ export function OptionsApp() {
           />
         </ModalFrame>
       )}
+      {guide && <OptionsGuide guide={guide} onDone={skipGuide} onNext={nextGuide} onSkip={skipGuide} />}
     </>
   );
 }

@@ -40,7 +40,7 @@ export function WelcomeModal({onClose, onDismiss, upgrade = false}: WelcomeModal
           </>
         )}
       </div>
-      <div className="modal-footer">
+      <div className="modal-footer welcome-modal-footer">
         <button type="button" className="btn btn-default" onClick={() => onClose?.('skip')}>
           {message('options_guideSkip', 'Skip guide')}
         </button>
