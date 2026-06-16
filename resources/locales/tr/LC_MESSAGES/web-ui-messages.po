@@ -333,6 +333,24 @@ msgstr ""
 msgid "options_showExternalProfileHelp"
 msgstr ""
 
+msgid "options_group_currentProfile"
+msgstr "Geçerli Profil"
+
+msgid "options_currentProfileHelp"
+msgstr "Etkin proxy profilini seçin."
+
+msgid "options_activeProfile"
+msgstr "Etkin Profil"
+
+msgid "options_currentProfileApplying"
+msgstr "Uygulanıyor..."
+
+msgid "options_currentProfileApplied"
+msgstr "Uygulandı."
+
+msgid "options_currentProfileApplyFailed"
+msgstr "Profil uygulanamadı."
+
 msgid "options_group_networkRequests"
 msgstr "Ağ İstekleri"
 

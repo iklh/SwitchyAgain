@@ -396,6 +396,24 @@ msgstr ""
 " توجه داشته باشید که نمایه وارد شده یک عکس فوری است و پس از آن هیچ تغییری از "
 "برنامه منبع را نشان نمی دهد."
 
+msgid "options_group_currentProfile"
+msgstr "نمایه فعلی"
+
+msgid "options_currentProfileHelp"
+msgstr "نمایه پراکسی فعال را انتخاب کنید."
+
+msgid "options_activeProfile"
+msgstr "نمایه فعال"
+
+msgid "options_currentProfileApplying"
+msgstr "در حال اعمال..."
+
+msgid "options_currentProfileApplied"
+msgstr "اعمال شد."
+
+msgid "options_currentProfileApplyFailed"
+msgstr "اعمال نمایه ناموفق بود."
+
 msgid "options_group_networkRequests"
 msgstr "درخواست‌های شبکه"
 

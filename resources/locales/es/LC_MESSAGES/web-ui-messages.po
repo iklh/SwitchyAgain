@@ -409,6 +409,24 @@ msgstr ""
 "instantánea y no reflejará ningún cambio desde la aplicación de origen a "
 "partir de entonces."
 
+msgid "options_group_currentProfile"
+msgstr "Perfil actual"
+
+msgid "options_currentProfileHelp"
+msgstr "Elija el perfil de proxy activo."
+
+msgid "options_activeProfile"
+msgstr "Perfil activo"
+
+msgid "options_currentProfileApplying"
+msgstr "Aplicando..."
+
+msgid "options_currentProfileApplied"
+msgstr "Aplicado."
+
+msgid "options_currentProfileApplyFailed"
+msgstr "No se pudo aplicar el perfil."
+
 msgid "options_group_networkRequests"
 msgstr "Peticiones de red"
 

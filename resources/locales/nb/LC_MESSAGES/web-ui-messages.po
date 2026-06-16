@@ -338,6 +338,24 @@ msgstr ""
 "Please note that the imported profile is a snapshot and will not reflect "
 "any changes from the source app thereafter."
 
+msgid "options_group_currentProfile"
+msgstr "Gjeldende profil"
+
+msgid "options_currentProfileHelp"
+msgstr "Velg den aktive proxy-profilen."
+
+msgid "options_activeProfile"
+msgstr "Aktiv profil"
+
+msgid "options_currentProfileApplying"
+msgstr "Bruker..."
+
+msgid "options_currentProfileApplied"
+msgstr "Brukt."
+
+msgid "options_currentProfileApplyFailed"
+msgstr "Klarte ikke å bruke profilen."
+
 msgid "options_group_networkRequests"
 msgstr "Nettverksforespørsler"
 

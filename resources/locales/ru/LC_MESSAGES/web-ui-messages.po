@@ -404,6 +404,24 @@ msgstr ""
 "Обратите внимание, что импортированный профиль является слепком, и не будет "
 "отражать какие-либо изменения, сделанные после импорта в исходном приложении."
 
+msgid "options_group_currentProfile"
+msgstr "Текущий профиль"
+
+msgid "options_currentProfileHelp"
+msgstr "Выберите активный профиль прокси."
+
+msgid "options_activeProfile"
+msgstr "Активный профиль"
+
+msgid "options_currentProfileApplying"
+msgstr "Применение..."
+
+msgid "options_currentProfileApplied"
+msgstr "Применено."
+
+msgid "options_currentProfileApplyFailed"
+msgstr "Не удалось применить профиль."
+
 msgid "options_group_networkRequests"
 msgstr "Сетевые запросы"
 

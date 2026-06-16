@@ -358,6 +358,24 @@ msgstr ""
 "导入其他应用提供的代理设置。导入的设置将会成为一个新的情景模式，其名称由您决"
 "定。请注意导入的情景模式只是当时的一个快照，导入后不会随着原来的应用更新。"
 
+msgid "options_group_currentProfile"
+msgstr "当前情景模式"
+
+msgid "options_currentProfileHelp"
+msgstr "选择当前生效的代理情景模式。"
+
+msgid "options_activeProfile"
+msgstr "生效情景模式"
+
+msgid "options_currentProfileApplying"
+msgstr "正在应用..."
+
+msgid "options_currentProfileApplied"
+msgstr "已应用。"
+
+msgid "options_currentProfileApplyFailed"
+msgstr "应用情景模式失败。"
+
 msgid "options_group_networkRequests"
 msgstr "网络请求"
 

@@ -348,6 +348,24 @@ msgstr ""
 "選擇了 $SYSTEMPROFILE$ 的情況下，您可以在彈出式選單中選擇 $EXTERNALPROFILE$ "
 "來匯入其他應用提供的代理設定。匯入的設定將會成為一個新的情境模式，其名稱由您決定。請注意匯入的情境模式只是當時的一個快照，匯入後不會隨著原來的應用更新。"
 
+msgid "options_group_currentProfile"
+msgstr "目前情境模式"
+
+msgid "options_currentProfileHelp"
+msgstr "選擇目前生效的代理情境模式。"
+
+msgid "options_activeProfile"
+msgstr "生效情境模式"
+
+msgid "options_currentProfileApplying"
+msgstr "正在套用..."
+
+msgid "options_currentProfileApplied"
+msgstr "已套用。"
+
+msgid "options_currentProfileApplyFailed"
+msgstr "套用情境模式失敗。"
+
 msgid "options_group_networkRequests"
 msgstr "網路請求"
 

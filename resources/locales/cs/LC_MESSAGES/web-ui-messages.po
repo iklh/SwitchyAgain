@@ -390,6 +390,24 @@ msgstr ""
 "Please note that the imported profile is a snapshot and will not reflect "
 "any changes from the source app thereafter."
 
+msgid "options_group_currentProfile"
+msgstr "Aktuální profil"
+
+msgid "options_currentProfileHelp"
+msgstr "Vyberte aktivní proxy profil."
+
+msgid "options_activeProfile"
+msgstr "Aktivní profil"
+
+msgid "options_currentProfileApplying"
+msgstr "Používá se..."
+
+msgid "options_currentProfileApplied"
+msgstr "Použito."
+
+msgid "options_currentProfileApplyFailed"
+msgstr "Profil se nepodařilo použít."
+
 msgid "options_group_networkRequests"
 msgstr "Síťové požadavky"
 
