@@ -8,6 +8,13 @@ export type ProxyCredentials = {
   username?: string;
 };
 
+export type ProxyAuthCapabilities = {
+  http: boolean;
+  https: boolean;
+  socks4: boolean;
+  socks5: boolean;
+};
+
 export type ProxyServer = Record<string, unknown> & {
   host?: string;
   port?: number;
@@ -80,6 +87,7 @@ export type ProxyChangeWatcher = (details: ProxyChangeDetails) => unknown;
 
 export type ProxyImplInstance = {
   features: string[];
+  proxyAuthCapabilities: ProxyAuthCapabilities;
   applyProfile(profile: ProxyProfile, meta?: unknown, options?: unknown): Promise<unknown>;
   parseExternalProfile(details: ExternalProxyDetails | ProxyProfile, options?: unknown): unknown;
   setProfileResolver?(resolver: ProxyProfileResolver | null, profileNames?: ProxyScopeProfileNames): void;

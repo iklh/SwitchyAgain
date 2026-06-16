@@ -333,7 +333,8 @@ class ChromeOptions extends OmegaTarget.Options {
       () => this.scopeProfileNames()
     );
     this._state.set({
-      profileScopeCapabilities: this.profileScopeCapabilities()
+      profileScopeCapabilities: this.profileScopeCapabilities(),
+      proxyAuthCapabilities: this.proxyImpl.proxyAuthCapabilities
     });
     this.refreshProfileScopeContainers();
     this.watchTabProfileContexts();

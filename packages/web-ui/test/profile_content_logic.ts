@@ -301,13 +301,12 @@ describe('profile content logic', () => {
     expect(fixedProfileAuthSupported('socks5')).toBe(false);
     expect(fixedProfileAuthSupported()).toBe(false);
 
-    (globalThis as any).browser = {
-      proxy: {
-        register() {}
-      }
-    };
-
-    expect(fixedProfileAuthSupported('socks5')).toBe(true);
+    expect(fixedProfileAuthSupported('socks5', {
+      http: true,
+      https: true,
+      socks4: false,
+      socks5: true
+    })).toBe(true);
   });
 
   it('clones switch source state and nested errors', () => {

@@ -119,6 +119,8 @@ export type PacProfileField = 'pacScript' | 'pacUrl';
 
 export type FixedProfileProxyProtocol = 'http' | 'https' | 'socks4' | 'socks5';
 
+export type ProxyAuthCapabilities = Record<FixedProfileProxyProtocol, boolean>;
+
 export type ProxyEditor = {
   host?: string;
   port?: number | string;

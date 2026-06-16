@@ -593,12 +593,19 @@ describe('options logic', () => {
     expect(proxyAuthSupported('socks5')).toBe(false);
     expect(hasProxyScriptApi()).toBe(false);
 
+    expect(proxyAuthSupported('socks5', {
+      http: true,
+      https: true,
+      socks4: false,
+      socks5: true
+    })).toBe(true);
+
     (globalThis as any).browser = {
       proxy: {
         register() {}
       }
     };
-    expect(proxyAuthSupported('socks5')).toBe(true);
+    expect(proxyAuthSupported('socks5')).toBe(false);
     expect(hasProxyScriptApi()).toBe(true);
 
     (globalThis as any).browser = {

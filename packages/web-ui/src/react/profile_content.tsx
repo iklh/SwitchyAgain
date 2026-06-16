@@ -61,6 +61,7 @@ import type {
   PacProfileField,
   RuleListProfileAttachedField,
   ProfileType,
+  ProxyAuthCapabilities,
   ProxyEditor,
   RuleListProfileField,
   RuleListProfileSourceField
@@ -106,6 +107,7 @@ export type FixedProfileProps = {
   onEditProxyAuth?: (scheme: FixedProfileScheme) => void;
   onProxyChange?: (field: FixedProfileProxyField, value?: ProxyEditor, options?: FixedProfileProxyChangeOptions) => void;
   profile: NamedFixedProfileModel;
+  proxyAuthCapabilities?: ProxyAuthCapabilities;
 };
 
 export type SwitchAttachedProfileProps = {
@@ -1104,7 +1106,7 @@ function fixedProfileOptionsForScheme(scheme: FixedProfileScheme) {
   ];
 }
 
-export function FixedProfileContent({profile, onBypassListChange, onEditProxyAuth, onProxyChange}: FixedProfileProps) {
+export function FixedProfileContent({profile, proxyAuthCapabilities, onBypassListChange, onEditProxyAuth, onProxyChange}: FixedProfileProps) {
   const {bypassList, fallbackProxy, name: profileName, proxyForHttp, proxyForHttps} = profile;
   const initialEditors = fixedProfileEditors(profile);
   const [draftEditors, setDraftEditors] = useState<FixedProfileProxyEditors>(() => cloneProxyEditors(initialEditors));
@@ -1137,7 +1139,7 @@ export function FixedProfileContent({profile, onBypassListChange, onEditProxyAut
   ) {
     const field = FIXED_PROFILE_PROXY_FIELDS[scheme];
     const nextEditor = {...editor};
-    const clearAuth = !fixedProfileAuthSupported(nextEditor.scheme);
+    const clearAuth = !fixedProfileAuthSupported(nextEditor.scheme, proxyAuthCapabilities);
 
     if (!nextEditor.scheme) {
       if (!scheme) {

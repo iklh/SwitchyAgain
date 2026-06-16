@@ -5,6 +5,8 @@ import type {
   NamedRuleListProfileModel,
   Profile as ProfileModel,
   ProfileAuth,
+  ProxyAuthCapabilities,
+  FixedProfileProxyProtocol,
   RuleListProfileModel
 } from './profile_types';
 import {
@@ -324,14 +326,15 @@ export function profileDownloadErrorMessage(err: unknown) {
   );
 }
 
-export function proxyAuthSupported(protocol?: string) {
-  if (protocol === 'http' || protocol === 'https') {
-    return true;
-  }
-  if (protocol === 'socks5') {
-    return Boolean((globalThis as GlobalWithBrowserProxy).browser?.proxy?.register);
-  }
-  return false;
+export const DEFAULT_PROXY_AUTH_CAPABILITIES: ProxyAuthCapabilities = {
+  http: true,
+  https: true,
+  socks4: false,
+  socks5: false
+};
+
+export function proxyAuthSupported(protocol?: string, capabilities: ProxyAuthCapabilities = DEFAULT_PROXY_AUTH_CAPABILITIES) {
+  return !!protocol && capabilities[protocol as FixedProfileProxyProtocol] === true;
 }
 
 export function cloneAuth(auth?: ProfileAuth) {

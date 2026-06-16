@@ -4,6 +4,7 @@ import type {
   ExternalProxyDetails,
   ProxyChangeDetails,
   ProxyChangeWatcher,
+  ProxyAuthCapabilities,
   ProxyLog,
   ProxyProfile
 } from './proxy_types';
@@ -14,10 +15,17 @@ const OmegaPromise = OmegaTarget.Promise;
 class ProxyImpl {
   features: string[];
   log: ProxyLog;
+  proxyAuthCapabilities: ProxyAuthCapabilities;
   private _proxyAuth?: InstanceType<typeof ProxyAuth>;
 
   constructor(log: ProxyLog) {
     this.features = [];
+    this.proxyAuthCapabilities = {
+      http: true,
+      https: true,
+      socks4: false,
+      socks5: false
+    };
     this.log = log;
   }
 

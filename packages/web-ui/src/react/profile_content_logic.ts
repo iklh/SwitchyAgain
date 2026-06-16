@@ -6,16 +6,9 @@ import type {
   FixedProfileProxyEditors,
   FixedProfileProxyField,
   FixedProfileProxyProtocol,
-  FixedProfileScheme
+  FixedProfileScheme,
+  ProxyAuthCapabilities
 } from './profile_types';
-
-type GlobalWithBrowserProxy = typeof globalThis & {
-  browser?: {
-    proxy?: {
-      register?: unknown;
-    };
-  };
-};
 
 export const FIXED_PROFILE_SCHEMES: FixedProfileScheme[] = ['', 'http', 'https'];
 export const FIXED_PROFILE_PROXY_FIELDS: Record<FixedProfileScheme, FixedProfileProxyField> = {
@@ -175,14 +168,18 @@ export function fixedProfileAuthActive(profile: FixedProfileModel, scheme: Fixed
   return !!profile.auth?.[FIXED_PROFILE_PROXY_FIELDS[scheme]];
 }
 
-export function fixedProfileAuthSupported(protocol?: string) {
-  if (protocol === 'http' || protocol === 'https') {
-    return true;
-  }
-  if (protocol === 'socks5') {
-    return Boolean((globalThis as GlobalWithBrowserProxy).browser?.proxy?.register);
-  }
-  return false;
+export const DEFAULT_FIXED_PROFILE_AUTH_CAPABILITIES: ProxyAuthCapabilities = {
+  http: true,
+  https: true,
+  socks4: false,
+  socks5: false
+};
+
+export function fixedProfileAuthSupported(
+  protocol?: string,
+  capabilities: ProxyAuthCapabilities = DEFAULT_FIXED_PROFILE_AUTH_CAPABILITIES
+) {
+  return !!protocol && capabilities[protocol as FixedProfileProxyProtocol] === true;
 }
 
 export function cloneSourceState(source?: SwitchRuleSourceState | null): SwitchRuleSourceState | undefined {

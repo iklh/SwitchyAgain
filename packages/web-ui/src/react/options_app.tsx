@@ -28,6 +28,7 @@ import {
   composeLegacyRuleList,
   composeOmegaRuleList,
   createPacExport,
+  DEFAULT_PROXY_AUTH_CAPABILITIES,
   deleteAttachedProfileOption,
   deleteProfileOption,
   deleteProfileScopeAssignments,
@@ -129,6 +130,7 @@ import type {
   ProfileAuth,
   ProfileAuthMap,
   ProfileAuthKey,
+  ProxyAuthCapabilities,
   ProfileType,
   PacProfileField,
   RuleListProfileAttachedField,
@@ -434,6 +436,7 @@ export function OptionsApp() {
   const [alert, setAlert] = useState<AlertState>(null);
   const [alertShown, setAlertShown] = useState(false);
   const [profileScopeCapabilities, setProfileScopeCapabilities] = useState<ProfileScopeCapabilities>(DEFAULT_PROFILE_SCOPE_CAPABILITIES);
+  const [proxyAuthCapabilities, setProxyAuthCapabilities] = useState<ProxyAuthCapabilities>(DEFAULT_PROXY_AUTH_CAPABILITIES);
   const [profileScopeContainers, setProfileScopeContainers] = useState<ProfileScopeContainerInfo[]>([]);
   const isExperimental = useMemo(hasProxyScriptApi, []);
   const pacProfilesUnsupported = isExperimental;
@@ -442,13 +445,15 @@ export function OptionsApp() {
     Promise.all([
       loadOptions(),
       getState<ProfileScopeCapabilities>('profileScopeCapabilities').catch(() => DEFAULT_PROFILE_SCOPE_CAPABILITIES),
+      getState<ProxyAuthCapabilities>('proxyAuthCapabilities').catch(() => DEFAULT_PROXY_AUTH_CAPABILITIES),
       getState<ProfileScopeContainerInfo[]>('profileScopeContainers').catch(() => [])
     ])
-      .then(([loadedOptions, capabilities, containers]) => {
+      .then(([loadedOptions, capabilities, authCapabilities, containers]) => {
         const cloned = cloneOptions(loadedOptions);
         setSavedOptions(cloned);
         setOptions(cloneOptions(cloned));
         setProfileScopeCapabilities(capabilities || DEFAULT_PROFILE_SCOPE_CAPABILITIES);
+        setProxyAuthCapabilities(authCapabilities || DEFAULT_PROXY_AUTH_CAPABILITIES);
         setProfileScopeContainers(Array.isArray(containers) ? containers : []);
         setStatus('ready');
         showFirstRun(cloned);
@@ -993,7 +998,7 @@ export function OptionsApp() {
     setModal({
       auth: cloneAuth(profile.auth?.[authKey]),
       authKey,
-      authSupported: proxyAuthSupported(proxy.scheme),
+      authSupported: proxyAuthSupported(proxy.scheme, proxyAuthCapabilities),
       kind: 'proxyAuth',
       profileName,
       protocolDisp: proxy.scheme
@@ -1188,6 +1193,7 @@ export function OptionsApp() {
           return (
             <FixedProfileContent
               profile={profile}
+              proxyAuthCapabilities={proxyAuthCapabilities}
               onBypassListChange={(value) => updateFixedProfileBypassList(profile.name, value)}
               onEditProxyAuth={(scheme) => requestFixedProxyAuth(profile, scheme)}
               onProxyChange={(field, value, changeOptions) => updateFixedProfileProxy(profile.name, field, value, changeOptions)}

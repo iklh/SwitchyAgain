@@ -59,6 +59,12 @@ class SettingsProxyImpl extends ProxyImpl {
   constructor(log: ProxyLog) {
     super(log);
     this.features = ['fullUrlHttp', 'pacScript', 'watchProxyChange', 'windowProfileScope'];
+    this.proxyAuthCapabilities = {
+      http: true,
+      https: true,
+      socks4: false,
+      socks5: false
+    };
     this._proxyChangeWatchers = null;
     this._proxyChangeListener = this._handleProxyChange.bind(this);
   }

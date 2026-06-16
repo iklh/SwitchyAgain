@@ -39,6 +39,12 @@ class ListenerProxyImpl extends ProxyImpl {
   constructor(log: ProxyLog) {
     super(log);
     this.features = ['fullUrl', 'socks5Auth', 'tabProfileScope', 'containerProfileScope', 'windowProfileScope'];
+    this.proxyAuthCapabilities = {
+      http: true,
+      https: true,
+      socks4: false,
+      socks5: true
+    };
     this._optionsReadyCallback = null;
     this._optionsReady = new (NativePromise as PromiseConstructor)((resolve) => {
       this._optionsReadyCallback = resolve;
